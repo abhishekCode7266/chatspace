@@ -1,8 +1,15 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:chatspace/services/encryption_service.dart';
 import 'package:chatspace/services/security_service.dart';
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+  });
+
   group('Security & Encryption Tests', () {
     test('generateSecurityFingerprint produces deterministic 60-digit formatted code', () {
       const uid1 = 'user_alice';
@@ -30,7 +37,7 @@ void main() {
       expect(decrypted, equals(plain));
     });
 
-    test('SecurityService verifies PIN correctly', () {
+    test('SecurityService verifies default PIN correctly', () {
       final security = SecurityService.instance;
       expect(security.verifyPin('1234'), isTrue);
       expect(security.verifyPin('9999'), isFalse);
@@ -40,6 +47,7 @@ void main() {
       final security = SecurityService.instance;
       const targetUid = 'bad_actor_99';
 
+      await security.unblockUser(targetUid);
       expect(security.isUserBlocked(targetUid), isFalse);
 
       await security.blockUser(targetUid);
