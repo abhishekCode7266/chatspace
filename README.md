@@ -19,21 +19,32 @@
    - Session persistence (user remains logged in across restarts).
    - Friendly user error messages for all Firebase authentication exceptions.
 
-2. **Registered Users Directory**
+2. **WhatsApp-Style Chat Bar & Messaging (व्हाट्सएप जैसा चैट बार)**
+   - Signature WhatsApp rounded input capsule with emoji picker (`👍 ❤️ 😂 🔥 👏 🙏`).
+   - Attachment paperclip modal sheet with 6 vibrant categories: Document, Camera, Gallery, Audio, Location, and Contact.
+   - Dynamic floating circular green action button: **Microphone (Voice Note simulation)** when input is empty; **Send arrow** when typing.
+   - Auto-scrolling, date separators (`Today`, `Yesterday`), and read receipts (`✓` Sent, `✓✓` Blue Seen).
+
+3. **WhatsApp-Style HD Video & Voice Calling (वीडियो और वॉइस कॉलिंग)**
+   - Top AppBar one-tap **Video Call** (`Icons.videocam_rounded`) and **Voice Call** (`Icons.call_rounded`) buttons.
+   - Full-screen calling screen with live duration timer (`Calling...` -> `Ringing...` -> `Connected 01:24`).
+   - **Video Calling**: Simulated HD video stream with movable Picture-in-Picture (PiP) local camera preview, switch front/rear camera toggle.
+   - **Voice Calling**: Pulsing wave animation and crystal-clear UI.
+   - Complete bottom toolbar: Flip Camera, Toggle Video, Mute Microphone, Speakerphone, and End Call (red circle button).
+
+4. **Advanced Security & Privacy Features (सिक्योरिटी फीचर्स)**
+   - 🔒 **End-to-End Encryption (E2EE)**: Messages and calls protected; WhatsApp-style E2EE golden security badge in chats.
+   - 🛡️ **60-Digit Security Verification Fingerprint**: Compare numeric cryptographic fingerprints between participants.
+   - 🔑 **App Lock (PIN Passcode)**: 4-digit PIN lock screen on app start/resume with customizable PIN in Settings.
+   - 🚫 **Block / Unblock Contacts**: Block nuisance users with one tap from the chat menu.
+   - 🗑️ **Clear Chat**: Clear conversation history with confirmation dialog.
+
+5. **Registered Users Directory**
    - Real-time directory listing all registered users (excluding current user).
    - Instant search filtering by contact name or status.
    - Live presence indicator (green badge for Online, last seen timestamp for Offline).
-   - One-tap conversation starter.
 
-3. **Real-Time One-to-One Messaging**
-   - Instant message transmission and synchronization using Cloud Firestore snapshot streams.
-   - Distinct chat bubbles: sent (right-aligned, brand themed) and received (left-aligned, neutral).
-   - Message timestamps and smart date separators (`Today`, `Yesterday`, full date).
-   - Automatic smooth scroll to the newest message.
-   - Message delivery state indicators: sent (`✓`) and seen (`✓✓` in blue).
-   - Real-time typing status indicator (`typing...`).
-
-4. **Recent Chats (Chat List)**
+6. **Recent Chats (Chat List)**
    - Home screen displaying active conversations with participant names, last message preview, and formatted timestamps.
    - Unread message count badges.
    - Sorted chronologically by most recent interaction.

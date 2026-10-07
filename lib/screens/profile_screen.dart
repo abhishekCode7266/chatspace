@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
 import '../providers/theme_provider.dart';
+import '../services/security_service.dart';
 import '../utils/constants.dart';
 import '../utils/validators.dart';
 import 'login_screen.dart';
@@ -85,6 +86,52 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void _showChangePinDialog() {
+    final security = SecurityService.instance;
+    final pinController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.pin_rounded, color: AppColors.primary),
+            SizedBox(width: 8),
+            Text('Change Security PIN'),
+          ],
+        ),
+        content: TextField(
+          controller: pinController,
+          keyboardType: TextInputType.number,
+          maxLength: 4,
+          obscureText: true,
+          decoration: const InputDecoration(
+            labelText: 'New 4-digit PIN',
+            hintText: 'e.g. 1234',
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            onPressed: () async {
+              final pin = pinController.text.trim();
+              if (pin.length == 4) {
+                await security.changePin(pin);
+                if (mounted) {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Security PIN updated successfully!')),
+                  );
+                }
+              }
+            },
+            child: const Text('Save PIN'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showLogoutDialog() {
     showDialog(
       context: context,
@@ -126,6 +173,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
     final themeProvider = context.watch<ThemeProvider>();
+    final security = SecurityService.instance;
     final currentUser = authProvider.currentUser;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -243,6 +291,72 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             const Divider(),
 
+            // SECURITY SECTION HEADER
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.security_rounded, size: 18, color: AppColors.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'SECURITY & PRIVACY (सिक्योरिटी)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.8,
+                      color: isDark ? Colors.white70 : Colors.grey.shade700,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // App Lock Switch
+            ListTile(
+              leading: const Icon(Icons.fingerprint_rounded, color: AppColors.primary),
+              title: const Text('App Lock (PIN Security)'),
+              subtitle: Text(
+                security.isAppLockEnabled
+                    ? 'Protected with 4-digit PIN'
+                    : 'Disabled',
+              ),
+              trailing: Switch(
+                value: security.isAppLockEnabled,
+                activeColor: AppColors.primary,
+                onChanged: (val) async {
+                  await security.setAppLockEnabled(val);
+                  setState(() {});
+                },
+              ),
+            ),
+
+            // Change Security PIN
+            if (security.isAppLockEnabled)
+              ListTile(
+                leading: const Icon(Icons.password_rounded, color: AppColors.primary),
+                title: const Text('Change Security PIN'),
+                subtitle: const Text('Update your 4-digit lock passcode'),
+                trailing: const Icon(Icons.chevron_right_rounded),
+                onTap: _showChangePinDialog,
+              ),
+
+            // End-to-End Encryption status
+            const ListTile(
+              leading: Icon(Icons.lock_rounded, color: AppColors.primary),
+              title: Text('End-to-End Encryption'),
+              subtitle: Text('Chats and calls are encrypted end-to-end'),
+              trailing: Icon(Icons.check_circle_rounded, color: AppColors.online, size: 20),
+            ),
+
+            // Blocked Contacts
+            ListTile(
+              leading: const Icon(Icons.block_rounded, color: AppColors.primary),
+              title: const Text('Blocked Contacts'),
+              subtitle: Text('${security.blockedUserIds.length} contact(s) blocked'),
+            ),
+
+            const Divider(),
+
             // Dark Mode Switch
             SwitchListTile(
               secondary: Icon(
@@ -264,18 +378,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const Divider(),
 
             // Notification Info
-            ListTile(
-              leading: const Icon(Icons.notifications_active_outlined, color: AppColors.primary),
-              title: const Text('Push Notifications'),
-              subtitle: const Text('Firebase Cloud Messaging (FCM) Enabled'),
-              trailing: const Icon(Icons.check_circle_rounded, color: AppColors.online, size: 20),
+            const ListTile(
+              leading: Icon(Icons.notifications_active_outlined, color: AppColors.primary),
+              title: Text('Push Notifications'),
+              subtitle: Text('Firebase Cloud Messaging (FCM) Enabled'),
+              trailing: Icon(Icons.check_circle_rounded, color: AppColors.online, size: 20),
             ),
             const Divider(),
 
             // App Version Info
-            ListTile(
-              leading: const Icon(Icons.apps_rounded, color: AppColors.primary),
-              title: const Text('ChatSpace Mobile'),
+            const ListTile(
+              leading: Icon(Icons.apps_rounded, color: AppColors.primary),
+              title: Text('ChatSpace Mobile'),
               subtitle: Text('Version ${AppConstants.appVersion} (Production Build)'),
             ),
             const Divider(),

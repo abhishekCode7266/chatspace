@@ -84,31 +84,29 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master')
         with:
-          tag_name: v1.0.0
-          name: ChatSpace v1.0.0 (Production Release & Developer Bypass)
+          tag_name: v1.1.0
+          name: ChatSpace v1.1.0 (WhatsApp UI, HD Video Calling & Security Release)
           draft: false
           prerelease: false
           body: |
-            ## ChatSpace v1.0.0 Production Release 🚀💬
+            ## ChatSpace v1.1.0 Production Release 🚀💬
             
-            Welcome to **ChatSpace** - the complete, production-ready real-time Flutter chat mobile application!
+            Welcome to **ChatSpace** - updated with WhatsApp-Style Chat Bar, HD Video Calling, and Advanced Security!
             
             ### 📱 Download & Install:
-            - **Download Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.0.0/app-release.apk)
-            - **Google Play Store App Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.0.0/app-release.aab)
+            - **Download Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.1.0/app-release.apk)
+            - **Google Play Store App Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.1.0/app-release.aab)
             
-            ### ✨ Core Features:
-            - 🔐 **Developer Mode Bypass (डेवलपर मोड बाईपास)**: Built-in bypass login to test and inspect all screens, simulated contacts, live auto-replying bots, typing indicators, and message status without requiring Firebase setup!
-            - 🛡️ Firebase Authentication (Email/Password, Signup, Login, Password Reset, Session Persistence)
-            - 💬 Real-Time One-to-One Messaging with Cloud Firestore snapshots
-            - 👥 Registered Users Directory with Online/Offline indicators & Last Seen timestamps
-            - 📋 Recent Chats list with unread counter badges & latest message timestamps
-            - 🔔 Push Notification integration with Firebase Cloud Messaging (FCM)
-            - 🌓 Material 3 Theming with Light/Dark mode toggle persisted in SharedPreferences
-            - 👤 Editable User Profile (Display Name & Bio/Status)
+            ### ✨ What's New in v1.1.0:
+            - 🎨 **Play Store Official Logo & App Icon**: Sleek emerald-green shield chat logo.
+            - 💬 **WhatsApp-Style Chat Bar (व्हाट्सएप जैसा चैट बार)**: Rounded pill bar, emoji quick picker, attachment modal sheet (Docs, Camera, Gallery, Audio, Location, Contact), and dynamic Mic/Send action button.
+            - 📹 **WhatsApp HD Video & Voice Calling (वीडियो कॉलिंग)**: Video Call with Picture-in-Picture (PiP) local camera feed, camera flip, mic mute, speaker toggle, and animated calling timer.
+            - 🔒 **Security & Privacy Features (सिक्योरिटी)**: End-to-End Encryption (E2EE), 60-digit cryptographic verification code, 4-digit PIN App Lock, and Block Contacts.
+            - 🔐 **Developer Mode Bypass (डेवलपर मोड बाईपास)**: 1-click bypass login to test all features instantly!
           files: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab
+            playstore_assets/chatspace_icon_512.jpg
 
   deploy_web:
     name: Build & Deploy Web Preview to GitHub Pages

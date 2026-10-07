@@ -83,11 +83,11 @@ class _LoginScreenState extends State<LoginScreen> {
                   // App Icon & Header
                   Center(
                     child: Container(
-                      width: 72,
-                      height: 72,
+                      width: 80,
+                      height: 80,
                       decoration: BoxDecoration(
                         color: AppColors.primary,
-                        shape: BoxShape.circle,
+                        borderRadius: BorderRadius.circular(20),
                         boxShadow: [
                           BoxShadow(
                             color: AppColors.primary.withOpacity(0.3),
@@ -96,10 +96,17 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.chat_bubble_rounded,
-                        size: 38,
-                        color: Colors.white,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Image.asset(
+                          'assets/images/app_logo.jpg',
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const Icon(
+                            Icons.chat_bubble_rounded,
+                            size: 40,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
                     ),
                   ),

@@ -2,7 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/auth_provider.dart';
+import '../services/security_service.dart';
 import '../utils/constants.dart';
+import 'app_lock_screen.dart';
 import 'chat_list_screen.dart';
 import 'login_screen.dart';
 
@@ -40,11 +42,29 @@ class _SplashScreenState extends State<SplashScreen>
     if (!mounted) return;
 
     final authProvider = context.read<AuthProvider>();
+    final security = SecurityService.instance;
+
     if (authProvider.isAuthenticated) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => const ChatListScreen()),
-      );
+      if (security.isAppLockEnabled && !security.isAppUnlocked) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => AppLockScreen(
+              onUnlocked: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ChatListScreen()),
+                );
+              },
+            ),
+          ),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const ChatListScreen()),
+        );
+      }
     } else {
       Navigator.pushReplacement(
         context,
@@ -101,7 +121,7 @@ class _SplashScreenState extends State<SplashScreen>
                   height: 100,
                   decoration: BoxDecoration(
                     color: AppColors.primary,
-                    shape: BoxShape.circle,
+                    borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.primary.withOpacity(0.35),
@@ -110,10 +130,17 @@ class _SplashScreenState extends State<SplashScreen>
                       ),
                     ],
                   ),
-                  child: const Icon(
-                    Icons.chat_bubble_rounded,
-                    size: 52,
-                    color: Colors.white,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(24),
+                    child: Image.asset(
+                      'assets/images/app_logo.jpg',
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => const Icon(
+                        Icons.chat_bubble_rounded,
+                        size: 52,
+                        color: Colors.white,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -129,12 +156,19 @@ class _SplashScreenState extends State<SplashScreen>
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              AppConstants.appTagline,
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark ? Colors.white60 : Colors.black54,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.lock_rounded, size: 14, color: AppColors.primary),
+                const SizedBox(width: 6),
+                Text(
+                  'End-to-End Encrypted Messaging & HD Calling',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: isDark ? Colors.white60 : Colors.black54,
+                  ),
+                ),
+              ],
             ),
             const Spacer(),
             const SizedBox(
