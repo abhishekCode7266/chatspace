@@ -6,6 +6,12 @@ class ChatModel {
   final String lastMessage;
   final DateTime? lastMessageTime;
   final Map<String, int> unreadCount;
+  final bool isGroup;
+  final String? groupName;
+  final String? groupDescription;
+  final String? groupAdminId;
+  final String? groupAvatar;
+  final bool isFavorite;
 
   ChatModel({
     required this.chatId,
@@ -13,10 +19,17 @@ class ChatModel {
     this.lastMessage = '',
     this.lastMessageTime,
     this.unreadCount = const {},
+    this.isGroup = false,
+    this.groupName,
+    this.groupDescription,
+    this.groupAdminId,
+    this.groupAvatar,
+    this.isFavorite = false,
   });
 
   /// Returns the other user's ID in a 1-to-1 conversation
   String getOtherUserId(String currentUserId) {
+    if (isGroup) return '';
     for (final id in participants) {
       if (id != currentUserId) return id;
     }
@@ -35,6 +48,12 @@ class ChatModel {
       'lastMessage': lastMessage,
       'lastMessageTime': lastMessageTime != null ? Timestamp.fromDate(lastMessageTime!) : null,
       'unreadCount': unreadCount,
+      'isGroup': isGroup,
+      'groupName': groupName,
+      'groupDescription': groupDescription,
+      'groupAdminId': groupAdminId,
+      'groupAvatar': groupAvatar,
+      'isFavorite': isFavorite,
     };
   }
 
@@ -67,6 +86,12 @@ class ChatModel {
       lastMessage: map['lastMessage'] as String? ?? '',
       lastMessageTime: parseDate(map['lastMessageTime']),
       unreadCount: unreadMap,
+      isGroup: map['isGroup'] as bool? ?? false,
+      groupName: map['groupName'] as String?,
+      groupDescription: map['groupDescription'] as String?,
+      groupAdminId: map['groupAdminId'] as String?,
+      groupAvatar: map['groupAvatar'] as String?,
+      isFavorite: map['isFavorite'] as bool? ?? false,
     );
   }
 
@@ -81,6 +106,12 @@ class ChatModel {
     String? lastMessage,
     DateTime? lastMessageTime,
     Map<String, int>? unreadCount,
+    bool? isGroup,
+    String? groupName,
+    String? groupDescription,
+    String? groupAdminId,
+    String? groupAvatar,
+    bool? isFavorite,
   }) {
     return ChatModel(
       chatId: chatId ?? this.chatId,
@@ -88,6 +119,12 @@ class ChatModel {
       lastMessage: lastMessage ?? this.lastMessage,
       lastMessageTime: lastMessageTime ?? this.lastMessageTime,
       unreadCount: unreadCount ?? this.unreadCount,
+      isGroup: isGroup ?? this.isGroup,
+      groupName: groupName ?? this.groupName,
+      groupDescription: groupDescription ?? this.groupDescription,
+      groupAdminId: groupAdminId ?? this.groupAdminId,
+      groupAvatar: groupAvatar ?? this.groupAvatar,
+      isFavorite: isFavorite ?? this.isFavorite,
     );
   }
 }

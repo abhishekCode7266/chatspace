@@ -1,11 +1,11 @@
 {
-    "name": "WhatsChat",
-    "short_name": "WhatsChat",
+    "name": "Universal Chat App",
+    "short_name": "Universal App",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#00A884",
     "theme_color": "#008069",
-    "description": "WhatsChat - WhatsApp-like Real-Time Chat & HD Calling App",
+    "description": "Universal Chat App - Intelligent Real-Time Messaging & HD Calling",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

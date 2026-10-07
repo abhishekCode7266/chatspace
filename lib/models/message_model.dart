@@ -8,8 +8,13 @@ class MessageModel {
   final DateTime timestamp;
   final bool isSeen;
   final String? reaction; // e.g. '👍', '❤️', '😂', '😮', '😢', '🙏'
-  final String messageType; // 'text', 'audio', 'image', 'call'
+  final String messageType; // 'text', 'audio', 'image', 'video', 'document', 'call'
   final String? audioDuration; // e.g. '0:14'
+  final String? senderName; // for group messages
+  final String? mediaUrl;
+  final String? fileName;
+  final String? fileSize;
+  final bool isDisappearing;
 
   MessageModel({
     required this.messageId,
@@ -21,6 +26,11 @@ class MessageModel {
     this.reaction,
     this.messageType = 'text',
     this.audioDuration,
+    this.senderName,
+    this.mediaUrl,
+    this.fileName,
+    this.fileSize,
+    this.isDisappearing = false,
   });
 
   Map<String, dynamic> toMap() {
@@ -34,6 +44,11 @@ class MessageModel {
       'reaction': reaction,
       'messageType': messageType,
       'audioDuration': audioDuration,
+      'senderName': senderName,
+      'mediaUrl': mediaUrl,
+      'fileName': fileName,
+      'fileSize': fileSize,
+      'isDisappearing': isDisappearing,
     };
   }
 
@@ -55,6 +70,11 @@ class MessageModel {
       reaction: map['reaction'] as String?,
       messageType: map['messageType'] as String? ?? 'text',
       audioDuration: map['audioDuration'] as String?,
+      senderName: map['senderName'] as String?,
+      mediaUrl: map['mediaUrl'] as String?,
+      fileName: map['fileName'] as String?,
+      fileSize: map['fileSize'] as String?,
+      isDisappearing: map['isDisappearing'] as bool? ?? false,
     );
   }
 
@@ -73,6 +93,11 @@ class MessageModel {
     String? reaction,
     String? messageType,
     String? audioDuration,
+    String? senderName,
+    String? mediaUrl,
+    String? fileName,
+    String? fileSize,
+    bool? isDisappearing,
   }) {
     return MessageModel(
       messageId: messageId ?? this.messageId,
@@ -84,6 +109,11 @@ class MessageModel {
       reaction: reaction ?? this.reaction,
       messageType: messageType ?? this.messageType,
       audioDuration: audioDuration ?? this.audioDuration,
+      senderName: senderName ?? this.senderName,
+      mediaUrl: mediaUrl ?? this.mediaUrl,
+      fileName: fileName ?? this.fileName,
+      fileSize: fileSize ?? this.fileSize,
+      isDisappearing: isDisappearing ?? this.isDisappearing,
     );
   }
 }

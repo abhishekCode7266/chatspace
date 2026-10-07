@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 
 class AppConstants {
   // App Info
-  static const String appName = 'WhatsChat';
-  static const String appTagline = 'Simple. Secure. Reliable Messaging & HD Calling.';
-  static const String appVersion = '1.2.0';
+  static const String appName = 'Universal Chat App';
+  static const String appShortName = 'Universal App';
+  static const String appTagline = 'Next-Gen Intelligent Messaging, HD Calling & Media Sharing';
+  static const String appVersion = '1.3.0';
 
   // Firestore Collections
   static const String usersCollection = 'users';
@@ -12,22 +13,24 @@ class AppConstants {
   static const String messagesCollection = 'messages';
   static const String callsCollection = 'calls';
   static const String statusCollection = 'statuses';
+  static const String channelsCollection = 'channels';
 
   // SharedPreferences Keys
   static const String prefThemeMode = 'theme_mode';
   static const String prefDevBypass = 'developer_bypass_enabled';
   static const String prefCurrentUserId = 'current_user_id';
+  static const String prefFavoriteChats = 'favorite_chat_ids';
 
   // Notification Channel
-  static const String notificationChannelId = 'whatschat_high_importance_channel';
-  static const String notificationChannelName = 'WhatsChat Messages';
-  static const String notificationChannelDesc = 'Real-time chat & HD call alerts';
+  static const String notificationChannelId = 'universal_chat_high_importance_channel';
+  static const String notificationChannelName = 'Universal Chat App Alerts';
+  static const String notificationChannelDesc = 'Real-time messages, HD calls, and channel updates';
 
   // Developer Bypass Defaults
-  static const String devUserId = 'dev_user_whatschat_99';
+  static const String devUserId = 'dev_user_universal_99';
   static const String devUserName = 'Developer (Admin)';
-  static const String devUserEmail = 'developer@whatschat.internal';
-  static const String devUserStatus = '🚀 WhatsChat Developer Bypass Active | Testing Mode';
+  static const String devUserEmail = 'developer@universalchat.app';
+  static const String devUserStatus = '🌐 Universal Chat App Dev Active | Testing Mode';
 }
 
 class AppColors {

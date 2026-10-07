@@ -26,7 +26,7 @@ void main() {
     });
 
     test('encryptMessage and decryptMessage perform reliable round-trip', () {
-      const plain = 'Confidential WhatsApp-style message from ChatSpace!';
+      const plain = 'Confidential message from Universal Chat App!';
       const chatId = 'chat_123';
 
       final encrypted = EncryptionService.encryptMessage(plain, chatId);

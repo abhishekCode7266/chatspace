@@ -10,7 +10,7 @@ class EncryptionService {
   /// for verifying end-to-end encryption between two users.
   static String generateSecurityFingerprint(String uid1, String uid2) {
     final sorted = [uid1, uid2]..sort();
-    final combined = 'chatspace_e2ee_${sorted[0]}_${sorted[1]}_secret_v1';
+    final combined = 'universal_chat_e2ee_${sorted[0]}_${sorted[1]}_secret_v1';
     final bytes = utf8.encode(combined);
     
     // Simple deterministic hash expansion into 60 digits

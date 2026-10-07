@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatspace/models/message_model.dart';
 import 'package:chatspace/models/call_model.dart';
+import 'package:chatspace/models/channel_model.dart';
 import 'package:chatspace/models/status_model.dart';
 import 'package:chatspace/widgets/custom_button.dart';
 import 'package:chatspace/widgets/custom_text_field.dart';
 import 'package:chatspace/widgets/message_bubble.dart';
 
 void main() {
-  group('WhatsChat UI Widget & Model Tests', () {
+  group('Universal Chat App UI Widget & Model Tests', () {
     testWidgets('CustomButton displays text and triggers callback',
         (WidgetTester tester) async {
       bool tapped = false;
@@ -194,7 +195,7 @@ void main() {
         statusId: 'stat_101',
         userId: 'u1',
         userName: 'Charlie',
-        text: 'Testing WhatsChat Status!',
+        text: 'Testing Universal Chat App Status!',
         backgroundColorHex: 0xFF005C4B,
         timestamp: DateTime(2026, 10, 7, 15, 10),
         isViewed: false,
@@ -202,12 +203,40 @@ void main() {
 
       final map = status.toMap();
       expect(map['statusId'], equals('stat_101'));
-      expect(map['text'], equals('Testing WhatsChat Status!'));
+      expect(map['text'], equals('Testing Universal Chat App Status!'));
 
       final restored = StatusModel.fromMap(map);
       expect(restored.userName, equals('Charlie'));
       expect(restored.backgroundColorHex, equals(0xFF005C4B));
       expect(restored.isViewed, isFalse);
     });
+
+    test('ChannelModel serialization and properties', () {
+      final now = DateTime(2026, 10, 7, 12, 0);
+      final channel = ChannelModel(
+        channelId: 'ch_news_01',
+        name: 'Universal AI Feed',
+        handle: '@universal_ai',
+        description: 'Latest breakthroughs in Universal Chat AI',
+        followersCount: 15400,
+        isVerified: true,
+        category: 'Tech & AI',
+        isFollowing: true,
+        latestUpdate: 'AI Assistant features launched.',
+        timestamp: now,
+      );
+
+      final map = channel.toMap();
+      expect(map['channelId'], equals('ch_news_01'));
+      expect(map['name'], equals('Universal AI Feed'));
+      expect(map['followersCount'], equals(15400));
+      expect(map['isVerified'], isTrue);
+
+      final restored = ChannelModel.fromMap(map);
+      expect(restored.name, equals('Universal AI Feed'));
+      expect(restored.category, equals('Tech & AI'));
+      expect(restored.isFollowing, isTrue);
+    });
   });
 }
+

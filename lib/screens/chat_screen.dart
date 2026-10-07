@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../models/message_model.dart';
 import '../models/user_model.dart';
 import '../models/call_model.dart';
+import '../models/chat_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import '../services/encryption_service.dart';
@@ -15,10 +16,12 @@ import 'call_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   final UserModel targetUser;
+  final ChatModel? groupChat;
 
   const ChatScreen({
     super.key,
     required this.targetUser,
+    this.groupChat,
   });
 
   @override
@@ -45,7 +48,11 @@ class _ChatScreenState extends State<ChatScreen> {
     final chatProvider = context.read<ChatProvider>();
     final currentUserId = authProvider.currentUser?.uid ?? '';
 
-    _chatId = chatProvider.getChatId(currentUserId, widget.targetUser.uid);
+    if (widget.groupChat != null) {
+      _chatId = widget.groupChat!.chatId;
+    } else {
+      _chatId = chatProvider.getChatId(currentUserId, widget.targetUser.uid);
+    }
 
     WidgetsBinding.instance.addPostFrameCallback((_) {
       chatProvider.markMessagesAsSeen(
@@ -95,15 +102,21 @@ class _ChatScreenState extends State<ChatScreen> {
     });
   }
 
-  Future<void> _handleSendMessage({String? customText}) async {
+  Future<void> _handleSendMessage({
+    String? customText,
+    String messageType = 'text',
+    String? audioDuration,
+    String? fileName,
+    String? fileSize,
+  }) async {
     final text = (customText ?? _messageController.text).trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && messageType == 'text') return;
 
     final authProvider = context.read<AuthProvider>();
     final chatProvider = context.read<ChatProvider>();
     final currentUserId = authProvider.currentUser?.uid ?? '';
 
-    if (SecurityService.instance.isUserBlocked(widget.targetUser.uid)) {
+    if (widget.groupChat == null && SecurityService.instance.isUserBlocked(widget.targetUser.uid)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Cannot send message: Contact is blocked.'),
@@ -125,12 +138,18 @@ class _ChatScreenState extends State<ChatScreen> {
       isDevBypass: authProvider.isDevBypass,
     );
 
-    // E2EE encrypted send
+    final receiverId = widget.groupChat != null ? widget.groupChat!.chatId : widget.targetUser.uid;
+
     await chatProvider.sendMessage(
       chatId: _chatId,
       senderId: currentUserId,
-      receiverId: widget.targetUser.uid,
+      receiverId: receiverId,
       text: text,
+      messageType: messageType,
+      audioDuration: audioDuration,
+      fileName: fileName,
+      fileSize: fileSize,
+      senderName: authProvider.currentUser?.name,
       isDevBypass: authProvider.isDevBypass,
     );
 
@@ -151,14 +170,16 @@ class _ChatScreenState extends State<ChatScreen> {
       final authProvider = context.read<AuthProvider>();
       final chatProvider = context.read<ChatProvider>();
       final currentUserId = authProvider.currentUser?.uid ?? '';
+      final receiverId = widget.groupChat != null ? widget.groupChat!.chatId : widget.targetUser.uid;
 
       await chatProvider.sendMessage(
         chatId: _chatId,
         senderId: currentUserId,
-        receiverId: widget.targetUser.uid,
+        receiverId: receiverId,
         text: '🎤 Voice message (0:05)',
         messageType: 'audio',
         audioDuration: '0:05',
+        senderName: authProvider.currentUser?.name,
         isDevBypass: authProvider.isDevBypass,
       );
       _scrollToBottom();
@@ -191,13 +212,12 @@ class _ChatScreenState extends State<ChatScreen> {
     );
 
     final dur = duration ?? 0;
-    // Record call log
     await chatProvider.addCallRecord(
       CallModel(
         callId: 'call_${DateTime.now().millisecondsSinceEpoch}',
         callerId: currentUserId,
         receiverId: widget.targetUser.uid,
-        callerName: widget.targetUser.name,
+        callerName: widget.groupChat != null ? widget.groupChat!.groupName ?? 'Group' : widget.targetUser.name,
         timestamp: DateTime.now(),
         durationSeconds: dur,
         isVideo: true,
@@ -230,13 +250,12 @@ class _ChatScreenState extends State<ChatScreen> {
     );
 
     final dur = duration ?? 0;
-    // Record call log
     await chatProvider.addCallRecord(
       CallModel(
         callId: 'call_${DateTime.now().millisecondsSinceEpoch}',
         callerId: currentUserId,
         receiverId: widget.targetUser.uid,
-        callerName: widget.targetUser.name,
+        callerName: widget.groupChat != null ? widget.groupChat!.groupName ?? 'Group' : widget.targetUser.name,
         timestamp: DateTime.now(),
         durationSeconds: dur,
         isVideo: false,
@@ -286,7 +305,12 @@ class _ChatScreenState extends State<ChatScreen> {
                     color: const Color(0xFF7F66FF),
                     onTap: () {
                       Navigator.pop(ctx);
-                      _handleSendMessage(customText: '📄 Document: Project_Report.pdf (1.2 MB)');
+                      _handleSendMessage(
+                        customText: 'Universal_Project_Spec.pdf',
+                        messageType: 'document',
+                        fileName: 'Universal_Project_Spec.pdf',
+                        fileSize: '2.4 MB',
+                      );
                     },
                   ),
                   _buildAttachmentItem(
@@ -295,7 +319,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     color: const Color(0xFFD33F8D),
                     onTap: () {
                       Navigator.pop(ctx);
-                      _handleSendMessage(customText: '📷 Photo sent');
+                      _handleSendMessage(
+                        customText: '📷 Photo sent',
+                        messageType: 'image',
+                      );
                     },
                   ),
                   _buildAttachmentItem(
@@ -304,7 +331,10 @@ class _ChatScreenState extends State<ChatScreen> {
                     color: const Color(0xFFAC44CF),
                     onTap: () {
                       Navigator.pop(ctx);
-                      _handleSendMessage(customText: '🖼️ Image attachment');
+                      _handleSendMessage(
+                        customText: '🖼️ High-Res Image attachment',
+                        messageType: 'image',
+                      );
                     },
                   ),
                 ],
@@ -314,12 +344,28 @@ class _ChatScreenState extends State<ChatScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildAttachmentItem(
+                    icon: Icons.videocam_rounded,
+                    label: 'Video',
+                    color: const Color(0xFFE53935),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _handleSendMessage(
+                        customText: '🎥 Video clip',
+                        messageType: 'video',
+                      );
+                    },
+                  ),
+                  _buildAttachmentItem(
                     icon: Icons.headphones_rounded,
                     label: 'Audio',
                     color: const Color(0xFFE56A2B),
                     onTap: () {
                       Navigator.pop(ctx);
-                      _handleSendMessage(customText: '🎧 Audio clip (3:12)');
+                      _handleSendMessage(
+                        customText: '🎧 Voice recording (0:18)',
+                        messageType: 'audio',
+                        audioDuration: '0:18',
+                      );
                     },
                   ),
                   _buildAttachmentItem(
@@ -328,16 +374,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     color: const Color(0xFF0F9D58),
                     onTap: () {
                       Navigator.pop(ctx);
-                      _handleSendMessage(customText: '📍 Live location shared');
-                    },
-                  ),
-                  _buildAttachmentItem(
-                    icon: Icons.person_rounded,
-                    label: 'Contact',
-                    color: const Color(0xFF009688),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _handleSendMessage(customText: '👤 Contact card shared');
+                      _handleSendMessage(customText: '📍 Live location shared (Universal HQ)');
                     },
                   ),
                 ],
@@ -359,18 +396,18 @@ class _ChatScreenState extends State<ChatScreen> {
       onTap: onTap,
       borderRadius: BorderRadius.circular(16),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          CircleAvatar(
-            radius: 28,
-            backgroundColor: color,
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, color: Colors.white, size: 26),
           ),
           const SizedBox(height: 8),
-          Text(
-            label,
-            style: const TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500),
-          ),
+          Text(label, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
         ],
       ),
     );
@@ -392,7 +429,7 @@ class _ChatScreenState extends State<ChatScreen> {
             children: [
               Icon(Icons.security_rounded, color: AppColors.primary),
               SizedBox(width: 10),
-              Text('Verify Security Code'),
+              Text('Strict E2EE Verification'),
             ],
           ),
           content: Column(
@@ -400,7 +437,7 @@ class _ChatScreenState extends State<ChatScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Messages and calls in this conversation are protected with end-to-end encryption. Compare this 60-digit number with the other participant to verify security.',
+                'Messages, calls, and media in this chat are protected by AES-256 end-to-end encryption. Compare this 60-digit number with the other participant to verify security.',
                 style: TextStyle(fontSize: 13, height: 1.4),
               ),
               const SizedBox(height: 16),
@@ -432,6 +469,45 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         );
       },
+    );
+  }
+
+  void _showDisappearingMessagesDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.timer_outlined, color: AppColors.primary),
+            SizedBox(width: 8),
+            Text('Disappearing Messages'),
+          ],
+        ),
+        content: const Text(
+          'For more privacy, all new messages will disappear from this chat after the selected duration.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Disappearing messages turned off.')),
+              );
+            },
+            child: const Text('Off'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Disappearing messages set to 24 Hours.')),
+              );
+            },
+            child: const Text('24 Hours', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
@@ -480,7 +556,10 @@ class _ChatScreenState extends State<ChatScreen> {
     final isDevBypass = authProvider.isDevBypass;
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final hasText = _messageController.text.trim().isNotEmpty;
-    final isBlocked = SecurityService.instance.isUserBlocked(widget.targetUser.uid);
+    final isGroup = widget.groupChat != null;
+    final isBlocked = !isGroup && SecurityService.instance.isUserBlocked(widget.targetUser.uid);
+
+    final displayName = isGroup ? (widget.groupChat!.groupName ?? 'Group') : widget.targetUser.name;
 
     return Scaffold(
       appBar: AppBar(
@@ -489,17 +568,17 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             CircleAvatar(
               radius: 18,
-              backgroundColor: Colors.white24,
-              child: Text(
-                widget.targetUser.name.isNotEmpty
-                    ? widget.targetUser.name[0].toUpperCase()
-                    : 'U',
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
+              backgroundColor: isGroup ? const Color(0xFF007AFF) : Colors.white24,
+              child: isGroup
+                  ? const Icon(Icons.groups_rounded, color: Colors.white, size: 20)
+                  : Text(
+                      displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
+                    ),
             ),
             const SizedBox(width: 10),
             Expanded(
@@ -507,7 +586,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    widget.targetUser.name,
+                    displayName,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(
                       fontSize: 16,
@@ -515,63 +594,68 @@ class _ChatScreenState extends State<ChatScreen> {
                       color: Colors.white,
                     ),
                   ),
-                  StreamBuilder<bool>(
-                    stream: chatProvider.getTypingStream(
-                      chatId: _chatId,
-                      otherUserId: widget.targetUser.uid,
-                      isDevBypass: isDevBypass,
-                    ),
-                    builder: (context, typingSnap) {
-                      final isTyping = typingSnap.data ?? false;
-                      if (isTyping) {
-                        return const Text(
-                          'typing...',
+                  if (isGroup)
+                    Text(
+                      '${widget.groupChat!.participants.length} participants',
+                      style: const TextStyle(fontSize: 12, color: Colors.white70),
+                    )
+                  else
+                    StreamBuilder<bool>(
+                      stream: chatProvider.getTypingStream(
+                        chatId: _chatId,
+                        otherUserId: widget.targetUser.uid,
+                        isDevBypass: isDevBypass,
+                      ),
+                      builder: (context, typingSnap) {
+                        final isTyping = typingSnap.data ?? false;
+                        if (isTyping) {
+                          return const Text(
+                            'typing...',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontStyle: FontStyle.italic,
+                              color: Colors.white,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          );
+                        }
+                        return Text(
+                          DateFormatter.formatLastSeen(
+                            isOnline: widget.targetUser.isOnline,
+                            lastSeen: widget.targetUser.lastSeen,
+                          ),
                           style: TextStyle(
                             fontSize: 12,
-                            fontStyle: FontStyle.italic,
-                            color: Colors.white,
-                            fontWeight: FontWeight.w500,
+                            color: widget.targetUser.isOnline
+                                ? const Color(0xFFB9F6CA)
+                                : Colors.white70,
                           ),
                         );
-                      }
-                      return Text(
-                        DateFormatter.formatLastSeen(
-                          isOnline: widget.targetUser.isOnline,
-                          lastSeen: widget.targetUser.lastSeen,
-                        ),
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: widget.targetUser.isOnline
-                              ? const Color(0xFFB9F6CA)
-                              : Colors.white70,
-                        ),
-                      );
-                    },
-                  ),
+                      },
+                    ),
                 ],
               ),
             ),
           ],
         ),
         actions: [
-          // WhatsApp Video Call Button
           IconButton(
             icon: const Icon(Icons.videocam_rounded),
             tooltip: 'Video Call',
             onPressed: _startVideoCall,
           ),
-          // WhatsApp Voice Call Button
           IconButton(
             icon: const Icon(Icons.call_rounded),
             tooltip: 'Voice Call',
             onPressed: _startVoiceCall,
           ),
-          // WhatsApp More Options Menu
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert_rounded),
+            tooltip: 'More options',
             onSelected: (val) {
               if (val == 'verify') {
                 _showVerifyEncryptionDialog();
+              } else if (val == 'disappearing') {
+                _showDisappearingMessagesDialog();
               } else if (val == 'block') {
                 _toggleBlockContact();
               } else if (val == 'clear') {
@@ -587,24 +671,35 @@ class _ChatScreenState extends State<ChatScreen> {
                   children: [
                     Icon(Icons.verified_user_rounded, color: AppColors.primary, size: 20),
                     SizedBox(width: 10),
-                    Text('Encryption Security Code'),
+                    Text('Strict E2EE Fingerprint'),
                   ],
                 ),
               ),
-              PopupMenuItem(
-                value: 'block',
+              const PopupMenuItem(
+                value: 'disappearing',
                 child: Row(
                   children: [
-                    Icon(
-                      isBlocked ? Icons.check_circle_outline : Icons.block_rounded,
-                      color: Colors.redAccent,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 10),
-                    Text(isBlocked ? 'Unblock Contact' : 'Block Contact'),
+                    Icon(Icons.timer_outlined, color: Colors.blueAccent, size: 20),
+                    SizedBox(width: 10),
+                    Text('Disappearing Messages'),
                   ],
                 ),
               ),
+              if (!isGroup)
+                PopupMenuItem(
+                  value: 'block',
+                  child: Row(
+                    children: [
+                      Icon(
+                        isBlocked ? Icons.check_circle_outline : Icons.block_rounded,
+                        color: Colors.redAccent,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 10),
+                      Text(isBlocked ? 'Unblock Contact' : 'Block Contact'),
+                    ],
+                  ),
+                ),
               const PopupMenuItem(
                 value: 'clear',
                 child: Row(
@@ -659,9 +754,9 @@ class _ChatScreenState extends State<ChatScreen> {
                   return ListView.builder(
                     controller: _scrollController,
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                    itemCount: messages.length + 1, // +1 for WhatsApp E2EE banner
+                    itemCount: messages.length + 1,
                     itemBuilder: (context, index) {
-                      // WhatsApp End-to-End Encryption Banner at top
+                      // Encryption Banner at top
                       if (index == 0) {
                         return GestureDetector(
                           onTap: _showVerifyEncryptionDialog,
@@ -687,7 +782,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    'Messages and calls are end-to-end encrypted. No one outside of this chat, not even WhatsChat, can read or listen to them. Tap to verify.',
+                                    'Messages, media, and calls are end-to-end encrypted with AES-256. No one outside of this chat, not even Universal Chat App, can read or listen to them. Tap to verify.',
                                     style: TextStyle(
                                       fontSize: 11.5,
                                       color: isDark ? Colors.amber.shade200 : const Color(0xFF856404),
@@ -733,6 +828,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         isMe: isMe,
                         showDateSeparator: showDateSep,
                         dateSeparatorText: dateSepText,
+                        isGroupChat: isGroup,
                         onReactionSelected: (emoji) {
                           chatProvider.toggleReaction(
                             chatId: _chatId,
@@ -748,7 +844,7 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
 
-            // Quick Emoji Bar (When emoji button is toggled)
+            // Quick Emoji Bar
             if (_showEmojiBar)
               Container(
                 height: 48,
@@ -786,14 +882,14 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               )
             else
-              // WhatsApp Chat Bar
+              // Chat Bar
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
                 child: SafeArea(
                   top: false,
                   child: Row(
                     children: [
-                      // Rounded WhatsApp Input Pill
+                      // Rounded Input Pill
                       Expanded(
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 4),
@@ -858,7 +954,10 @@ class _ChatScreenState extends State<ChatScreen> {
                                 IconButton(
                                   icon: Icon(Icons.camera_alt_rounded, color: Colors.grey.shade600),
                                   onPressed: () {
-                                    _handleSendMessage(customText: '📷 Photo');
+                                    _handleSendMessage(
+                                      customText: '📷 Photo',
+                                      messageType: 'image',
+                                    );
                                   },
                                 ),
                             ],
@@ -866,7 +965,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                       const SizedBox(width: 6),
-                      // Floating Circular WhatsApp Action Button (Mic or Send)
+                      // Floating Circular Action Button (Mic or Send)
                       GestureDetector(
                         onTap: hasText ? () => _handleSendMessage() : _simulateVoiceNote,
                         child: Container(

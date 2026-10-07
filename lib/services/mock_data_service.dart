@@ -4,11 +4,11 @@ import '../models/message_model.dart';
 import '../models/chat_model.dart';
 import '../models/call_model.dart';
 import '../models/status_model.dart';
+import '../models/channel_model.dart';
 import '../utils/constants.dart';
 
-/// Service providing mock real-time data for Developer Bypass Mode
-/// Allows developer to test all chat, list, profile, call, status, and E2EE features
-/// without needing an active Firebase connection or credentials.
+/// Service providing mock real-time data for Developer Bypass Mode in Universal Chat App
+/// Supports 1-to-1 chats, Group chats, News/Channels, Status stories, Voice/Video calls, and E2EE.
 class MockDataService {
   static final MockDataService instance = MockDataService._internal();
   MockDataService._internal() {
@@ -24,6 +24,8 @@ class MockDataService {
       StreamController<List<CallModel>>.broadcast();
   final StreamController<List<StatusModel>> _statusController =
       StreamController<List<StatusModel>>.broadcast();
+  final StreamController<List<ChannelModel>> _channelsController =
+      StreamController<List<ChannelModel>>.broadcast();
   final Map<String, StreamController<List<MessageModel>>> _messagesControllers = {};
   final Map<String, StreamController<bool>> _typingControllers = {};
 
@@ -32,6 +34,7 @@ class MockDataService {
   final List<ChatModel> _mockChats = [];
   final List<CallModel> _mockCalls = [];
   final List<StatusModel> _mockStatuses = [];
+  final List<ChannelModel> _mockChannels = [];
   final Map<String, List<MessageModel>> _mockMessages = {};
 
   UserModel get currentDevUser => _currentDevUser;
@@ -53,8 +56,8 @@ class MockDataService {
       UserModel(
         uid: 'user_alice_01',
         name: 'Alice Johnson',
-        email: 'alice@whatschat.com',
-        status: 'Exploring Flutter Material 3 🎨',
+        email: 'alice@universalchat.app',
+        status: 'Exploring Universal Chat App & AI 🎨',
         isOnline: true,
         lastSeen: now,
         createdAt: now.subtract(const Duration(days: 20)),
@@ -62,8 +65,8 @@ class MockDataService {
       UserModel(
         uid: 'user_bob_02',
         name: 'Bob Smith',
-        email: 'bob@whatschat.com',
-        status: 'Busy at work. Drop a message! 💼',
+        email: 'bob@universalchat.app',
+        status: 'Busy in meeting. Drop a message! 💼',
         isOnline: false,
         lastSeen: now.subtract(const Duration(minutes: 18)),
         createdAt: now.subtract(const Duration(days: 15)),
@@ -71,8 +74,8 @@ class MockDataService {
       UserModel(
         uid: 'user_charlie_03',
         name: 'Charlie Dev',
-        email: 'charlie@whatschat.com',
-        status: 'Deploying release builds to Play Store 🚀',
+        email: 'charlie@universalchat.app',
+        status: 'Deploying Universal Chat App v1.3.0 to Play Store 🚀',
         isOnline: true,
         lastSeen: now,
         createdAt: now.subtract(const Duration(days: 10)),
@@ -80,8 +83,8 @@ class MockDataService {
       UserModel(
         uid: 'user_diana_04',
         name: 'Diana Prince',
-        email: 'diana@whatschat.com',
-        status: 'Coffee & Code ☕',
+        email: 'diana@universalchat.app',
+        status: 'Coffee, AI & Next-Gen Apps ☕',
         isOnline: false,
         lastSeen: now.subtract(const Duration(hours: 3)),
         createdAt: now.subtract(const Duration(days: 8)),
@@ -89,21 +92,21 @@ class MockDataService {
       UserModel(
         uid: 'user_evan_05',
         name: 'Evan Wright',
-        email: 'evan@whatschat.com',
-        status: 'Offline today. Catch you later! ✈️',
+        email: 'evan@universalchat.app',
+        status: 'Offline today. Catch you soon! ✈️',
         isOnline: false,
         lastSeen: now.subtract(const Duration(days: 1, hours: 2)),
         createdAt: now.subtract(const Duration(days: 5)),
       ),
     ]);
 
-    // Initial mock chat 1 (Alice)
+    // Initial 1-to-1 Chat: Alice (Marked as Favorite!)
     final aliceChatId = getChatId(AppConstants.devUserId, 'user_alice_01');
     final aliceMsg1 = MessageModel(
       messageId: 'msg_001',
       senderId: 'user_alice_01',
       receiverId: AppConstants.devUserId,
-      text: 'Hey Developer! Welcome to WhatsChat WhatsApp-like experience.',
+      text: 'Hey Developer! Welcome to Universal Chat App.',
       timestamp: now.subtract(const Duration(minutes: 15)),
       isSeen: true,
     );
@@ -111,7 +114,7 @@ class MockDataService {
       messageId: 'msg_002',
       senderId: AppConstants.devUserId,
       receiverId: 'user_alice_01',
-      text: 'Thanks Alice! Testing real-time messages, audio notes, and HD calls.',
+      text: 'Thanks Alice! Testing real-time messages, audio notes, groups, and HD calls.',
       timestamp: now.subtract(const Duration(minutes: 12)),
       isSeen: true,
       reaction: '👍',
@@ -131,7 +134,7 @@ class MockDataService {
       messageId: 'msg_004',
       senderId: 'user_alice_01',
       receiverId: AppConstants.devUserId,
-      text: 'Everything looks super smooth, just like WhatsApp! 🚀',
+      text: 'Everything looks super smooth and fast! 🚀',
       timestamp: now.subtract(const Duration(minutes: 2)),
       isSeen: false,
     );
@@ -141,13 +144,14 @@ class MockDataService {
       ChatModel(
         chatId: aliceChatId,
         participants: [AppConstants.devUserId, 'user_alice_01'],
-        lastMessage: 'Everything looks super smooth, just like WhatsApp! 🚀',
+        lastMessage: 'Everything looks super smooth and fast! 🚀',
         lastMessageTime: now.subtract(const Duration(minutes: 2)),
         unreadCount: {AppConstants.devUserId: 1, 'user_alice_01': 0},
+        isFavorite: true,
       ),
     );
 
-    // Initial mock chat 2 (Charlie)
+    // Initial 1-to-1 Chat: Charlie
     final charlieChatId = getChatId(AppConstants.devUserId, 'user_charlie_03');
     final charlieMsg1 = MessageModel(
       messageId: 'msg_005',
@@ -167,10 +171,96 @@ class MockDataService {
         lastMessage: 'The Play Store bundle (.aab) and APK are compiled and ready!',
         lastMessageTime: now.subtract(const Duration(hours: 1)),
         unreadCount: {AppConstants.devUserId: 0, 'user_charlie_03': 0},
+        isFavorite: false,
       ),
     );
 
-    // Initial mock call logs
+    // Initial Group Chat 1: "🚀 Universal AI & Flutter Devs"
+    const group1Id = 'group_ai_flutter_01';
+    final groupMsg1 = MessageModel(
+      messageId: 'gmsg_001',
+      senderId: 'user_charlie_03',
+      receiverId: group1Id,
+      senderName: 'Charlie Dev',
+      text: 'Welcome team to the Universal Chat App developer group! 🎉',
+      timestamp: now.subtract(const Duration(hours: 4)),
+      isSeen: true,
+    );
+    final groupMsg2 = MessageModel(
+      messageId: 'gmsg_002',
+      senderId: 'user_alice_01',
+      receiverId: group1Id,
+      senderName: 'Alice Johnson',
+      text: 'Excited for the new group chat & channel features! 🌐✨',
+      timestamp: now.subtract(const Duration(hours: 2)),
+      isSeen: true,
+      reaction: '🔥',
+    );
+    final groupMsg3 = MessageModel(
+      messageId: 'gmsg_003',
+      senderId: 'user_charlie_03',
+      receiverId: group1Id,
+      senderName: 'Charlie Dev',
+      text: 'v1.3.0 Google Play Store release build is verified and ready! 🚀',
+      timestamp: now.subtract(const Duration(minutes: 18)),
+      isSeen: false,
+    );
+    _mockMessages[group1Id] = [groupMsg1, groupMsg2, groupMsg3];
+
+    _mockChats.add(
+      ChatModel(
+        chatId: group1Id,
+        participants: [
+          AppConstants.devUserId,
+          'user_alice_01',
+          'user_charlie_03',
+          'user_bob_02',
+        ],
+        lastMessage: 'Charlie: v1.3.0 Google Play Store release build is verified and ready! 🚀',
+        lastMessageTime: now.subtract(const Duration(minutes: 18)),
+        unreadCount: {AppConstants.devUserId: 1},
+        isGroup: true,
+        groupName: '🚀 Universal AI & Flutter Devs',
+        groupDescription: 'Collaborative channel for AI models, Flutter apps, and next-gen communication protocols.',
+        groupAdminId: AppConstants.devUserId,
+        isFavorite: true,
+      ),
+    );
+
+    // Initial Group Chat 2: "💡 Tech Innovators"
+    const group2Id = 'group_tech_innovators_02';
+    final g2Msg1 = MessageModel(
+      messageId: 'g2msg_001',
+      senderId: 'user_diana_04',
+      receiverId: group2Id,
+      senderName: 'Diana Prince',
+      text: 'End-to-end encryption audit passed with zero vulnerabilities! 🔒',
+      timestamp: now.subtract(const Duration(hours: 5)),
+      isSeen: true,
+    );
+    _mockMessages[group2Id] = [g2Msg1];
+
+    _mockChats.add(
+      ChatModel(
+        chatId: group2Id,
+        participants: [
+          AppConstants.devUserId,
+          'user_diana_04',
+          'user_evan_05',
+          'user_alice_01',
+        ],
+        lastMessage: 'Diana: End-to-end encryption audit passed with zero vulnerabilities! 🔒',
+        lastMessageTime: now.subtract(const Duration(hours: 5)),
+        unreadCount: {AppConstants.devUserId: 0},
+        isGroup: true,
+        groupName: '💡 Tech Innovators',
+        groupDescription: 'Brainstorming revolutionary mobile and AI experiences.',
+        groupAdminId: 'user_diana_04',
+        isFavorite: false,
+      ),
+    );
+
+    // Initial Mock Calls (Separated Video & Voice)
     _mockCalls.addAll([
       CallModel(
         callId: 'call_01',
@@ -216,15 +306,26 @@ class MockDataService {
         isMissed: false,
         isOutgoing: true,
       ),
+      CallModel(
+        callId: 'call_05',
+        callerId: 'user_alice_01',
+        receiverId: AppConstants.devUserId,
+        callerName: 'Alice Johnson',
+        timestamp: now.subtract(const Duration(days: 1, hours: 6)),
+        durationSeconds: 520,
+        isVideo: false,
+        isMissed: false,
+        isOutgoing: false,
+      ),
     ]);
 
-    // Initial mock statuses
+    // Initial Mock Status Stories
     _mockStatuses.addAll([
       StatusModel(
         statusId: 'stat_01',
         userId: 'user_alice_01',
         userName: 'Alice Johnson',
-        text: 'Building high-performance Flutter mobile apps! 💙✨\nMaterial 3 design is amazing.',
+        text: 'Building next-generation intelligent communication tools! 🌐✨\nUniversal Chat App is live.',
         backgroundColorHex: 0xFF005C4B,
         timestamp: now.subtract(const Duration(minutes: 35)),
         isViewed: false,
@@ -233,7 +334,7 @@ class MockDataService {
         statusId: 'stat_02',
         userId: 'user_charlie_03',
         userName: 'Charlie Dev',
-        text: 'Play Store release build ready! 🚀\nWhatsChat v1.2.0 is live on GitHub.',
+        text: 'Play Store Google Play Bundle ready! 🚀\nUniversal Chat App v1.3.0 is compiled.',
         backgroundColorHex: 0xFF128C7E,
         timestamp: now.subtract(const Duration(hours: 2)),
         isViewed: false,
@@ -242,10 +343,53 @@ class MockDataService {
         statusId: 'stat_03',
         userId: 'user_diana_04',
         userName: 'Diana Prince',
-        text: 'Weekend coffee & coding session ☕🎧',
+        text: 'Coffee & zero-knowledge cryptography session ☕🎧',
         backgroundColorHex: 0xFF5856D6,
         timestamp: now.subtract(const Duration(hours: 6)),
         isViewed: true,
+      ),
+    ]);
+
+    // Initial Mock News Channels / Broadcast Updates
+    _mockChannels.addAll([
+      ChannelModel(
+        channelId: 'chan_01',
+        name: '🤖 Universal AI Tech Feed',
+        handle: '@universal_ai',
+        description: 'Official broadcast on Deep Learning, Gemini models, and mobile AI innovations.',
+        category: 'Artificial Intelligence',
+        avatar: '🤖',
+        isVerified: true,
+        followersCount: 148500,
+        isFollowing: true,
+        latestUpdate: 'Gemini 2.5 Flash achieves lightning-fast sub-second latency for real-time mobile multi-agent chats.',
+        timestamp: now.subtract(const Duration(minutes: 45)),
+      ),
+      ChannelModel(
+        channelId: 'chan_02',
+        name: '📱 Flutter & Mobile Ecosystem',
+        handle: '@flutter_global',
+        description: 'Updates from the Flutter & Dart global developer community.',
+        category: 'Software Engineering',
+        avatar: '📱',
+        isVerified: true,
+        followersCount: 231000,
+        isFollowing: true,
+        latestUpdate: 'Flutter 3.29 release brings enhanced Impeller GPU pipeline with zero shader compilation jank.',
+        timestamp: now.subtract(const Duration(hours: 3)),
+      ),
+      ChannelModel(
+        channelId: 'chan_03',
+        name: '🛡️ CyberSecurity & E2EE Watch',
+        handle: '@cyber_sec',
+        description: 'Global alerts on privacy, cryptography standards, and digital communication safety.',
+        category: 'Security',
+        avatar: '🛡️',
+        isVerified: true,
+        followersCount: 92400,
+        isFollowing: false,
+        latestUpdate: 'New post-quantum cryptographic key exchanges are adopted for universal peer-to-peer security.',
+        timestamp: now.subtract(const Duration(hours: 8)),
       ),
     ]);
   }
@@ -261,7 +405,7 @@ class MockDataService {
     return _usersController.stream;
   }
 
-  // Stream of recent chats
+  // Stream of recent chats (1-to-1 + Groups)
   Stream<List<ChatModel>> getRecentChatsStream(String currentUserId) {
     Future.microtask(() => _chatsController.add(List.from(_mockChats)));
     return _chatsController.stream;
@@ -296,6 +440,76 @@ class MockDataService {
   Stream<List<StatusModel>> getStatusStream() {
     Future.microtask(() => _statusController.add(List.from(_mockStatuses)));
     return _statusController.stream;
+  }
+
+  // Stream of channels / news
+  Stream<List<ChannelModel>> getChannelsStream() {
+    Future.microtask(() => _channelsController.add(List.from(_mockChannels)));
+    return _channelsController.stream;
+  }
+
+  // Toggle channel follow
+  Future<void> toggleChannelFollow(String channelId) async {
+    final idx = _mockChannels.indexWhere((c) => c.channelId == channelId);
+    if (idx >= 0) {
+      final cur = _mockChannels[idx];
+      _mockChannels[idx] = cur.copyWith(
+        isFollowing: !cur.isFollowing,
+        followersCount: cur.isFollowing ? cur.followersCount - 1 : cur.followersCount + 1,
+      );
+      _channelsController.add(List.from(_mockChannels));
+    }
+  }
+
+  // Toggle favorite chat
+  Future<void> toggleChatFavorite(String chatId) async {
+    final idx = _mockChats.indexWhere((c) => c.chatId == chatId);
+    if (idx >= 0) {
+      final cur = _mockChats[idx];
+      _mockChats[idx] = cur.copyWith(isFavorite: !cur.isFavorite);
+      _chatsController.add(List.from(_mockChats));
+    }
+  }
+
+  // Create new group chat
+  Future<ChatModel> createGroup({
+    required String groupName,
+    required String groupDescription,
+    required List<String> participantIds,
+    required String adminId,
+  }) async {
+    final now = DateTime.now();
+    final groupId = 'group_${DateTime.now().millisecondsSinceEpoch}';
+    final allParticipants = [adminId, ...participantIds].toSet().toList();
+
+    final welcomeMsg = MessageModel(
+      messageId: 'gmsg_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: adminId,
+      receiverId: groupId,
+      senderName: AppConstants.devUserName,
+      text: 'Group created: "$groupName". Welcome everyone! 🌐',
+      timestamp: now,
+      isSeen: true,
+    );
+
+    _mockMessages[groupId] = [welcomeMsg];
+
+    final newGroup = ChatModel(
+      chatId: groupId,
+      participants: allParticipants,
+      lastMessage: 'Group created: "$groupName"',
+      lastMessageTime: now,
+      unreadCount: {},
+      isGroup: true,
+      groupName: groupName,
+      groupDescription: groupDescription,
+      groupAdminId: adminId,
+      isFavorite: false,
+    );
+
+    _mockChats.insert(0, newGroup);
+    _chatsController.add(List.from(_mockChats));
+    return newGroup;
   }
 
   // Add a call record
@@ -333,7 +547,7 @@ class MockDataService {
     }
   }
 
-  // Send message in mock mode + auto-reply simulator
+  // Send message in mock mode + auto-reply simulator (Text, Media, Docs, Audio)
   Future<void> sendMessage({
     required String chatId,
     required String senderId,
@@ -341,6 +555,10 @@ class MockDataService {
     required String text,
     String messageType = 'text',
     String? audioDuration,
+    String? senderName,
+    String? fileName,
+    String? fileSize,
+    String? mediaUrl,
   }) async {
     final now = DateTime.now();
     final newMsg = MessageModel(
@@ -352,6 +570,10 @@ class MockDataService {
       isSeen: false,
       messageType: messageType,
       audioDuration: audioDuration,
+      senderName: senderName ?? AppConstants.devUserName,
+      fileName: fileName,
+      fileSize: fileSize,
+      mediaUrl: mediaUrl,
     );
 
     if (!_mockMessages.containsKey(chatId)) {
@@ -359,8 +581,18 @@ class MockDataService {
     }
     _mockMessages[chatId]!.add(newMsg);
 
-    // Update or add chat in recent chats
-    final displayText = messageType == 'audio' ? '🎤 Voice message ($audioDuration)' : text;
+    // Format display preview
+    String displayText = text;
+    if (messageType == 'audio') {
+      displayText = '🎤 Voice message ($audioDuration)';
+    } else if (messageType == 'image') {
+      displayText = '📷 Photo';
+    } else if (messageType == 'video') {
+      displayText = '🎥 Video';
+    } else if (messageType == 'document') {
+      displayText = '📄 Document ($fileName)';
+    }
+
     final chatIdx = _mockChats.indexWhere((c) => c.chatId == chatId);
     if (chatIdx >= 0) {
       final existing = _mockChats[chatIdx];
@@ -387,12 +619,54 @@ class MockDataService {
     _chatsController.add(List.from(_mockChats));
     _messagesControllers[chatId]?.add(List.from(_mockMessages[chatId]!));
 
-    // Simulate smart auto-reply bot if receiver is a mock contact and message is text
-    if (messageType == 'text') {
-      _simulateAutoReply(chatId, receiverId, senderId, text);
-    } else if (messageType == 'audio') {
-      _simulateAudioAutoReply(chatId, receiverId, senderId);
+    // Simulate auto-reply bot if 1-to-1 mock contact
+    final isGroup = _mockChats.any((c) => c.chatId == chatId && c.isGroup);
+    if (!isGroup) {
+      if (messageType == 'text') {
+        _simulateAutoReply(chatId, receiverId, senderId, text);
+      } else if (messageType == 'audio') {
+        _simulateAudioAutoReply(chatId, receiverId, senderId);
+      } else if (messageType == 'image' || messageType == 'document') {
+        _simulateMediaAutoReply(chatId, receiverId, senderId, messageType);
+      }
     }
+  }
+
+  void _simulateMediaAutoReply(String chatId, String botId, String currentUserId, String type) {
+    Timer(const Duration(milliseconds: 1800), () {
+      _typingControllers[chatId]?.add(true);
+    });
+
+    Timer(const Duration(milliseconds: 3200), () {
+      _typingControllers[chatId]?.add(false);
+      final now = DateTime.now();
+      final replyText = type == 'image'
+          ? 'Great photo! High resolution received via E2EE transfer. 📸'
+          : 'Document securely downloaded and verified! 📄✅';
+
+      final replyMsg = MessageModel(
+        messageId: 'msg_${DateTime.now().millisecondsSinceEpoch}',
+        senderId: botId,
+        receiverId: currentUserId,
+        text: replyText,
+        timestamp: now,
+        isSeen: true,
+        reaction: '👍',
+      );
+
+      _mockMessages[chatId]?.add(replyMsg);
+      final chatIdx = _mockChats.indexWhere((c) => c.chatId == chatId);
+      if (chatIdx >= 0) {
+        final existing = _mockChats[chatIdx];
+        _mockChats[chatIdx] = existing.copyWith(
+          lastMessage: replyText,
+          lastMessageTime: now,
+        );
+      }
+
+      _chatsController.add(List.from(_mockChats));
+      _messagesControllers[chatId]?.add(List.from(_mockMessages[chatId] ?? []));
+    });
   }
 
   void _simulateAudioAutoReply(String chatId, String botId, String currentUserId) {
@@ -440,8 +714,8 @@ class MockDataService {
       (u) => u.uid == botId,
       orElse: () => UserModel(
         uid: botId,
-        name: 'WhatsChat Assistant',
-        email: 'bot@whatschat.com',
+        name: 'Universal Assistant',
+        email: 'assistant@universalchat.app',
         createdAt: DateTime.now(),
       ),
     );
@@ -458,13 +732,13 @@ class MockDataService {
       String replyText;
       final lower = userText.toLowerCase();
       if (lower.contains('hello') || lower.contains('hi') || lower.contains('hey')) {
-        replyText = 'Hey ${AppConstants.devUserName}! Nice to chat with you in WhatsChat. Real-time messaging, status & HD calls are working!';
-      } else if (lower.contains('status') || lower.contains('online')) {
-        replyText = 'I am currently marked ${botUser.isOnline ? "Online" : "Away"} in WhatsChat.';
-      } else if (lower.contains('test') || lower.contains('apk') || lower.contains('call')) {
-        replyText = 'Testing mode verified! Real-time stream, UI bubbles, call logs, and state updates are 100% functional.';
+        replyText = 'Hey ${AppConstants.devUserName}! Universal Chat App is running with ultra-fast latency and strict E2EE!';
+      } else if (lower.contains('group') || lower.contains('channel')) {
+        replyText = 'You can create groups and follow news channels directly from the Universal Chat interface! 🌐';
+      } else if (lower.contains('call') || lower.contains('video')) {
+        replyText = 'HD voice and video calling channels are operational and logged in the Calls tab.';
       } else {
-        replyText = 'Got it! Received: "$userText". E2EE message encryption & local caching verified! ✅';
+        replyText = 'Received: "$userText". Encrypted via AES-256 and replicated across nodes! ✅';
       }
 
       final now = DateTime.now();

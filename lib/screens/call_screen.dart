@@ -347,7 +347,7 @@ class _CallScreenState extends State<CallScreen> with TickerProviderStateMixin {
           const SizedBox(height: 36),
           if (!_isConnected)
             const Text(
-              'Connecting with ChatSpace peer network...',
+              'Connecting with Universal Chat peer network...',
               style: TextStyle(color: Colors.white54, fontSize: 14),
             ),
         ],

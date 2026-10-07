@@ -32,13 +32,13 @@ void main() async {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ChatProvider()),
       ],
-      child: const WhatsChatApp(),
+      child: const UniversalChatApp(),
     ),
   );
 }
 
-class WhatsChatApp extends StatelessWidget {
-  const WhatsChatApp({super.key});
+class UniversalChatApp extends StatelessWidget {
+  const UniversalChatApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -55,4 +55,5 @@ class WhatsChatApp extends StatelessWidget {
   }
 }
 
-typedef ChatSpaceApp = WhatsChatApp;
+typedef WhatsChatApp = UniversalChatApp;
+typedef ChatSpaceApp = UniversalChatApp;

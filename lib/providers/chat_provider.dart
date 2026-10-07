@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/chat_model.dart';
 import '../models/call_model.dart';
 import '../models/status_model.dart';
+import '../models/channel_model.dart';
 import '../models/message_model.dart';
 import '../models/user_model.dart';
 import '../services/chat_service.dart';
@@ -35,7 +36,7 @@ class ChatProvider with ChangeNotifier {
     return _userService.getUsersStream(currentUserId);
   }
 
-  /// Real-time stream of recent chats
+  /// Real-time stream of recent chats (1-to-1 + Groups)
   Stream<List<ChatModel>> getRecentChatsStream({
     required String currentUserId,
     required bool isDevBypass,
@@ -87,6 +88,43 @@ class ChatProvider with ChangeNotifier {
     return _mockDataService.getStatusStream();
   }
 
+  /// Real-time stream of news channels
+  Stream<List<ChannelModel>> getChannelsStream({
+    required bool isDevBypass,
+  }) {
+    return _mockDataService.getChannelsStream();
+  }
+
+  /// Toggle follow on a channel
+  Future<void> toggleChannelFollow(String channelId, {required bool isDevBypass}) async {
+    await _mockDataService.toggleChannelFollow(channelId);
+    notifyListeners();
+  }
+
+  /// Toggle favorite on a chat
+  Future<void> toggleChatFavorite(String chatId, {required bool isDevBypass}) async {
+    await _mockDataService.toggleChatFavorite(chatId);
+    notifyListeners();
+  }
+
+  /// Create new group chat
+  Future<ChatModel> createGroup({
+    required String groupName,
+    required String groupDescription,
+    required List<String> participantIds,
+    required String adminId,
+    required bool isDevBypass,
+  }) async {
+    final group = await _mockDataService.createGroup(
+      groupName: groupName,
+      groupDescription: groupDescription,
+      participantIds: participantIds,
+      adminId: adminId,
+    );
+    notifyListeners();
+    return group;
+  }
+
   /// Record a call log
   Future<void> addCallRecord(CallModel call, {required bool isDevBypass}) async {
     await _mockDataService.addCallRecord(call);
@@ -105,7 +143,7 @@ class ChatProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Send message (text, voice note, etc.)
+  /// Send message (text, voice note, photo, video, document)
   Future<bool> sendMessage({
     required String chatId,
     required String senderId,
@@ -114,6 +152,10 @@ class ChatProvider with ChangeNotifier {
     required bool isDevBypass,
     String messageType = 'text',
     String? audioDuration,
+    String? senderName,
+    String? fileName,
+    String? fileSize,
+    String? mediaUrl,
   }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty && messageType == 'text') return false;
@@ -131,6 +173,10 @@ class ChatProvider with ChangeNotifier {
           text: trimmed,
           messageType: messageType,
           audioDuration: audioDuration,
+          senderName: senderName,
+          fileName: fileName,
+          fileSize: fileSize,
+          mediaUrl: mediaUrl,
         );
       } else {
         await _chatService.sendMessage(

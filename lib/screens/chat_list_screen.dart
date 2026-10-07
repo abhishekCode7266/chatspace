@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../models/chat_model.dart';
 import '../models/call_model.dart';
 import '../models/status_model.dart';
+import '../models/channel_model.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
@@ -14,6 +15,8 @@ import 'call_screen.dart';
 import 'profile_screen.dart';
 import 'users_list_screen.dart';
 import 'status_view_screen.dart';
+import 'group_create_screen.dart';
+import 'channel_screen.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -28,6 +31,12 @@ class _ChatListScreenState extends State<ChatListScreen>
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   bool _isSearching = false;
+
+  // Chats Tab Filter Chip: 'all', 'unread', 'favorites', 'groups'
+  String _activeChatFilter = 'all';
+
+  // Calls Tab Filter: 'all', 'voice', 'video'
+  String _activeCallFilter = 'all';
 
   @override
   void initState() {
@@ -55,7 +64,7 @@ class _ChatListScreenState extends State<ChatListScreen>
       0xFF5856D6,
       0xFFFF2D55,
       0xFFFF9500,
-      0xFF5856D6,
+      0xFF007AFF,
     ];
 
     showModalBottomSheet(
@@ -82,7 +91,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Create Status Update',
+                    'Create Status Story',
                     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                   ),
                   const SizedBox(height: 14),
@@ -107,7 +116,6 @@ class _ChatListScreenState extends State<ChatListScreen>
                     ),
                   ),
                   const SizedBox(height: 14),
-                  // Background color picker
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
                     child: Row(
@@ -172,7 +180,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                         Navigator.pop(ctx);
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text('Status update posted!'),
+                            content: Text('Status story published!'),
                             backgroundColor: AppColors.primary,
                           ),
                         );
@@ -222,7 +230,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                     ),
                     const SizedBox(width: 10),
                     Text(
-                      isVideo ? 'Start Video Call' : 'Start Voice Call',
+                      isVideo ? 'Start HD Video Call' : 'Start Voice Call',
                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
                     ),
                   ],
@@ -285,7 +293,6 @@ class _ChatListScreenState extends State<ChatListScreen>
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
-    final chatProvider = context.watch<ChatProvider>();
     final currentUser = authProvider.currentUser;
     final isDevBypass = authProvider.isDevBypass;
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -309,7 +316,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                 },
                 style: const TextStyle(color: Colors.white),
                 decoration: const InputDecoration(
-                  hintText: 'Search...',
+                  hintText: 'Search chats, groups, updates...',
                   hintStyle: TextStyle(color: Colors.white60),
                   border: InputBorder.none,
                 ),
@@ -352,27 +359,32 @@ class _ChatListScreenState extends State<ChatListScreen>
             },
           ),
           IconButton(
-            icon: const Icon(Icons.people_alt_rounded),
-            tooltip: 'Contacts',
+            icon: const Icon(Icons.group_add_rounded),
+            tooltip: 'New Group',
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const UsersListScreen()),
+                MaterialPageRoute(builder: (_) => const GroupCreateScreen()),
               );
             },
           ),
           PopupMenuButton<String>(
             tooltip: 'More options',
             onSelected: (val) {
-              if (val == 'settings') {
+              if (val == 'new_group') {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
+                  MaterialPageRoute(builder: (_) => const GroupCreateScreen()),
                 );
               } else if (val == 'contacts') {
                 Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const UsersListScreen()),
+                );
+              } else if (val == 'settings') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
                 );
               } else if (val == 'bypass') {
                 authProvider.toggleDevBypass();
@@ -390,6 +402,16 @@ class _ChatListScreenState extends State<ChatListScreen>
             },
             itemBuilder: (ctx) => [
               const PopupMenuItem(
+                value: 'new_group',
+                child: Row(
+                  children: [
+                    Icon(Icons.groups_rounded, size: 20),
+                    SizedBox(width: 12),
+                    Text('New Group'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
                 value: 'contacts',
                 child: Row(
                   children: [
@@ -405,7 +427,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                   children: [
                     Icon(Icons.settings_rounded, size: 20),
                     SizedBox(width: 12),
-                    Text('Settings & Profile'),
+                    Text('Settings & Privacy'),
                   ],
                 ),
               ),
@@ -435,7 +457,7 @@ class _ChatListScreenState extends State<ChatListScreen>
           labelStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14.5),
           tabs: const [
             Tab(text: 'CHATS'),
-            Tab(text: 'STATUS'),
+            Tab(text: 'UPDATES'),
             Tab(text: 'CALLS'),
           ],
         ),
@@ -454,7 +476,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Developer Mode Active (बाईपास चालू है): Instant real-time simulation enabled.',
+                      'Universal Developer Mode Active (बाईपास चालू है): Instant simulation for Groups, Channels & Calls enabled.',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.amber.shade900,
@@ -471,7 +493,7 @@ class _ChatListScreenState extends State<ChatListScreen>
               controller: _tabController,
               children: [
                 _buildChatsTab(currentUser, isDevBypass, isDark),
-                _buildStatusTab(currentUser, isDevBypass, isDark),
+                _buildUpdatesTab(currentUser, isDevBypass, isDark),
                 _buildCallsTab(currentUser, isDevBypass, isDark),
               ],
             ),
@@ -486,19 +508,38 @@ class _ChatListScreenState extends State<ChatListScreen>
   Widget _buildFab() {
     final currentIndex = _tabController.index;
     if (currentIndex == 0) {
-      // Chats Tab FAB
-      return FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => const UsersListScreen()),
-          );
-        },
-        tooltip: 'New Chat',
-        child: const Icon(Icons.chat_rounded),
+      // Chats Tab FABs
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.small(
+            heroTag: 'fab_group',
+            backgroundColor: const Color(0xFF007AFF),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const GroupCreateScreen()),
+              );
+            },
+            tooltip: 'New Group',
+            child: const Icon(Icons.groups_rounded, color: Colors.white),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            heroTag: 'fab_chat',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const UsersListScreen()),
+              );
+            },
+            tooltip: 'New Chat',
+            child: const Icon(Icons.chat_rounded),
+          ),
+        ],
       );
     } else if (currentIndex == 1) {
-      // Status Tab FAB
+      // Updates Tab FABs
       return Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -513,7 +554,7 @@ class _ChatListScreenState extends State<ChatListScreen>
           FloatingActionButton(
             heroTag: 'camera_status',
             onPressed: _showAddStatusDialog,
-            tooltip: 'Camera Status',
+            tooltip: 'Post Status',
             child: const Icon(Icons.camera_alt_rounded),
           ),
         ],
@@ -528,457 +569,701 @@ class _ChatListScreenState extends State<ChatListScreen>
     }
   }
 
-  // 1. CHATS TAB
+  // 1. CHATS TAB with Modern Filter Chips
   Widget _buildChatsTab(UserModel currentUser, bool isDevBypass, bool isDark) {
     final chatProvider = context.watch<ChatProvider>();
 
-    return StreamBuilder<List<ChatModel>>(
-      stream: chatProvider.getRecentChatsStream(
-        currentUserId: currentUser.uid,
-        isDevBypass: isDevBypass,
-      ),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final chats = snapshot.data ?? [];
-        final filteredChats = _searchQuery.isEmpty
-            ? chats
-            : chats.where((c) {
-                return c.lastMessage.toLowerCase().contains(_searchQuery);
-              }).toList();
-
-        if (filteredChats.isEmpty) {
-          return Center(
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.chat_bubble_outline_rounded,
-                    size: 64,
-                    color: Colors.grey.shade400,
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    _searchQuery.isEmpty
-                        ? 'No conversations yet'
-                        : 'No matching chats found',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: isDark ? Colors.white70 : Colors.black87,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    _searchQuery.isEmpty
-                        ? 'Tap the chat button below to start messaging!'
-                        : 'Try searching with a different keyword',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: isDark ? Colors.white38 : Colors.grey.shade600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        return ListView.separated(
-          itemCount: filteredChats.length,
-          separatorBuilder: (_, __) => Divider(
-            height: 1,
-            indent: 80,
-            color: isDark ? Colors.white10 : Colors.grey.shade200,
-          ),
-          itemBuilder: (context, index) {
-            final chat = filteredChats[index];
-            final otherUserId = chat.getOtherUserId(currentUser.uid);
-
-            return ChatTile(
-              chat: chat,
-              onTap: () async {
-                final otherUser = await chatProvider.getUserById(
-                  otherUserId,
-                  isDevBypass,
-                );
-                if (otherUser != null && context.mounted) {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ChatScreen(
-                        targetUser: otherUser,
-                      ),
-                    ),
-                  );
-                }
-              },
-            );
-          },
-        );
-      },
-    );
-  }
-
-  // 2. STATUS TAB
-  Widget _buildStatusTab(UserModel currentUser, bool isDevBypass, bool isDark) {
-    final chatProvider = context.watch<ChatProvider>();
-
-    return StreamBuilder<List<StatusModel>>(
-      stream: chatProvider.getStatusStream(isDevBypass: isDevBypass),
-      builder: (context, snapshot) {
-        final statuses = snapshot.data ?? [];
-        final recentStatuses = statuses.where((s) => !s.isViewed).toList();
-        final viewedStatuses = statuses.where((s) => s.isViewed).toList();
-
-        return ListView(
-          children: [
-            // My Status Tile
-            ListTile(
-              leading: Stack(
-                children: [
-                  CircleAvatar(
-                    radius: 26,
-                    backgroundColor: AppColors.primary,
-                    child: Text(
-                      currentUser.name.isNotEmpty
-                          ? currentUser.name[0].toUpperCase()
-                          : 'M',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 20,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 0,
-                    right: 0,
-                    child: Container(
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF25D366),
-                        shape: BoxShape.circle,
-                      ),
-                      padding: const EdgeInsets.all(2),
-                      child: const Icon(
-                        Icons.add,
-                        size: 16,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              title: const Text(
-                'My Status',
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-              ),
-              subtitle: const Text('Tap to add status update'),
-              onTap: _showAddStatusDialog,
-            ),
-
-            // Recent Updates Section
-            if (recentStatuses.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-                child: Text(
-                  'Recent updates',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white60 : Colors.black54,
-                  ),
-                ),
-              ),
-              ...recentStatuses.map((status) {
-                return ListTile(
-                  leading: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFF25D366),
-                        width: 2.5,
-                      ),
-                    ),
-                    padding: const EdgeInsets.all(2.5),
-                    child: CircleAvatar(
-                      radius: 22,
-                      backgroundColor: Color(status.backgroundColorHex),
-                      child: Text(
-                        status.userName.isNotEmpty
-                            ? status.userName[0].toUpperCase()
-                            : 'U',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  title: Text(
-                    status.userName,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  subtitle: Text(
-                    DateFormatter.formatMessageTime(status.timestamp),
-                    style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => StatusViewScreen(
-                          status: status,
-                          onStatusCompleted: () {
-                            chatProvider.markStatusViewed(
-                              status.statusId,
-                              isDevBypass: isDevBypass,
-                            );
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                );
-              }),
-            ],
-
-            // Viewed Updates Section
-            if (viewedStatuses.isNotEmpty) ...[
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-                child: Text(
-                  'Viewed updates',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700,
-                    color: isDark ? Colors.white60 : Colors.black54,
-                  ),
-                ),
-              ),
-              ...viewedStatuses.map((status) {
-                return ListTile(
-                  leading: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: isDark ? Colors.white30 : Colors.grey.shade400,
-                        width: 2.0,
-                      ),
-                    ),
-                    padding: const EdgeInsets.all(2.5),
-                    child: CircleAvatar(
-                      radius: 22,
-                      backgroundColor: Color(status.backgroundColorHex),
-                      child: Text(
-                        status.userName.isNotEmpty
-                            ? status.userName[0].toUpperCase()
-                            : 'U',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  title: Text(
-                    status.userName,
-                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                  ),
-                  subtitle: Text(
-                    DateFormatter.formatMessageTime(status.timestamp),
-                    style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
-                  ),
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => StatusViewScreen(status: status),
-                      ),
-                    );
-                  },
-                );
-              }),
-            ],
-          ],
-        );
-      },
-    );
-  }
-
-  // 3. CALLS TAB
-  Widget _buildCallsTab(UserModel currentUser, bool isDevBypass, bool isDark) {
-    final chatProvider = context.watch<ChatProvider>();
-
-    return StreamBuilder<List<CallModel>>(
-      stream: chatProvider.getCallsStream(
-        currentUserId: currentUser.uid,
-        isDevBypass: isDevBypass,
-      ),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        final calls = snapshot.data ?? [];
-
-        if (calls.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      children: [
+        // WhatsApp Modern Filter Chips Bar
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          color: isDark ? const Color(0xFF121B22) : Colors.white,
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
               children: [
-                Icon(
-                  Icons.phone_missed_rounded,
-                  size: 64,
-                  color: Colors.grey.shade400,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'No recent calls',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white70 : Colors.black87,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Tap the call button below to start an HD voice or video call!',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isDark ? Colors.white38 : Colors.grey.shade600,
-                  ),
-                ),
+                _buildFilterChip('All', 'all', isDark),
+                const SizedBox(width: 8),
+                _buildFilterChip('Unread', 'unread', isDark),
+                const SizedBox(width: 8),
+                _buildFilterChip('Favorites ⭐', 'favorites', isDark),
+                const SizedBox(width: 8),
+                _buildFilterChip('Groups 👥', 'groups', isDark),
               ],
             ),
-          );
-        }
+          ),
+        ),
 
-        return ListView(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
-              child: Text(
-                'Recent',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w700,
-                  color: isDark ? Colors.white60 : Colors.black54,
-                ),
-              ),
+        // Chat stream
+        Expanded(
+          child: StreamBuilder<List<ChatModel>>(
+            stream: chatProvider.getRecentChatsStream(
+              currentUserId: currentUser.uid,
+              isDevBypass: isDevBypass,
             ),
-            ...calls.map((call) {
-              final isMissed = call.isMissed;
-              final isOutgoing = call.isOutgoing;
-
-              // Arrow icon & color
-              IconData callIcon;
-              Color callColor;
-              if (isMissed) {
-                callIcon = Icons.call_missed_rounded;
-                callColor = Colors.redAccent;
-              } else if (isOutgoing) {
-                callIcon = Icons.call_made_rounded;
-                callColor = const Color(0xFF25D366);
-              } else {
-                callIcon = Icons.call_received_rounded;
-                callColor = const Color(0xFF25D366);
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
               }
 
-              final durationText = call.durationSeconds > 0
-                  ? ' (${(call.durationSeconds ~/ 60)}m ${(call.durationSeconds % 60)}s)'
-                  : (isMissed ? ' (Missed)' : '');
+              final allChats = snapshot.data ?? [];
 
-              return ListTile(
-                leading: CircleAvatar(
-                  radius: 24,
-                  backgroundColor: AppColors.primary,
-                  child: Text(
-                    call.callerName.isNotEmpty
-                        ? call.callerName[0].toUpperCase()
-                        : 'C',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 18,
+              // Apply Filter Chips
+              List<ChatModel> filteredByChip = allChats;
+              if (_activeChatFilter == 'unread') {
+                filteredByChip = allChats.where((c) => c.getUnreadCount(currentUser.uid) > 0).toList();
+              } else if (_activeChatFilter == 'favorites') {
+                filteredByChip = allChats.where((c) => c.isFavorite).toList();
+              } else if (_activeChatFilter == 'groups') {
+                filteredByChip = allChats.where((c) => c.isGroup).toList();
+              }
+
+              // Apply Search Query
+              final filteredChats = _searchQuery.isEmpty
+                  ? filteredByChip
+                  : filteredByChip.where((c) {
+                      final name = c.isGroup ? (c.groupName ?? '') : '';
+                      return c.lastMessage.toLowerCase().contains(_searchQuery) ||
+                          name.toLowerCase().contains(_searchQuery);
+                    }).toList();
+
+              if (filteredChats.isEmpty) {
+                return Center(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.chat_bubble_outline_rounded,
+                          size: 64,
+                          color: Colors.grey.shade400,
+                        ),
+                        const SizedBox(height: 16),
+                        Text(
+                          _searchQuery.isEmpty
+                              ? 'No ${_activeChatFilter == "all" ? "conversations" : _activeChatFilter} yet'
+                              : 'No matching chats found',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: isDark ? Colors.white70 : Colors.black87,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          _searchQuery.isEmpty
+                              ? 'Tap the message button to start chatting or create a group!'
+                              : 'Try searching with a different keyword',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: isDark ? Colors.white38 : Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+                );
+              }
+
+              return ListView.separated(
+                itemCount: filteredChats.length,
+                separatorBuilder: (_, __) => Divider(
+                  height: 1,
+                  indent: 80,
+                  color: isDark ? Colors.white10 : Colors.grey.shade200,
                 ),
-                title: Text(
-                  call.callerName,
-                  style: TextStyle(
+                itemBuilder: (context, index) {
+                  final chat = filteredChats[index];
+
+                  return ChatTile(
+                    chat: chat,
+                    onTap: () async {
+                      if (chat.isGroup) {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => ChatScreen(
+                              targetUser: UserModel(
+                                uid: chat.chatId,
+                                name: chat.groupName ?? 'Group',
+                                email: '',
+                                status: chat.groupDescription ?? '',
+                                createdAt: DateTime.now(),
+                              ),
+                              groupChat: chat,
+                            ),
+                          ),
+                        );
+                      } else {
+                        final otherUserId = chat.getOtherUserId(currentUser.uid);
+                        final otherUser = await chatProvider.getUserById(
+                          otherUserId,
+                          isDevBypass,
+                        );
+                        if (otherUser != null && context.mounted) {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ChatScreen(
+                                targetUser: otherUser,
+                              ),
+                            ),
+                          );
+                        }
+                      }
+                    },
+                  );
+                },
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildFilterChip(String label, String filterKey, bool isDark) {
+    final isSelected = _activeChatFilter == filterKey;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _activeChatFilter = filterKey;
+        });
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary
+              : (isDark ? const Color(0xFF1F2C34) : Colors.grey.shade100),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : Colors.transparent,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // 2. UPDATES TAB (Status Stories + News Channels)
+  Widget _buildUpdatesTab(UserModel currentUser, bool isDevBypass, bool isDark) {
+    final chatProvider = context.watch<ChatProvider>();
+
+    return ListView(
+      children: [
+        // My Status Tile
+        ListTile(
+          leading: Stack(
+            children: [
+              CircleAvatar(
+                radius: 26,
+                backgroundColor: AppColors.primary,
+                child: Text(
+                  currentUser.name.isNotEmpty
+                      ? currentUser.name[0].toUpperCase()
+                      : 'M',
+                  style: const TextStyle(
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                    color: isMissed ? Colors.redAccent : null,
+                    fontSize: 20,
                   ),
                 ),
-                subtitle: Row(
-                  children: [
-                    Icon(callIcon, size: 16, color: callColor),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${DateFormatter.formatMessageTime(call.timestamp)}$durationText',
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  decoration: const BoxDecoration(
+                    color: Color(0xFF25D366),
+                    shape: BoxShape.circle,
+                  ),
+                  padding: const EdgeInsets.all(2),
+                  child: const Icon(
+                    Icons.add,
+                    size: 16,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          title: const Text(
+            'My Status',
+            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+          ),
+          subtitle: const Text('Tap to add status update'),
+          onTap: _showAddStatusDialog,
+        ),
+
+        // Status stream
+        StreamBuilder<List<StatusModel>>(
+          stream: chatProvider.getStatusStream(isDevBypass: isDevBypass),
+          builder: (context, snapshot) {
+            final statuses = snapshot.data ?? [];
+            final recentStatuses = statuses.where((s) => !s.isViewed).toList();
+            final viewedStatuses = statuses.where((s) => s.isViewed).toList();
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (recentStatuses.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                    child: Text(
+                      'Recent updates',
                       style: TextStyle(
                         fontSize: 13,
+                        fontWeight: FontWeight.w700,
                         color: isDark ? Colors.white60 : Colors.black54,
                       ),
                     ),
-                  ],
-                ),
-                trailing: IconButton(
-                  icon: Icon(
-                    call.isVideo ? Icons.videocam_rounded : Icons.call_rounded,
-                    color: AppColors.primary,
                   ),
-                  tooltip: call.isVideo ? 'Video Call' : 'Voice Call',
-                  onPressed: () async {
-                    final targetUser = await chatProvider.getUserById(
-                      call.isOutgoing ? call.receiverId : call.callerId,
-                      isDevBypass,
-                    ) ?? UserModel(
-                      uid: call.isOutgoing ? call.receiverId : call.callerId,
-                      name: call.callerName,
-                      email: '',
-                      createdAt: DateTime.now(),
-                    );
-
-                    if (context.mounted) {
-                      final dur = await Navigator.push<int>(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => CallScreen(
-                            targetUser: targetUser,
-                            isVideoCall: call.isVideo,
+                  ...recentStatuses.map((status) {
+                    return ListTile(
+                      leading: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: const Color(0xFF25D366),
+                            width: 2.5,
                           ),
                         ),
-                      );
-
-                      final callDuration = dur ?? 0;
-                      await chatProvider.addCallRecord(
-                        CallModel(
-                          callId: 'call_${DateTime.now().millisecondsSinceEpoch}',
-                          callerId: currentUser.uid,
-                          receiverId: targetUser.uid,
-                          callerName: targetUser.name,
-                          timestamp: DateTime.now(),
-                          durationSeconds: callDuration,
-                          isVideo: call.isVideo,
-                          isMissed: callDuration == 0,
-                          isOutgoing: true,
+                        padding: const EdgeInsets.all(2.5),
+                        child: CircleAvatar(
+                          radius: 22,
+                          backgroundColor: Color(status.backgroundColorHex),
+                          child: Text(
+                            status.userName.isNotEmpty
+                                ? status.userName[0].toUpperCase()
+                                : 'U',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                        isDevBypass: isDevBypass,
-                      );
-                    }
-                  },
+                      ),
+                      title: Text(
+                        status.userName,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      subtitle: Text(
+                        DateFormatter.formatMessageTime(status.timestamp),
+                        style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => StatusViewScreen(
+                              status: status,
+                              onStatusCompleted: () {
+                                chatProvider.markStatusViewed(
+                                  status.statusId,
+                                  isDevBypass: isDevBypass,
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                    );
+                  }),
+                ],
+
+                if (viewedStatuses.isNotEmpty) ...[
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                    child: Text(
+                      'Viewed updates',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                        color: isDark ? Colors.white60 : Colors.black54,
+                      ),
+                    ),
+                  ),
+                  ...viewedStatuses.map((status) {
+                    return ListTile(
+                      leading: Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isDark ? Colors.white30 : Colors.grey.shade400,
+                            width: 2.0,
+                          ),
+                        ),
+                        padding: const EdgeInsets.all(2.5),
+                        child: CircleAvatar(
+                          radius: 22,
+                          backgroundColor: Color(status.backgroundColorHex),
+                          child: Text(
+                            status.userName.isNotEmpty
+                                ? status.userName[0].toUpperCase()
+                                : 'U',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ),
+                      title: Text(
+                        status.userName,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      subtitle: Text(
+                        DateFormatter.formatMessageTime(status.timestamp),
+                        style: TextStyle(color: isDark ? Colors.white60 : Colors.black54),
+                      ),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => StatusViewScreen(status: status),
+                          ),
+                        );
+                      },
+                    );
+                  }),
+                ],
+              ],
+            );
+          },
+        ),
+
+        const Divider(thickness: 6, height: 28),
+
+        // Channels & News Updates Section
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'Channels & News Feeds',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : Colors.black87,
                 ),
+              ),
+              Text(
+                'Explore >',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.primary,
+                ),
+              ),
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16),
+          child: Text(
+            'Stay updated on topics you care about. Follow AI, Tech, and Security news.',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade500),
+          ),
+        ),
+        const SizedBox(height: 8),
+
+        StreamBuilder<List<ChannelModel>>(
+          stream: chatProvider.getChannelsStream(isDevBypass: isDevBypass),
+          builder: (context, snapshot) {
+            final channels = snapshot.data ?? [];
+            return Column(
+              children: channels.map((chan) {
+                return ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: const Color(0xFF007AFF).withOpacity(0.12),
+                    child: Text(chan.avatar, style: const TextStyle(fontSize: 20)),
+                  ),
+                  title: Row(
+                    children: [
+                      Flexible(
+                        child: Text(
+                          chan.name,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        ),
+                      ),
+                      if (chan.isVerified) ...[
+                        const SizedBox(width: 4),
+                        const Icon(Icons.verified_rounded, size: 15, color: AppColors.primary),
+                      ],
+                    ],
+                  ),
+                  subtitle: Text(
+                    chan.latestUpdate,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(fontSize: 13, color: isDark ? Colors.white60 : Colors.black54),
+                  ),
+                  trailing: OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      side: BorderSide(color: chan.isFollowing ? Colors.grey : AppColors.primary),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                    ),
+                    onPressed: () {
+                      chatProvider.toggleChannelFollow(chan.channelId, isDevBypass: isDevBypass);
+                    },
+                    child: Text(
+                      chan.isFollowing ? 'Following' : 'Follow',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                        color: chan.isFollowing ? Colors.grey : AppColors.primary,
+                      ),
+                    ),
+                  ),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => ChannelScreen(channel: chan)),
+                    );
+                  },
+                );
+              }).toList(),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  // 3. CALLS TAB with Voice & Video Separation
+  Widget _buildCallsTab(UserModel currentUser, bool isDevBypass, bool isDark) {
+    final chatProvider = context.watch<ChatProvider>();
+
+    return Column(
+      children: [
+        // Voice vs Video Segment Filter
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          color: isDark ? const Color(0xFF121B22) : Colors.white,
+          child: Row(
+            children: [
+              _buildCallFilterChip('All Calls', 'all', isDark),
+              const SizedBox(width: 8),
+              _buildCallFilterChip('📞 Voice Calls', 'voice', isDark),
+              const SizedBox(width: 8),
+              _buildCallFilterChip('📹 Video Calls', 'video', isDark),
+            ],
+          ),
+        ),
+
+        Expanded(
+          child: StreamBuilder<List<CallModel>>(
+            stream: chatProvider.getCallsStream(
+              currentUserId: currentUser.uid,
+              isDevBypass: isDevBypass,
+            ),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              final allCalls = snapshot.data ?? [];
+              List<CallModel> filteredCalls = allCalls;
+              if (_activeCallFilter == 'voice') {
+                filteredCalls = allCalls.where((c) => !c.isVideo).toList();
+              } else if (_activeCallFilter == 'video') {
+                filteredCalls = allCalls.where((c) => c.isVideo).toList();
+              }
+
+              if (filteredCalls.isEmpty) {
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.phone_missed_rounded,
+                        size: 64,
+                        color: Colors.grey.shade400,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'No ${_activeCallFilter == "all" ? "recent" : _activeCallFilter} calls',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white70 : Colors.black87,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Tap the call button below to start an HD voice or video call!',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: isDark ? Colors.white38 : Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }
+
+              return ListView.separated(
+                itemCount: filteredCalls.length,
+                separatorBuilder: (_, __) => Divider(
+                  height: 1,
+                  indent: 80,
+                  color: isDark ? Colors.white10 : Colors.grey.shade200,
+                ),
+                itemBuilder: (context, index) {
+                  final call = filteredCalls[index];
+                  final isMissed = call.isMissed;
+                  final isOutgoing = call.isOutgoing;
+
+                  IconData callIcon;
+                  Color callColor;
+                  if (isMissed) {
+                    callIcon = Icons.call_missed_rounded;
+                    callColor = Colors.redAccent;
+                  } else if (isOutgoing) {
+                    callIcon = Icons.call_made_rounded;
+                    callColor = const Color(0xFF25D366);
+                  } else {
+                    callIcon = Icons.call_received_rounded;
+                    callColor = const Color(0xFF25D366);
+                  }
+
+                  final durationText = call.durationSeconds > 0
+                      ? ' (${(call.durationSeconds ~/ 60)}m ${(call.durationSeconds % 60)}s)'
+                      : (isMissed ? ' (Missed)' : '');
+
+                  return ListTile(
+                    leading: CircleAvatar(
+                      radius: 24,
+                      backgroundColor: call.isVideo
+                          ? const Color(0xFF007AFF).withOpacity(0.18)
+                          : AppColors.primary.withOpacity(0.18),
+                      child: Icon(
+                        call.isVideo ? Icons.videocam_rounded : Icons.call_rounded,
+                        color: call.isVideo ? const Color(0xFF007AFF) : AppColors.primary,
+                        size: 22,
+                      ),
+                    ),
+                    title: Text(
+                      call.callerName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: isMissed ? Colors.redAccent : null,
+                      ),
+                    ),
+                    subtitle: Row(
+                      children: [
+                        Icon(callIcon, size: 16, color: callColor),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${DateFormatter.formatMessageTime(call.timestamp)}$durationText',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: isDark ? Colors.white60 : Colors.black54,
+                          ),
+                        ),
+                      ],
+                    ),
+                    trailing: IconButton(
+                      icon: Icon(
+                        call.isVideo ? Icons.videocam_rounded : Icons.call_rounded,
+                        color: AppColors.primary,
+                      ),
+                      tooltip: call.isVideo ? 'Video Call' : 'Voice Call',
+                      onPressed: () async {
+                        final targetUser = await chatProvider.getUserById(
+                          call.isOutgoing ? call.receiverId : call.callerId,
+                          isDevBypass,
+                        ) ?? UserModel(
+                          uid: call.isOutgoing ? call.receiverId : call.callerId,
+                          name: call.callerName,
+                          email: '',
+                          createdAt: DateTime.now(),
+                        );
+
+                        if (context.mounted) {
+                          final dur = await Navigator.push<int>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => CallScreen(
+                                targetUser: targetUser,
+                                isVideoCall: call.isVideo,
+                              ),
+                            ),
+                          );
+
+                          final callDuration = dur ?? 0;
+                          await chatProvider.addCallRecord(
+                            CallModel(
+                              callId: 'call_${DateTime.now().millisecondsSinceEpoch}',
+                              callerId: currentUser.uid,
+                              receiverId: targetUser.uid,
+                              callerName: targetUser.name,
+                              timestamp: DateTime.now(),
+                              durationSeconds: callDuration,
+                              isVideo: call.isVideo,
+                              isMissed: callDuration == 0,
+                              isOutgoing: true,
+                            ),
+                            isDevBypass: isDevBypass,
+                          );
+                        }
+                      },
+                    ),
+                  );
+                },
               );
-            }),
-          ],
-        );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCallFilterChip(String label, String filterKey, bool isDark) {
+    final isSelected = _activeCallFilter == filterKey;
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _activeCallFilter = filterKey;
+        });
       },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primary
+              : (isDark ? const Color(0xFF1F2C34) : Colors.grey.shade100),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isSelected ? AppColors.primary : Colors.transparent,
+            width: 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+            color: isSelected ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+          ),
+        ),
+      ),
     );
   }
 }

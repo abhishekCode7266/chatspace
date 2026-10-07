@@ -138,7 +138,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       builder: (ctx) {
         return AlertDialog(
           title: const Text('Log Out'),
-          content: const Text('Are you sure you want to log out of ChatSpace?'),
+          content: Text('Are you sure you want to log out of ${AppConstants.appName}?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
@@ -387,10 +387,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
             const Divider(),
 
             // App Version Info
-            const ListTile(
-              leading: Icon(Icons.apps_rounded, color: AppColors.primary),
-              title: Text('WhatsChat'),
-              subtitle: Text('Version ${AppConstants.appVersion} (Play Store Build)'),
+            ListTile(
+              leading: const Icon(Icons.apps_rounded, color: AppColors.primary),
+              title: const Text(AppConstants.appName),
+              subtitle: const Text('Version ${AppConstants.appVersion} (Play Store Build)'),
             ),
             const Divider(),
             const SizedBox(height: 20),

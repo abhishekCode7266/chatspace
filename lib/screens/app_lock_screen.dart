@@ -86,7 +86,7 @@ class _AppLockScreenState extends State<AppLockScreen> {
             ),
             const SizedBox(height: 24),
             Text(
-              'ChatSpace Locked',
+              '${AppConstants.appName} Locked',
               style: TextStyle(
                 fontSize: 22,
                 fontWeight: FontWeight.bold,

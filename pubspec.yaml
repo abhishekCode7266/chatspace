@@ -1,7 +1,7 @@
 name: chatspace
-description: "WhatsChat - WhatsApp-like Flutter Mobile & Web Messaging App with Real-Time Chat, HD Video/Voice Calling, Status Stories, E2EE Security and Developer Bypass."
+description: "Universal Chat App - Modern, AI-friendly, secure communication app with Text, HD Voice/Video Calls, Groups, Channels, Status, and E2EE."
 publish_to: "none"
-version: 1.2.0+3
+version: 1.3.0+4
 
 environment:
   sdk: ">=3.0.0 <4.0.0"

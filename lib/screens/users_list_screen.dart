@@ -132,7 +132,7 @@ class _UsersListScreenState extends State<UsersListScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Invite friends to join ChatSpace!',
+                          'Invite friends to join ${AppConstants.appName}!',
                           style: TextStyle(
                             fontSize: 14,
                             color: isDark ? Colors.white38 : Colors.grey.shade600,
