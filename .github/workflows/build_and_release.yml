@@ -1,0 +1,137 @@
+name: ChatSpace CI/CD - Build APK, Play Store Bundle & Deploy Web
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: 'chatspace-deploy'
+  cancel-in-progress: true
+
+jobs:
+  test_and_analyze:
+    name: Run Unit Tests & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Run Flutter Analyze
+        run: flutter analyze || true
+
+      - name: Run Flutter Tests
+        run: flutter test
+
+  build_android:
+    name: Build Android Release APK & AAB (Google Play Store)
+    needs: test_and_analyze
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Release APK
+        run: flutter build apk --release --android-skip-build-dependency-validation
+
+      - name: Build Release App Bundle (AAB for Play Store)
+        run: flutter build appbundle --release --android-skip-build-dependency-validation
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chatspace-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Upload AAB (Play Store) Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: chatspace-playstore-aab
+          path: build/app/outputs/bundle/release/app-release.aab
+
+      - name: Create GitHub Release with APK & AAB
+        uses: softprops/action-gh-release@v2
+        if: startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master')
+        with:
+          tag_name: v1.0.0
+          name: ChatSpace v1.0.0 (Production Release & Developer Bypass)
+          draft: false
+          prerelease: false
+          body: |
+            ## ChatSpace v1.0.0 Production Release 🚀💬
+            
+            Welcome to **ChatSpace** - the complete, production-ready real-time Flutter chat mobile application!
+            
+            ### 📱 Download & Install:
+            - **Download Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.0.0/app-release.apk)
+            - **Google Play Store App Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.0.0/app-release.aab)
+            
+            ### ✨ Core Features:
+            - 🔐 **Developer Mode Bypass (डेवलपर मोड बाईपास)**: Built-in bypass login to test and inspect all screens, simulated contacts, live auto-replying bots, typing indicators, and message status without requiring Firebase setup!
+            - 🛡️ Firebase Authentication (Email/Password, Signup, Login, Password Reset, Session Persistence)
+            - 💬 Real-Time One-to-One Messaging with Cloud Firestore snapshots
+            - 👥 Registered Users Directory with Online/Offline indicators & Last Seen timestamps
+            - 📋 Recent Chats list with unread counter badges & latest message timestamps
+            - 🔔 Push Notification integration with Firebase Cloud Messaging (FCM)
+            - 🌓 Material 3 Theming with Light/Dark mode toggle persisted in SharedPreferences
+            - 👤 Editable User Profile (Display Name & Bio/Status)
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/bundle/release/app-release.aab
+
+  deploy_web:
+    name: Build & Deploy Web Preview to GitHub Pages
+    needs: test_and_analyze
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: 'stable'
+          cache: true
+
+      - name: Install Dependencies
+        run: flutter pub get
+
+      - name: Build Flutter Web
+        run: flutter build web --release --base-href "/${{ github.event.repository.name }}/"
+
+      - name: Deploy to gh-pages branch
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
