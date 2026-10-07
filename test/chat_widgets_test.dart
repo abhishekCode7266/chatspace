@@ -65,13 +65,14 @@ void main() {
       );
 
       expect(find.text('Enter Password'), findsOneWidget);
-      expect(find.byIcon(Icons.visibility), findsOneWidget);
+      // Initially obscureText is true, displaying visibility_off
+      expect(find.byIcon(Icons.visibility_off), findsOneWidget);
 
-      // Tap visibility toggle icon
-      await tester.tap(find.byIcon(Icons.visibility));
+      // Tap visibility toggle icon to make visible
+      await tester.tap(find.byIcon(Icons.visibility_off));
       await tester.pumpAndSettle();
 
-      expect(find.byIcon(Icons.visibility_off), findsOneWidget);
+      expect(find.byIcon(Icons.visibility), findsOneWidget);
     });
 
     testWidgets('MessageBubble renders message text, timestamp, and status icon',
