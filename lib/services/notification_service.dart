@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -36,43 +35,45 @@ class NotificationService {
 
       debugPrint('FCM Authorization status: ${settings.authorizationStatus}');
 
-      // 2. Initialize Android & iOS local notification settings
-      const AndroidInitializationSettings androidSettings =
-          AndroidInitializationSettings('@mipmap/ic_launcher');
+      // 2. Initialize Android & iOS local notification settings (skipped on web)
+      if (!kIsWeb) {
+        const AndroidInitializationSettings androidSettings =
+            AndroidInitializationSettings('@mipmap/ic_launcher');
 
-      const DarwinInitializationSettings iosSettings =
-          DarwinInitializationSettings(
-        requestAlertPermission: true,
-        requestBadgePermission: true,
-        requestSoundPermission: true,
-      );
-
-      const InitializationSettings initSettings = InitializationSettings(
-        android: androidSettings,
-        iOS: iosSettings,
-      );
-
-      await _localNotifications.initialize(
-        initSettings,
-        onDidReceiveNotificationResponse: (NotificationResponse response) {
-          debugPrint('Notification clicked: ${response.payload}');
-        },
-      );
-
-      // 3. Create high importance Android notification channel
-      if (!kIsWeb && Platform.isAndroid) {
-        const AndroidNotificationChannel channel = AndroidNotificationChannel(
-          AppConstants.notificationChannelId,
-          AppConstants.notificationChannelName,
-          description: AppConstants.notificationChannelDesc,
-          importance: Importance.high,
-          playSound: true,
+        const DarwinInitializationSettings iosSettings =
+            DarwinInitializationSettings(
+          requestAlertPermission: true,
+          requestBadgePermission: true,
+          requestSoundPermission: true,
         );
 
-        await _localNotifications
-            .resolvePlatformSpecificImplementation<
-                AndroidFlutterLocalNotificationsPlugin>()
-            ?.createNotificationChannel(channel);
+        const InitializationSettings initSettings = InitializationSettings(
+          android: androidSettings,
+          iOS: iosSettings,
+        );
+
+        await _localNotifications.initialize(
+          initSettings,
+          onDidReceiveNotificationResponse: (NotificationResponse response) {
+            debugPrint('Notification clicked: ${response.payload}');
+          },
+        );
+
+        // 3. Create high importance Android notification channel
+        if (defaultTargetPlatform == TargetPlatform.android) {
+          const AndroidNotificationChannel channel = AndroidNotificationChannel(
+            AppConstants.notificationChannelId,
+            AppConstants.notificationChannelName,
+            description: AppConstants.notificationChannelDesc,
+            importance: Importance.high,
+            playSound: true,
+          );
+
+          await _localNotifications
+              .resolvePlatformSpecificImplementation<
+                  AndroidFlutterLocalNotificationsPlugin>()
+              ?.createNotificationChannel(channel);
+        }
       }
 
       // 4. Set Background messaging handler
@@ -121,6 +122,7 @@ class NotificationService {
     required String body,
     String? payload,
   }) async {
+    if (kIsWeb) return;
     try {
       const AndroidNotificationDetails androidDetails =
           AndroidNotificationDetails(
