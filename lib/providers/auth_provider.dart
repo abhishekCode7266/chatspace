@@ -162,6 +162,23 @@ class AuthProvider with ChangeNotifier {
     _setLoading(false);
   }
 
+  /// Toggle Developer Mode Bypass on or off
+  Future<void> toggleDevBypass() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_isDevBypass) {
+      _isDevBypass = false;
+      await prefs.setBool(AppConstants.prefDevBypass, false);
+      if (_currentUser?.uid == AppConstants.devUserId) {
+        _currentUser = null;
+      }
+    } else {
+      _isDevBypass = true;
+      _currentUser = MockDataService.instance.currentDevUser;
+      await prefs.setBool(AppConstants.prefDevBypass, true);
+    }
+    notifyListeners();
+  }
+
   /// Update Display Name and Status Bio
   Future<bool> updateProfile({
     required String name,
