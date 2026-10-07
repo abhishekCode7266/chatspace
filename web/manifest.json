@@ -1,11 +1,11 @@
 {
-    "name": "ChatSpace",
-    "short_name": "ChatSpace",
+    "name": "WhatsChat",
+    "short_name": "WhatsChat",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "ChatSpace - Real-time Chat Mobile Application",
+    "background_color": "#00A884",
+    "theme_color": "#008069",
+    "description": "WhatsChat - WhatsApp-like Real-Time Chat & HD Calling App",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

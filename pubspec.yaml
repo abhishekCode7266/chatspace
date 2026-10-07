@@ -1,7 +1,7 @@
 name: chatspace
-description: "ChatSpace - Production-Ready Real-Time Chat Flutter mobile app with Firebase backend and Developer Mode Bypass."
+description: "WhatsChat - WhatsApp-like Flutter Mobile & Web Messaging App with Real-Time Chat, HD Video/Voice Calling, Status Stories, E2EE Security and Developer Bypass."
 publish_to: "none"
-version: 1.0.0+1
+version: 1.2.0+3
 
 environment:
   sdk: ">=3.0.0 <4.0.0"

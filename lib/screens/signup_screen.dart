@@ -42,8 +42,8 @@ class _SignupScreenState extends State<SignupScreen> {
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('🎉 Account created successfully! Welcome to ChatSpace.'),
+        SnackBar(
+          content: Text('🎉 Account created successfully! Welcome to ${AppConstants.appName}.'),
           backgroundColor: AppColors.primary,
         ),
       );
@@ -74,7 +74,7 @@ class _SignupScreenState extends State<SignupScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Text(
-                    'Join ChatSpace',
+                    'Join ${AppConstants.appName}',
                     style: TextStyle(
                       fontSize: 26,
                       fontWeight: FontWeight.bold,

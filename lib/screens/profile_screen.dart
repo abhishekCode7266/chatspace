@@ -389,8 +389,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             // App Version Info
             const ListTile(
               leading: Icon(Icons.apps_rounded, color: AppColors.primary),
-              title: Text('ChatSpace Mobile'),
-              subtitle: Text('Version ${AppConstants.appVersion} (Production Build)'),
+              title: Text('WhatsChat'),
+              subtitle: Text('Version ${AppConstants.appVersion} (Play Store Build)'),
             ),
             const Divider(),
             const SizedBox(height: 20),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/message_model.dart';
 import '../models/user_model.dart';
+import '../models/call_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
 import '../services/encryption_service.dart';
@@ -141,12 +142,26 @@ class _ChatScreenState extends State<ChatScreen> {
       _isVoiceRecording = true;
     });
 
-    Timer(const Duration(milliseconds: 1200), () {
+    Timer(const Duration(milliseconds: 1200), () async {
       if (!mounted) return;
       setState(() {
         _isVoiceRecording = false;
       });
-      _handleSendMessage(customText: '🎤 Voice message (0:04)');
+
+      final authProvider = context.read<AuthProvider>();
+      final chatProvider = context.read<ChatProvider>();
+      final currentUserId = authProvider.currentUser?.uid ?? '';
+
+      await chatProvider.sendMessage(
+        chatId: _chatId,
+        senderId: currentUserId,
+        receiverId: widget.targetUser.uid,
+        text: '🎤 Voice message (0:05)',
+        messageType: 'audio',
+        audioDuration: '0:05',
+        isDevBypass: authProvider.isDevBypass,
+      );
+      _scrollToBottom();
     });
   }
 
@@ -161,6 +176,10 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _startVideoCall() async {
+    final authProvider = context.read<AuthProvider>();
+    final chatProvider = context.read<ChatProvider>();
+    final currentUserId = authProvider.currentUser?.uid ?? '';
+
     final duration = await Navigator.push<int>(
       context,
       MaterialPageRoute(
@@ -171,14 +190,35 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
 
-    if (duration != null && duration > 0) {
+    final dur = duration ?? 0;
+    // Record call log
+    await chatProvider.addCallRecord(
+      CallModel(
+        callId: 'call_${DateTime.now().millisecondsSinceEpoch}',
+        callerId: currentUserId,
+        receiverId: widget.targetUser.uid,
+        callerName: widget.targetUser.name,
+        timestamp: DateTime.now(),
+        durationSeconds: dur,
+        isVideo: true,
+        isMissed: dur == 0,
+        isOutgoing: true,
+      ),
+      isDevBypass: authProvider.isDevBypass,
+    );
+
+    if (dur > 0) {
       _handleSendMessage(
-        customText: '📹 Video call ended (${(duration ~/ 60)}m ${(duration % 60)}s)',
+        customText: '📹 Video call ended (${(dur ~/ 60)}m ${(dur % 60)}s)',
       );
     }
   }
 
   void _startVoiceCall() async {
+    final authProvider = context.read<AuthProvider>();
+    final chatProvider = context.read<ChatProvider>();
+    final currentUserId = authProvider.currentUser?.uid ?? '';
+
     final duration = await Navigator.push<int>(
       context,
       MaterialPageRoute(
@@ -189,9 +229,26 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
     );
 
-    if (duration != null && duration > 0) {
+    final dur = duration ?? 0;
+    // Record call log
+    await chatProvider.addCallRecord(
+      CallModel(
+        callId: 'call_${DateTime.now().millisecondsSinceEpoch}',
+        callerId: currentUserId,
+        receiverId: widget.targetUser.uid,
+        callerName: widget.targetUser.name,
+        timestamp: DateTime.now(),
+        durationSeconds: dur,
+        isVideo: false,
+        isMissed: dur == 0,
+        isOutgoing: true,
+      ),
+      isDevBypass: authProvider.isDevBypass,
+    );
+
+    if (dur > 0) {
       _handleSendMessage(
-        customText: '📞 Voice call ended (${(duration ~/ 60)}m ${(duration % 60)}s)',
+        customText: '📞 Voice call ended (${(dur ~/ 60)}m ${(dur % 60)}s)',
       );
     }
   }
@@ -630,7 +687,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 const SizedBox(width: 10),
                                 Expanded(
                                   child: Text(
-                                    'Messages are end-to-end encrypted. No one outside of this chat, not even ChatSpace, can read them. Tap to verify.',
+                                    'Messages and calls are end-to-end encrypted. No one outside of this chat, not even WhatsChat, can read or listen to them. Tap to verify.',
                                     style: TextStyle(
                                       fontSize: 11.5,
                                       color: isDark ? Colors.amber.shade200 : const Color(0xFF856404),
@@ -676,6 +733,14 @@ class _ChatScreenState extends State<ChatScreen> {
                         isMe: isMe,
                         showDateSeparator: showDateSep,
                         dateSeparatorText: dateSepText,
+                        onReactionSelected: (emoji) {
+                          chatProvider.toggleReaction(
+                            chatId: _chatId,
+                            messageId: message.messageId,
+                            reaction: emoji,
+                            isDevBypass: isDevBypass,
+                          );
+                        },
                       );
                     },
                   );

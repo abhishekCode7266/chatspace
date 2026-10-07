@@ -7,6 +7,9 @@ class MessageModel {
   final String text;
   final DateTime timestamp;
   final bool isSeen;
+  final String? reaction; // e.g. '👍', '❤️', '😂', '😮', '😢', '🙏'
+  final String messageType; // 'text', 'audio', 'image', 'call'
+  final String? audioDuration; // e.g. '0:14'
 
   MessageModel({
     required this.messageId,
@@ -15,6 +18,9 @@ class MessageModel {
     required this.text,
     required this.timestamp,
     this.isSeen = false,
+    this.reaction,
+    this.messageType = 'text',
+    this.audioDuration,
   });
 
   Map<String, dynamic> toMap() {
@@ -25,6 +31,9 @@ class MessageModel {
       'text': text,
       'timestamp': Timestamp.fromDate(timestamp),
       'isSeen': isSeen,
+      'reaction': reaction,
+      'messageType': messageType,
+      'audioDuration': audioDuration,
     };
   }
 
@@ -43,6 +52,9 @@ class MessageModel {
       text: map['text'] as String? ?? '',
       timestamp: map['timestamp'] != null ? parseDate(map['timestamp']) : DateTime.now(),
       isSeen: map['isSeen'] as bool? ?? false,
+      reaction: map['reaction'] as String?,
+      messageType: map['messageType'] as String? ?? 'text',
+      audioDuration: map['audioDuration'] as String?,
     );
   }
 
@@ -58,6 +70,9 @@ class MessageModel {
     String? text,
     DateTime? timestamp,
     bool? isSeen,
+    String? reaction,
+    String? messageType,
+    String? audioDuration,
   }) {
     return MessageModel(
       messageId: messageId ?? this.messageId,
@@ -66,6 +81,9 @@ class MessageModel {
       text: text ?? this.text,
       timestamp: timestamp ?? this.timestamp,
       isSeen: isSeen ?? this.isSeen,
+      reaction: reaction ?? this.reaction,
+      messageType: messageType ?? this.messageType,
+      audioDuration: audioDuration ?? this.audioDuration,
     );
   }
 }

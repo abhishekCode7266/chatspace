@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/chat_model.dart';
+import '../models/call_model.dart';
+import '../models/status_model.dart';
 import '../models/message_model.dart';
 import '../models/user_model.dart';
 import '../services/chat_service.dart';
@@ -70,16 +72,51 @@ class ChatProvider with ChangeNotifier {
     );
   }
 
-  /// Send message
+  /// Real-time stream of calls
+  Stream<List<CallModel>> getCallsStream({
+    required String currentUserId,
+    required bool isDevBypass,
+  }) {
+    return _mockDataService.getCallsStream(currentUserId);
+  }
+
+  /// Real-time stream of statuses
+  Stream<List<StatusModel>> getStatusStream({
+    required bool isDevBypass,
+  }) {
+    return _mockDataService.getStatusStream();
+  }
+
+  /// Record a call log
+  Future<void> addCallRecord(CallModel call, {required bool isDevBypass}) async {
+    await _mockDataService.addCallRecord(call);
+    notifyListeners();
+  }
+
+  /// Mark status as viewed
+  Future<void> markStatusViewed(String statusId, {required bool isDevBypass}) async {
+    await _mockDataService.markStatusViewed(statusId);
+    notifyListeners();
+  }
+
+  /// Add new status story
+  Future<void> addStatus(StatusModel status, {required bool isDevBypass}) async {
+    await _mockDataService.addStatus(status);
+    notifyListeners();
+  }
+
+  /// Send message (text, voice note, etc.)
   Future<bool> sendMessage({
     required String chatId,
     required String senderId,
     required String receiverId,
     required String text,
     required bool isDevBypass,
+    String messageType = 'text',
+    String? audioDuration,
   }) async {
     final trimmed = text.trim();
-    if (trimmed.isEmpty) return false;
+    if (trimmed.isEmpty && messageType == 'text') return false;
 
     _isSending = true;
     _errorMessage = null;
@@ -92,6 +129,8 @@ class ChatProvider with ChangeNotifier {
           senderId: senderId,
           receiverId: receiverId,
           text: trimmed,
+          messageType: messageType,
+          audioDuration: audioDuration,
         );
       } else {
         await _chatService.sendMessage(
@@ -109,6 +148,19 @@ class ChatProvider with ChangeNotifier {
       _isSending = false;
       notifyListeners();
       return false;
+    }
+  }
+
+  /// Toggle or update reaction on a message
+  Future<void> toggleReaction({
+    required String chatId,
+    required String messageId,
+    required String reaction,
+    required bool isDevBypass,
+  }) async {
+    if (isDevBypass) {
+      await _mockDataService.toggleReaction(chatId, messageId, reaction);
+      notifyListeners();
     }
   }
 

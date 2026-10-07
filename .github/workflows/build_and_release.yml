@@ -1,4 +1,4 @@
-name: ChatSpace CI/CD - Build APK, Play Store Bundle & Deploy Web
+name: WhatsChat CI/CD - Build APK, Play Store Bundle & Deploy Web
 
 on:
   push:
@@ -13,7 +13,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: 'chatspace-deploy'
+  group: 'whatschat-deploy'
   cancel-in-progress: true
 
 jobs:
@@ -71,42 +71,49 @@ jobs:
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: chatspace-release-apk
+          name: whatschat-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
 
       - name: Upload AAB (Play Store) Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: chatspace-playstore-aab
+          name: whatschat-playstore-aab
           path: build/app/outputs/bundle/release/app-release.aab
 
       - name: Create GitHub Release with APK & AAB
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master')
         with:
-          tag_name: v1.1.0
-          name: ChatSpace v1.1.0 (WhatsApp UI, HD Video Calling & Security Release)
+          tag_name: v1.2.0
+          name: WhatsChat v1.2.0 (WhatsApp 3-Tabs, Status Stories, HD Video Calling & Play Store Ready)
           draft: false
           prerelease: false
           body: |
-            ## ChatSpace v1.1.0 Production Release 🚀💬
+            ## WhatsChat v1.2.0 Production Release 🚀💬
             
-            Welcome to **ChatSpace** - updated with WhatsApp-Style Chat Bar, HD Video Calling, and Advanced Security!
+            Welcome to **WhatsChat** - complete WhatsApp-like messaging experience with 3-Tab navigation, Status stories, Call history, HD Video/Voice calling, Message reactions, and Play Store ready bundle!
             
             ### 📱 Download & Install:
-            - **Download Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.1.0/app-release.apk)
-            - **Google Play Store App Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.1.0/app-release.aab)
+            - **Download Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.2.0/app-release.apk)
+            - **Google Play Store App Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.2.0/app-release.aab)
+            - **🌐 Live Web Demo**: [https://abhishekcode7266.github.io/chatspace/](https://abhishekcode7266.github.io/chatspace/)
             
-            ### ✨ What's New in v1.1.0:
-            - 🎨 **Play Store Official Logo & App Icon**: Sleek emerald-green shield chat logo.
-            - 💬 **WhatsApp-Style Chat Bar (व्हाट्सएप जैसा चैट बार)**: Rounded pill bar, emoji quick picker, attachment modal sheet (Docs, Camera, Gallery, Audio, Location, Contact), and dynamic Mic/Send action button.
-            - 📹 **WhatsApp HD Video & Voice Calling (वीडियो कॉलिंग)**: Video Call with Picture-in-Picture (PiP) local camera feed, camera flip, mic mute, speaker toggle, and animated calling timer.
-            - 🔒 **Security & Privacy Features (सिक्योरिटी)**: End-to-End Encryption (E2EE), 60-digit cryptographic verification code, 4-digit PIN App Lock, and Block Contacts.
-            - 🔐 **Developer Mode Bypass (डेवलपर मोड बाईपास)**: 1-click bypass login to test all features instantly!
+            ### ✨ What's New in v1.2.0:
+            - 🏷️ **Rebranded to WhatsChat**: Distinguishable WhatsApp-inspired identity and styling.
+            - 🎨 **Official 512x512 Play Store Logo**: 3D glossy emerald app icon with handset and audio waves (`playstore_assets/whatschat_icon_512.jpg`).
+            - 📑 **WhatsApp 3-Tab Layout (व्हाट्सएप 3-टैब लेआउट)**:
+              - **CHATS**: Recent chats, unread badges, timestamps, search filter.
+              - **STATUS**: My Status ("+" badge), Recent Updates (green ring), Viewed Updates, and full-screen WhatsApp Story Viewer with 5-second animated progress bar.
+              - **CALLS**: Complete Call logs with incoming, outgoing, and missed call arrows, duration, and 1-tap quick buttons to start HD Voice/Video calls.
+            - 📹 **HD Video & Voice Calling (वीडियो और वॉइस कॉलिंग)**: Full-screen calling interface with Picture-in-Picture (PiP) local preview, camera flip, mute, and live duration timer.
+            - ❤️ **Message Reactions (रिएक्शन)**: Long press any message bubble to react with `👍`, `❤️`, `😂`, `😮`, `😢`, `🙏` with WhatsApp reaction pill badge.
+            - 🎙️ **Voice Note Audio Player (ऑडियो प्लेयर)**: Interactive audio bubble with Play/Pause circular button, simulated waveform bars, and duration.
+            - 🔒 **Security Features (सिक्योरिटी)**: E2EE cryptographic badge, 60-digit security verification code, 4-digit PIN App Lock, and Block Contacts.
+            - 🔓 **Developer Mode Bypass (डेवलपर मोड बाईपास)**: 1-click bypass login or 4-tap splash logo to test all features instantly!
           files: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab
-            playstore_assets/chatspace_icon_512.jpg
+            playstore_assets/whatschat_icon_512.jpg
 
   deploy_web:
     name: Build & Deploy Web Preview to GitHub Pages

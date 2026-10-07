@@ -2,14 +2,16 @@ import 'package:flutter/material.dart';
 
 class AppConstants {
   // App Info
-  static const String appName = 'ChatSpace';
-  static const String appTagline = 'Instant, Secure & Real-Time Messaging';
-  static const String appVersion = '1.0.0';
+  static const String appName = 'WhatsChat';
+  static const String appTagline = 'Simple. Secure. Reliable Messaging & HD Calling.';
+  static const String appVersion = '1.2.0';
 
   // Firestore Collections
   static const String usersCollection = 'users';
   static const String chatsCollection = 'chats';
   static const String messagesCollection = 'messages';
+  static const String callsCollection = 'calls';
+  static const String statusCollection = 'statuses';
 
   // SharedPreferences Keys
   static const String prefThemeMode = 'theme_mode';
@@ -17,15 +19,15 @@ class AppConstants {
   static const String prefCurrentUserId = 'current_user_id';
 
   // Notification Channel
-  static const String notificationChannelId = 'chatspace_high_importance_channel';
-  static const String notificationChannelName = 'ChatSpace Messages';
-  static const String notificationChannelDesc = 'Real-time chat message alerts';
+  static const String notificationChannelId = 'whatschat_high_importance_channel';
+  static const String notificationChannelName = 'WhatsChat Messages';
+  static const String notificationChannelDesc = 'Real-time chat & HD call alerts';
 
   // Developer Bypass Defaults
-  static const String devUserId = 'dev_user_chatspace_99';
+  static const String devUserId = 'dev_user_whatschat_99';
   static const String devUserName = 'Developer (Admin)';
-  static const String devUserEmail = 'developer@chatspace.internal';
-  static const String devUserStatus = '🚀 Developer Bypass Active | Testing Mode';
+  static const String devUserEmail = 'developer@whatschat.internal';
+  static const String devUserStatus = '🚀 WhatsChat Developer Bypass Active | Testing Mode';
 }
 
 class AppColors {
