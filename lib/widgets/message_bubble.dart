@@ -259,6 +259,8 @@ class _MessageBubbleState extends State<MessageBubble> {
                       // Message Content according to type
                       if (message.isDeletedForEveryone)
                         _buildDeletedContent(textColor, timeColor)
+                      else if (message.paymentAmount != null || message.messageType == 'payment')
+                        _buildPaymentContent(textColor, timeColor, isDark)
                       else if (message.messageType == 'audio')
                         _buildVoiceNoteContent(textColor, timeColor, isDark)
                       else if (message.messageType == 'image')
@@ -714,6 +716,99 @@ class _MessageBubbleState extends State<MessageBubble> {
                 const Icon(Icons.download_rounded, color: AppColors.primary, size: 20),
               ],
             ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [_buildTimeStatusRow(timeColor)],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPaymentContent(Color textColor, Color timeColor, bool isDark) {
+    final amount = widget.message.paymentAmount ?? 0.0;
+    final status = widget.message.paymentStatus ?? 'SUCCESS';
+    final isSuccess = status == 'SUCCESS';
+    final note = widget.message.paymentNote ?? widget.message.text;
+    final txnId = widget.message.paymentTxnId ?? 'UPI20261008001';
+
+    return Container(
+      width: 250,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF0D1418) : Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(
+          color: isSuccess ? Colors.green.withOpacity(0.5) : Colors.amber.withOpacity(0.5),
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isSuccess ? Colors.green.shade600 : Colors.amber.shade700,
+                ),
+                child: Icon(
+                  isSuccess ? Icons.check_rounded : Icons.access_time_rounded,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  isSuccess ? 'Payment Completed' : 'Payment Pending',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 12.5,
+                    color: isSuccess ? Colors.green : Colors.amber,
+                  ),
+                ),
+              ),
+              const Text(
+                'UPI',
+                style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900, color: Colors.grey),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            '₹${amount.toStringAsFixed(2)}',
+            style: const TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w900,
+              color: AppColors.primary,
+            ),
+          ),
+          if (note.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text(
+              note,
+              style: TextStyle(fontSize: 13, color: textColor),
+            ),
+          ],
+          const SizedBox(height: 8),
+          const Divider(height: 12),
+          Row(
+            children: [
+              const Icon(Icons.receipt_long_rounded, size: 14, color: Colors.grey),
+              const SizedBox(width: 4),
+              Expanded(
+                child: Text(
+                  txnId,
+                  style: const TextStyle(fontSize: 10, color: Colors.grey),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           Row(

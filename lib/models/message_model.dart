@@ -32,6 +32,13 @@ class MessageModel {
   final double? uploadProgress;
   final int forwardCount;
 
+  // In-Chat Payment & WhatsApp Pay / UPI fields
+  final double? paymentAmount;
+  final String? paymentStatus; // 'SUCCESS', 'PENDING', 'FAILED'
+  final String? paymentNote;
+  final String? paymentTxnId;
+  final String? paymentReceiverName;
+
   MessageModel({
     required this.messageId,
     required this.senderId,
@@ -61,6 +68,11 @@ class MessageModel {
     this.stickerUrl,
     this.uploadProgress,
     this.forwardCount = 0,
+    this.paymentAmount,
+    this.paymentStatus,
+    this.paymentNote,
+    this.paymentTxnId,
+    this.paymentReceiverName,
   });
 
   Map<String, dynamic> toMap() {
@@ -93,6 +105,11 @@ class MessageModel {
       'stickerUrl': stickerUrl,
       'uploadProgress': uploadProgress,
       'forwardCount': forwardCount,
+      'paymentAmount': paymentAmount,
+      'paymentStatus': paymentStatus,
+      'paymentNote': paymentNote,
+      'paymentTxnId': paymentTxnId,
+      'paymentReceiverName': paymentReceiverName,
     };
   }
 
@@ -133,6 +150,11 @@ class MessageModel {
       stickerUrl: map['stickerUrl'] as String?,
       uploadProgress: (map['uploadProgress'] as num?)?.toDouble(),
       forwardCount: map['forwardCount'] as int? ?? 0,
+      paymentAmount: (map['paymentAmount'] as num?)?.toDouble(),
+      paymentStatus: map['paymentStatus'] as String?,
+      paymentNote: map['paymentNote'] as String?,
+      paymentTxnId: map['paymentTxnId'] as String?,
+      paymentReceiverName: map['paymentReceiverName'] as String?,
     );
   }
 
@@ -170,6 +192,11 @@ class MessageModel {
     String? stickerUrl,
     double? uploadProgress,
     int? forwardCount,
+    double? paymentAmount,
+    String? paymentStatus,
+    String? paymentNote,
+    String? paymentTxnId,
+    String? paymentReceiverName,
   }) {
     return MessageModel(
       messageId: messageId ?? this.messageId,
@@ -200,6 +227,11 @@ class MessageModel {
       stickerUrl: stickerUrl ?? this.stickerUrl,
       uploadProgress: uploadProgress ?? this.uploadProgress,
       forwardCount: forwardCount ?? this.forwardCount,
+      paymentAmount: paymentAmount ?? this.paymentAmount,
+      paymentStatus: paymentStatus ?? this.paymentStatus,
+      paymentNote: paymentNote ?? this.paymentNote,
+      paymentTxnId: paymentTxnId ?? this.paymentTxnId,
+      paymentReceiverName: paymentReceiverName ?? this.paymentReceiverName,
     );
   }
 }

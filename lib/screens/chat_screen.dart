@@ -16,6 +16,10 @@ import '../widgets/floating_dev_circle.dart';
 import 'call_screen.dart';
 import 'group_call_screen.dart';
 import 'ai_assistant_screen.dart';
+import 'payments_screen.dart';
+import 'qr_code_share_screen.dart';
+import '../services/payment_service.dart';
+import '../widgets/meta_ai_circle.dart';
 
 class ChatScreen extends StatefulWidget {
   final UserModel targetUser;
@@ -114,9 +118,14 @@ class _ChatScreenState extends State<ChatScreen> {
     String? audioDuration,
     String? fileName,
     String? fileSize,
+    double? paymentAmount,
+    String? paymentStatus,
+    String? paymentNote,
+    String? paymentTxnId,
+    String? paymentReceiverName,
   }) async {
     final text = (customText ?? _messageController.text).trim();
-    if (text.isEmpty && messageType == 'text') return;
+    if (text.isEmpty && messageType == 'text' && paymentAmount == null) return;
 
     final authProvider = context.read<AuthProvider>();
     final chatProvider = context.read<ChatProvider>();
@@ -167,9 +176,207 @@ class _ChatScreenState extends State<ChatScreen> {
       replyToText: replyText,
       replyToSender: replySender,
       isDevBypass: authProvider.isDevBypass,
+      paymentAmount: paymentAmount,
+      paymentStatus: paymentStatus,
+      paymentNote: paymentNote,
+      paymentTxnId: paymentTxnId,
+      paymentReceiverName: paymentReceiverName,
     );
 
     _scrollToBottom();
+  }
+
+  void _showInChatPaymentDialog() {
+    final amountController = TextEditingController();
+    final noteController = TextEditingController();
+    final pinController = TextEditingController();
+    final payment = PaymentService.instance;
+    bool isStepPin = false;
+    bool isPinError = false;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final isDark = Theme.of(ctx).brightness == Brightness.dark;
+          final targetName = widget.groupChat != null
+              ? (widget.groupChat!.groupName ?? 'Group')
+              : widget.targetUser.name;
+
+          return Container(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+              top: 24,
+              left: 24,
+              right: 24,
+            ),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.green.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.currency_rupee_rounded, color: Colors.green, size: 22),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            isStepPin ? 'Enter UPI PIN' : 'Pay to $targetName',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                          ),
+                          Text(
+                            'Universal Pay UPI • Bank Secured',
+                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 18),
+                if (!isStepPin) ...[
+                  TextField(
+                    controller: amountController,
+                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                    autofocus: true,
+                    style: const TextStyle(fontSize: 26, fontWeight: FontWeight.bold),
+                    decoration: InputDecoration(
+                      labelText: 'Amount (रुपये)',
+                      prefixText: '₹ ',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: noteController,
+                    decoration: InputDecoration(
+                      labelText: 'Add a message or note',
+                      hintText: 'e.g. Thanks for dinner!',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                      prefixIcon: const Icon(Icons.note_alt_rounded),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Row(
+                    children: [
+                      const Icon(Icons.account_balance_rounded, size: 16, color: Colors.grey),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Debit from: ${payment.primaryBank.bankName}',
+                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        final amt = double.tryParse(amountController.text.trim()) ?? 0;
+                        if (amt <= 0) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please enter a valid amount.')),
+                          );
+                          return;
+                        }
+                        setModalState(() {
+                          isStepPin = true;
+                        });
+                      },
+                      child: const Text('Proceed to Enter PIN', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                ] else ...[
+                  Text(
+                    'Transferring ₹${amountController.text.trim()} to $targetName',
+                    style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text('Enter 4-digit UPI PIN (Default: 1234)', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: pinController,
+                    obscureText: true,
+                    maxLength: 4,
+                    keyboardType: TextInputType.number,
+                    autofocus: true,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 26, letterSpacing: 8, fontWeight: FontWeight.bold),
+                    decoration: InputDecoration(
+                      hintText: '••••',
+                      errorText: isPinError ? 'Invalid UPI PIN. Try 1234' : null,
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green.shade600,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        if (payment.verifyUpiPin(pinController.text.trim())) {
+                          final amt = double.tryParse(amountController.text.trim()) ?? 0;
+                          final note = noteController.text.trim();
+                          final txn = payment.sendMoney(
+                            senderId: 'current_user',
+                            senderName: 'You',
+                            receiverId: widget.groupChat != null ? widget.groupChat!.chatId : widget.targetUser.uid,
+                            receiverName: targetName,
+                            amount: amt,
+                            note: note,
+                          );
+                          Navigator.pop(ctx);
+                          _handleSendMessage(
+                            customText: '💸 Payment of ₹${amt.toStringAsFixed(2)} completed',
+                            messageType: 'payment',
+                            paymentAmount: amt,
+                            paymentStatus: 'SUCCESS',
+                            paymentNote: note,
+                            paymentTxnId: txn.upiRefId,
+                            paymentReceiverName: targetName,
+                          );
+                        } else {
+                          setModalState(() {
+                            isPinError = true;
+                          });
+                        }
+                      },
+                      child: const Text('Confirm & Send Money', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          );
+        },
+      ),
+    );
   }
 
   void _simulateVoiceNote() {
@@ -461,6 +668,50 @@ class _ChatScreenState extends State<ChatScreen> {
                       _handleSendMessage(
                         customText: '🎉 Sticker',
                         messageType: 'sticker',
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildAttachmentItem(
+                    icon: Icons.currency_rupee_rounded,
+                    label: 'Payment (पेमेंट)',
+                    color: const Color(0xFF00897B),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showInChatPaymentDialog();
+                    },
+                  ),
+                  _buildAttachmentItem(
+                    icon: Icons.qr_code_2_rounded,
+                    label: 'QR Code (क्यूआर)',
+                    color: const Color(0xFF5E35B1),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => QrCodeShareScreen(
+                            groupChatId: widget.groupChat?.chatId,
+                            groupName: widget.groupChat?.groupName,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  _buildAttachmentItem(
+                    icon: Icons.account_balance_wallet_rounded,
+                    label: 'All Payments',
+                    color: const Color(0xFF0288D1),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PaymentsScreen()),
                       );
                     },
                   ),
@@ -1170,6 +1421,15 @@ class _ChatScreenState extends State<ChatScreen> {
                                   child: Icon(Icons.attach_file_rounded, color: Colors.grey.shade600),
                                 ),
                                 onPressed: _showAttachmentsBottomSheet,
+                              ),
+                              // Meta AI Quick Action Button
+                              MetaAiChatAction(
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(builder: (_) => const AiAssistantScreen()),
+                                  );
+                                },
                               ),
                               // Camera Button (if not typing)
                               if (!hasText)

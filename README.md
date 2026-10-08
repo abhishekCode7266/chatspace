@@ -16,15 +16,37 @@
 ## 📱 Quick Links & Downloads
 
 - 🌐 **Live Web App Preview**: [https://abhishekcode7266.github.io/chatspace/](https://abhishekcode7266.github.io/chatspace/)
-- 📦 **Download Android APK (Direct Install)**: [GitHub Releases - app-release.apk (v1.4.0)](https://github.com/abhishekCode7266/chatspace/releases/download/v1.4.0/app-release.apk)
-- 🏬 **Google Play Store App Bundle**: [GitHub Releases - app-release.aab (v1.4.0)](https://github.com/abhishekCode7266/chatspace/releases/download/v1.4.0/app-release.aab)
+- 📦 **Download Android APK (Direct Install)**: [GitHub Releases - app-release.apk (v1.5.0)](https://github.com/abhishekCode7266/chatspace/releases/download/v1.5.0/app-release.apk)
+- 🏬 **Google Play Store App Bundle**: [GitHub Releases - app-release.aab (v1.5.0)](https://github.com/abhishekCode7266/chatspace/releases/download/v1.5.0/app-release.aab)
 - 🎨 **Google Play Store 512x512 High-Res Icon**: `playstore_assets/universal_chat_icon_512.jpg`
 
 ---
 
 ## 🌟 Core Highlights & Feature Matrix
 
-### 1. ⚡ Floating Developer Circle Bypass (छोटा सा गोला)
+### 1. 🟣 Meta AI Floating Assistant Circle (WhatsApp Style)
+- **WhatsApp-Style Circular AI Placement**: Iridescent glowing ring button located on the right-hand side directly above the `New Chat` floating action button.
+- **1-Tap Quick Launch**: Opens the **Universal Meta AI Assistant** with `/imagine` 3D image generator, suggested prompt chips, and multi-turn chat.
+- **Inline Chat AI Action**: Tap the Meta AI icon in the chat input bar to generate instant replies and imagery within any conversation.
+
+### 2. 💳 WhatsApp Pay & UPI In-Chat Payments (पेमेंट्स व बैंक खाते)
+- **In-Chat UPI Transfers**: Send and request money directly inside any 1-to-1 conversation via the attachment menu.
+- **Rich UPI Payment Cards**: Displays payment cards with green checkmarks, INR amount, notes, and transaction IDs embedded in chat bubbles.
+- **Payments Center (`PaymentsScreen`)**: Link bank accounts (State Bank of India, HDFC Bank, Paytm Payments Bank), check real-time account balances, view full transaction history, and generate receipts.
+- **Secure 4-Digit UPI PIN**: Bank-grade PIN authentication (default test-drive PIN: `1234`).
+
+### 3. 📲 WhatsApp-Style QR Code System (क्यूआर कोड)
+- **Personal Profile QR (`My Code`)**: High-resolution custom matrix QR code displaying user avatar and UPI ID. Share or scan to instantly start a 1-to-1 chat.
+- **Group Invite QR**: Dedicated QR code for group chats and channels. Scan to join groups immediately.
+- **Live Laser Camera Scanner**: Viewfinder with animated green laser scanning line and instant 1-tap recognition for users, groups, and payments.
+
+### 4. ⭐ Freemium AI & Premium Cloud Subscriptions
+- **Daily Quota Management**: 15 free Meta AI queries per day for standard users. Exceeding the quota triggers an upgrade prompt.
+- **Universal Pro (₹199/mo)**: 100GB extra cloud storage, unlimited Meta AI + `/imagine` generation, verified gold star badge ⭐, and 100% ad-free experience.
+- **Business Enterprise (₹699/mo)**: 1TB cloud storage, automated customer service bot, catalog boost, and verified green business badge ✅.
+- **Storage Progress Bar & In-App Upgrade**: Track cloud storage usage and upgrade in 1-tap via simulated UPI payment.
+
+### 5. ⚡ Floating Developer Circle Bypass (छोटा सा गोला)
 - **Draggable Pulsating Floating Badge (`FloatingDevCircle`)**: A small glowing circular badge floating on top of all screens with continuous pulse animation.
 - **1-Tap Developer Suite**: Tapping the circle opens the **Developer Bypass & Inspection Suite** sheet.
 - **Instant Security Bypass**: Bypass authentication, OTP, and PIN locks in 1-tap for lightning-fast testing and demonstration.
@@ -110,7 +132,8 @@ chatspace/
 │   │   ├── call_model.dart          # Voice, Video & Group call model
 │   │   ├── channel_model.dart       # Broadcast Tech News Channel model
 │   │   ├── chat_model.dart          # Chat model (groups, pinned, favorites, AI)
-│   │   ├── message_model.dart       # Rich media, voice, replies, pins, edits
+│   │   ├── message_model.dart       # Rich media, voice, replies, pins, edits & payments
+│   │   ├── payment_model.dart       # Bank accounts, UPI transactions & subscription plans
 │   │   ├── status_model.dart        # WhatsApp-style status story model
 │   │   └── user_model.dart          # User profile model
 │   ├── providers/
@@ -119,14 +142,14 @@ chatspace/
 │   │   └── theme_provider.dart      # Dark / Light Material 3 theme mode
 │   ├── screens/
 │   │   ├── admin_dashboard_screen.dart   # Admin Command Center & Telemetry
-│   │   ├── ai_assistant_screen.dart      # Universal AI Suite (5 Tools)
+│   │   ├── ai_assistant_screen.dart      # Universal AI Suite & Meta AI /imagine
 │   │   ├── app_lock_screen.dart          # 4-Digit PIN passcode lock screen
 │   │   ├── backup_sync_screen.dart       # Cloud Backup & Restore Hub
 │   │   ├── business_profile_screen.dart  # Business Hub & Product Catalog
 │   │   ├── call_screen.dart              # 1-to-1 Fullscreen HD Call UI
 │   │   ├── channel_screen.dart           # Broadcast channel feed viewer
 │   │   ├── chat_list_screen.dart         # 3-Tab UI + Filter Chips + Floating Circle
-│   │   ├── chat_screen.dart              # E2EE Chat UI with replies & attachments
+│   │   ├── chat_screen.dart              # E2EE Chat UI with replies, attachments & UPI pay
 │   │   ├── community_screen.dart         # Community announcement channel
 │   │   ├── dev_bypass_sheet.dart         # Developer Bypass Inspection Sheet
 │   │   ├── group_call_screen.dart        # Multi-participant 2x2 video grid
@@ -134,13 +157,16 @@ chatspace/
 │   │   ├── linked_devices_screen.dart    # Web/Desktop QR sync management
 │   │   ├── login_screen.dart             # Login + Developer Bypass action
 │   │   ├── media_preview_screen.dart     # Fullscreen photo/video zoom viewer
+│   │   ├── payments_screen.dart          # WhatsApp Pay & Paytm UPI Payments Center
 │   │   ├── privacy_security_screen.dart  # App Lock, Biometrics & 2FA
 │   │   ├── profile_screen.dart           # User profile & settings
+│   │   ├── qr_code_share_screen.dart     # Personal & Group QR Code Hub with Live Scanner
 │   │   ├── search_screen.dart            # Global Search Hub with filters
 │   │   ├── signup_screen.dart            # Account registration
 │   │   ├── splash_screen.dart            # Animated splash with secret bypass tap
 │   │   ├── starred_messages_screen.dart  # Starred/Bookmarked messages repository
 │   │   ├── status_view_screen.dart       # Story viewer with 5s animated progress bar
+│   │   ├── subscription_screen.dart      # Universal Pro & Extra Cloud Storage Hub
 │   │   └── users_list_screen.dart        # Contact directory
 │   ├── services/
 │   │   ├── auth_service.dart        # Firebase Auth integration
@@ -148,6 +174,7 @@ chatspace/
 │   │   ├── encryption_service.dart  # AES-256 E2EE cipher & fingerprint generator
 │   │   ├── mock_data_service.dart   # Developer Bypass simulation engine
 │   │   ├── notification_service.dart# Push notification handler (FCM)
+│   │   ├── payment_service.dart     # Bank UPI transactions & Freemium AI quota engine
 │   │   └── security_service.dart    # PIN Lock & blocked contacts manager
 │   ├── utils/
 │   │   ├── app_theme.dart           # Emerald & Dark Teal Material 3 theme
@@ -159,7 +186,8 @@ chatspace/
 │       ├── custom_button.dart       # Reusable loading button
 │       ├── custom_text_field.dart   # Styled form input field
 │       ├── floating_dev_circle.dart # Draggable pulsating developer bypass button
-│       ├── message_bubble.dart      # Bubble with photos, videos, docs, audio player
+│       ├── message_bubble.dart      # Bubble with photos, videos, docs, audio & UPI cards
+│       ├── meta_ai_circle.dart      # WhatsApp Meta AI Iridescent Circular Ring
 │       └── user_tile.dart           # User contact list item
 └── test/
     ├── chat_id_test.dart            # Consistent chat room ID generator tests

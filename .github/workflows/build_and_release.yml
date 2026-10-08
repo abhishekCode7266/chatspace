@@ -84,59 +84,44 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master')
         with:
-          tag_name: v1.4.0
-          name: Universal Chat App v1.4.0 (AI Suite, Group Video Calls, Business Hub, Admin Panel & Floating Dev Circle Bypass)
+          tag_name: v1.5.0
+          name: Universal Chat App v1.5.0 (Meta AI Floating Circle, WhatsApp Pay UPI, QR Code Hub & Cloud Subscriptions)
           draft: false
           prerelease: false
           body: |
-            ## 🌐 Universal Chat App v1.4.0 Production Release 🚀📱🤖
+            ## 🌐 Universal Chat App v1.5.0 Production Release 🚀📱🤖💳
             
-            Welcome to **Universal Chat App v1.4.0** — the ultimate all-in-one next-generation communication platform. Designed for fast mobile messaging, group collaboration, broadcast channels, high-definition group voice/video calls, enterprise business features, built-in AI intelligence, bank-grade E2EE privacy, and complete developer tools!
+            Welcome to **Universal Chat App v1.5.0** — the premier communication and payment powerhouse. Packed with WhatsApp-style Meta AI floating assistance, in-chat bank UPI payments, scannable QR hubs, and premium subscriptions with extra cloud storage!
             
             ### 📥 Download & Install (डाउनलोड करें):
-            - **📱 Direct Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.4.0/app-release.apk)
-            - **🏬 Google Play Store Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.4.0/app-release.aab)
+            - **📱 Direct Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.5.0/app-release.apk)
+            - **🏬 Google Play Store Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.5.0/app-release.aab)
             - **🌐 Live Web Demo**: [https://abhishekcode7266.github.io/chatspace/](https://abhishekcode7266.github.io/chatspace/)
             
             ---
             
-            ### ✨ What's New in v1.4.0 (मुख्य नए फीचर्स):
-            1. **⚡ Floating Developer Circle Bypass (छोटा सा गोला)**:
-               - Prominent pulsating draggable circular button floating on top of all screens.
-               - 1-tap instant Developer Mode Bypass to unlock all authentication, screens, and administrative features without requiring phone numbers or SMS setup.
-               - Includes quick simulation triggers (switch users, clear mock data, reset PIN, inject test chats).
-            2. **🤖 Optimal Universal AI Suite**:
-               - **Universal AI Chat Assistant**: Smart multi-turn generative companion.
-               - **Message Summarizer**: Condenses long chat histories or documents into bulleted action items.
-               - **Real-Time Language Translator**: Instant translation across English, Hindi, Spanish, French, German, Arabic, Chinese, and Japanese.
-               - **3D AI Image Generation**: Text-to-image prompt visualization for social posts and avatars.
-               - **Document & PDF Analysis**: Intelligent keyword and structure extraction from documents.
-            3. **👥 Group Voice & Video Calling (मल्टी-पार्टिसिपेंट ग्रुप कॉलिंग)**:
-               - High-definition 2x2 responsive video grid with active speaker glow indicators.
-               - Controls for mute/unmute, front/rear camera toggle, screen sharing simulation, and speaker/earpiece route.
-            4. **💼 Business Platform & Commerce**:
-               - Official Business Profile with verified badge, hours, address, and website.
-               - Product Catalog with prices, photos, and customer ordering workflow.
-               - Automated greeting messages, away responses, and customer support tracking.
-            5. **🛡️ Admin Command Center & Moderation**:
-               - Real-time system telemetry (active users, total groups, message counts, server uptime %, network latency ms).
-               - User management with instant ban/unban controls.
-               - Spam detection, content reports moderation, and global broadcast announcements.
-            6. **💬 Advanced Next-Gen Messaging**:
-               - Quoted replies, message editing with `(edited)` tag, and delete for me/everyone.
-               - Pinned messages header banner in chat rooms.
-               - Starred / bookmarked messages repository screen.
-               - Location cards, contact vCard sharing, stickers, and interactive voice notes.
-               - Full-screen media preview viewer with zoom and download progress.
-            7. **💻 Linked Devices & Multi-Device Sync**:
-               - Manage active Web and Desktop sessions with QR code scanner pairing.
-            8. **☁️ Cloud Backup & Restore**:
-               - Encrypted backup size estimation, Google Drive / Cloud sync, and 1-tap restore.
-            9. **🔒 Bank-Grade Privacy & Security**:
-               - 256-bit AES End-to-End Encryption with 60-digit verification fingerprint.
-               - App Lock with 4-digit PIN, Biometrics toggle, 2-Step Verification, and Blocked Contacts manager.
-            10. **🔍 Global Search Hub**:
-                - Universal search across users, chats, messages, media, audio, documents, and links with date filters.
+            ### ✨ What's New in v1.5.0 (मुख्य नए फीचर्स):
+            1. **🟣 Meta AI Floating Assistant Circle (WhatsApp Style)**:
+               - Circular animated glowing ring floating prominently on the right-hand side right above the chat FAB.
+               - 1-tap instant activation to Universal Meta AI assistant.
+               - Inline chat bar AI action button for quick queries and `/imagine` 3D image generation directly within conversations.
+            2. **💳 WhatsApp Pay & UPI In-Chat Payments (पेमेंट्स व बैंक खाते)**:
+               - Send & request money directly inside any 1-to-1 conversation via the attachment menu.
+               - Beautiful green UPI transaction cards embedded in message bubbles with instant status check and reference IDs.
+               - Dedicated Payments Center with linked bank accounts (SBI, HDFC, Paytm), balance checking, and transaction history.
+               - Secure 4-digit UPI PIN verification (default test drive PIN: `1234`).
+            3. **📲 WhatsApp-Style QR Code System (क्यूआर कोड सिस्टम)**:
+               - **My Code**: High-resolution personal profile QR code to share or display for instant 1-to-1 contact adding.
+               - **Group Invite**: Group QR codes allowing anyone to scan and instantly join groups or communities.
+               - **Live Camera Scanner**: Viewfinder with animated laser line and instant 1-tap card detection for users, groups, and payments.
+            4. **⭐ Freemium AI & Premium Cloud Subscriptions (प्रीमियम सब्सक्रिप्शन)**:
+               - Free tier with 15 free daily Meta AI queries quota tracking.
+               - Exceeding the daily limit displays upgrade prompt to **Universal Pro** or **Business Enterprise**.
+               - **Universal Pro (₹199/mo)**: 100GB extra cloud storage, unlimited Meta AI + `/imagine` image generation, verified gold star badge ⭐, and 100% ad-free experience.
+               - **Business Enterprise (₹699/mo)**: 1TB cloud storage, team customer service bot, business catalog boost, and verified green badge ✅.
+               - In-app cloud storage usage progress bar and simulated 1-click UPI upgrade.
+            5. **⚡ Floating Developer Bypass Circle (छोटा सा गोला)**:
+               - Unlocks all screens, tests, and mock databases without requiring SMS / phone setup.
           files: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab

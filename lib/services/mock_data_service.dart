@@ -566,6 +566,11 @@ class MockDataService {
     String? contactName,
     String? contactPhone,
     String? stickerUrl,
+    double? paymentAmount,
+    String? paymentStatus,
+    String? paymentNote,
+    String? paymentTxnId,
+    String? paymentReceiverName,
   }) async {
     final now = DateTime.now();
     final newMsg = MessageModel(
@@ -588,6 +593,11 @@ class MockDataService {
       contactName: contactName,
       contactPhone: contactPhone,
       stickerUrl: stickerUrl,
+      paymentAmount: paymentAmount,
+      paymentStatus: paymentStatus,
+      paymentNote: paymentNote,
+      paymentTxnId: paymentTxnId,
+      paymentReceiverName: paymentReceiverName,
     );
 
     if (!_mockMessages.containsKey(chatId)) {
@@ -597,7 +607,9 @@ class MockDataService {
 
     // Format display preview
     String displayText = text;
-    if (messageType == 'audio') {
+    if (paymentAmount != null) {
+      displayText = '💸 Paid ₹${paymentAmount.toStringAsFixed(2)} via UPI';
+    } else if (messageType == 'audio') {
       displayText = '🎤 Voice message ($audioDuration)';
     } else if (messageType == 'image') {
       displayText = '📷 Photo';

@@ -163,9 +163,14 @@ class ChatProvider with ChangeNotifier {
     String? contactName,
     String? contactPhone,
     String? stickerUrl,
+    double? paymentAmount,
+    String? paymentStatus,
+    String? paymentNote,
+    String? paymentTxnId,
+    String? paymentReceiverName,
   }) async {
     final trimmed = text.trim();
-    if (trimmed.isEmpty && messageType == 'text') return false;
+    if (trimmed.isEmpty && messageType == 'text' && paymentAmount == null) return false;
 
     _isSending = true;
     _errorMessage = null;
@@ -191,6 +196,11 @@ class ChatProvider with ChangeNotifier {
           contactName: contactName,
           contactPhone: contactPhone,
           stickerUrl: stickerUrl,
+          paymentAmount: paymentAmount,
+          paymentStatus: paymentStatus,
+          paymentNote: paymentNote,
+          paymentTxnId: paymentTxnId,
+          paymentReceiverName: paymentReceiverName,
         );
       } else {
         await _chatService.sendMessage(

@@ -7,6 +7,8 @@ import 'package:chatspace/models/status_model.dart';
 import 'package:chatspace/models/business_model.dart';
 import 'package:chatspace/models/ai_model.dart';
 import 'package:chatspace/models/admin_model.dart';
+import 'package:chatspace/models/payment_model.dart';
+import 'package:chatspace/services/payment_service.dart';
 import 'package:chatspace/widgets/custom_button.dart';
 import 'package:chatspace/widgets/custom_text_field.dart';
 import 'package:chatspace/widgets/message_bubble.dart';
@@ -347,6 +349,151 @@ void main() {
       final restoredReport = ModerationReportModel.fromMap(rMap);
       expect(restoredReport.reportId, equals('rep_12'));
       expect(restoredReport.status, equals('Pending'));
+    });
+
+    testWidgets('MessageBubble renders UPI payment card with amount, note, and green checkmark',
+        (WidgetTester tester) async {
+      final paymentMsg = MessageModel(
+        messageId: 'msg_pay_01',
+        senderId: 'user_1',
+        receiverId: 'user_2',
+        text: 'Paid ₹500 via UPI',
+        timestamp: DateTime(2026, 10, 8, 14, 0),
+        isSeen: true,
+        messageType: 'payment',
+        paymentAmount: 500.0,
+        paymentStatus: 'SUCCESS',
+        paymentNote: 'Dinner split payment',
+        paymentTxnId: 'UPI20261008123456',
+        paymentReceiverName: 'Bob Smith',
+      );
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: MessageBubble(
+              message: paymentMsg,
+              isMe: true,
+            ),
+          ),
+        ),
+      );
+
+      expect(find.text('₹500.00'), findsOneWidget);
+      expect(find.text('Dinner split payment'), findsOneWidget);
+      expect(find.text('Payment Completed'), findsOneWidget);
+      expect(find.text('UPI'), findsOneWidget);
+      expect(find.byIcon(Icons.check_rounded), findsOneWidget);
+    });
+
+    test('PaymentTransactionModel and BankAccountModel serialization', () {
+      final now = DateTime(2026, 10, 8, 15, 0);
+      final txn = PaymentTransactionModel(
+        id: 'txn_test_01',
+        senderId: 'u1',
+        senderName: 'Rajnesh',
+        receiverId: 'u2',
+        receiverName: 'Alice',
+        amount: 750.0,
+        currency: '₹',
+        note: 'Coffee and snacks',
+        timestamp: now,
+        status: 'SUCCESS',
+        upiRefId: 'UPI987654321',
+        bankName: 'State Bank of India',
+        paymentMethod: 'UPI',
+      );
+
+      final tMap = txn.toMap();
+      expect(tMap['id'], equals('txn_test_01'));
+      expect(tMap['amount'], equals(750.0));
+      expect(tMap['status'], equals('SUCCESS'));
+
+      final restoredTxn = PaymentTransactionModel.fromMap(tMap);
+      expect(restoredTxn.senderName, equals('Rajnesh'));
+      expect(restoredTxn.receiverName, equals('Alice'));
+      expect(restoredTxn.amount, equals(750.0));
+      expect(restoredTxn.bankName, equals('State Bank of India'));
+
+      final bank = BankAccountModel(
+        id: 'bank_test_01',
+        bankName: 'HDFC Bank',
+        accountNumberMasked: '•••• 1234',
+        ifsc: 'HDFC0001234',
+        accountType: 'Savings',
+        isPrimary: true,
+        upiId: 'test@okhdfcbank',
+        balance: 15000.0,
+      );
+
+      final bMap = bank.toMap();
+      expect(bMap['bankName'], equals('HDFC Bank'));
+      expect(bMap['isPrimary'], isTrue);
+
+      final restoredBank = BankAccountModel.fromMap(bMap);
+      expect(restoredBank.accountNumberMasked, equals('•••• 1234'));
+      expect(restoredBank.balance, equals(15000.0));
+    });
+
+    test('PaymentService UPI PIN verification and money transfer', () {
+      final paymentService = PaymentService.instance;
+
+      // Default PIN test
+      expect(paymentService.verifyUpiPin('1234'), isTrue);
+      expect(paymentService.verifyUpiPin('0000'), isFalse);
+
+      // Send money
+      final txn = paymentService.sendMoney(
+        senderId: 'current_user',
+        senderName: 'You',
+        receiverId: 'user_bob',
+        receiverName: 'Bob',
+        amount: 250.0,
+        note: 'Cab share',
+      );
+
+      expect(txn.amount, equals(250.0));
+      expect(txn.status, equals('SUCCESS'));
+      expect(paymentService.transactions.contains(txn), isTrue);
+
+      // Request money
+      final reqTxn = paymentService.requestMoney(
+        senderId: 'current_user',
+        senderName: 'You',
+        receiverId: 'user_alice',
+        receiverName: 'Alice',
+        amount: 600.0,
+        note: 'Project contribution',
+      );
+
+      expect(reqTxn.amount, equals(600.0));
+      expect(reqTxn.status, equals('PENDING'));
+    });
+
+    test('PaymentService AI quota tracking and subscription upgrade', () {
+      final paymentService = PaymentService.instance;
+
+      // Reset quota
+      paymentService.resetDailyAiQuota();
+      expect(paymentService.aiQueriesUsedToday, equals(0));
+      expect(paymentService.canUseAi(), isTrue);
+
+      // Record queries
+      paymentService.recordAiQuery();
+      expect(paymentService.aiQueriesUsedToday, equals(1));
+      expect(paymentService.remainingFreeAiQueries, equals(14));
+
+      // Test subscription upgrade
+      expect(paymentService.isPremiumUser, isFalse);
+      paymentService.upgradePlan('pro');
+      expect(paymentService.isPremiumUser, isTrue);
+      expect(paymentService.isAdFree, isTrue);
+      expect(paymentService.cloudStorageLimitGb, equals(100));
+      expect(paymentService.canUseAi(), isTrue);
+
+      // Revert to free plan
+      paymentService.cancelSubscription();
+      expect(paymentService.isPremiumUser, isFalse);
     });
   });
 }

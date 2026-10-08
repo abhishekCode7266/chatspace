@@ -27,6 +27,11 @@ import 'privacy_security_screen.dart';
 import 'starred_messages_screen.dart';
 import 'search_screen.dart';
 import 'community_screen.dart';
+import 'payments_screen.dart';
+import 'subscription_screen.dart';
+import 'qr_code_share_screen.dart';
+import '../services/payment_service.dart';
+import '../widgets/meta_ai_circle.dart';
 
 
 class ChatListScreen extends StatefulWidget {
@@ -358,6 +363,16 @@ class _ChatListScreenState extends State<ChatListScreen>
         actions: [
           const AppBarDevCircleButton(),
           IconButton(
+            icon: const Icon(Icons.qr_code_scanner_rounded),
+            tooltip: 'QR Code & Scanner',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const QrCodeShareScreen(initialTabIndex: 0)),
+              );
+            },
+          ),
+          IconButton(
             icon: Icon(_isSearching ? Icons.close_rounded : Icons.search_rounded),
             tooltip: _isSearching ? 'Close Search' : 'Search',
             onPressed: () {
@@ -380,7 +395,13 @@ class _ChatListScreenState extends State<ChatListScreen>
           PopupMenuButton<String>(
             tooltip: 'More options',
             onSelected: (val) {
-              if (val == 'new_group') {
+              if (val == 'payments') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentsScreen()));
+              } else if (val == 'subscription') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionScreen()));
+              } else if (val == 'qr_code') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const QrCodeShareScreen()));
+              } else if (val == 'new_group') {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const GroupCreateScreen()));
               } else if (val == 'contacts') {
                 Navigator.push(context, MaterialPageRoute(builder: (_) => const UsersListScreen()));
@@ -417,6 +438,37 @@ class _ChatListScreenState extends State<ChatListScreen>
               }
             },
             itemBuilder: (ctx) => [
+              const PopupMenuItem(
+                value: 'payments',
+                child: Row(
+                  children: [
+                    Icon(Icons.currency_rupee_rounded, color: Colors.teal, size: 20),
+                    SizedBox(width: 12),
+                    Text('Payments (पेमेंट्स)'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'subscription',
+                child: Row(
+                  children: [
+                    Icon(Icons.star_rounded, color: Colors.amber, size: 20),
+                    SizedBox(width: 12),
+                    Text('Universal Pro & Storage'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'qr_code',
+                child: Row(
+                  children: [
+                    Icon(Icons.qr_code_2_rounded, color: Color(0xFF5E35B1), size: 20),
+                    SizedBox(width: 12),
+                    Text('QR Code (क्यूआर)'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
               const PopupMenuItem(
                 value: 'ai_suite',
                 child: Row(
@@ -601,10 +653,14 @@ class _ChatListScreenState extends State<ChatListScreen>
   Widget _buildFab() {
     final currentIndex = _tabController.index;
     if (currentIndex == 0) {
-      // Chats Tab FABs
+      // Chats Tab FABs: WhatsApp style with Meta AI circle right above New Chat FAB on right side
       return Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          // WhatsApp / Meta AI Floating Circle
+          const MetaAiFloatingCircle(),
+          const SizedBox(height: 12),
           FloatingActionButton.small(
             heroTag: 'fab_group',
             backgroundColor: const Color(0xFF007AFF),
@@ -687,6 +743,49 @@ class _ChatListScreenState extends State<ChatListScreen>
             ),
           ),
         ),
+
+        // Sponsored Ad Banner (Free Tier only - disappears with Pro Subscription)
+        if (!PaymentService.instance.isPremiumUser)
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : const Color(0xFFF0FDF4),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.green.withOpacity(0.3)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.cloud_upload_rounded, color: Colors.green, size: 20),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        'Sponsored: 100GB Extra Cloud Backup & Unlimited AI',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 11.5),
+                      ),
+                      Text(
+                        'Upgrade to Universal Pro to remove ads & unlock all features.',
+                        style: TextStyle(fontSize: 10.5, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
+                    );
+                  },
+                  child: const Text('Upgrade Pro', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ),
 
         // Chat stream
         Expanded(

@@ -32,6 +32,8 @@ migrate_working_dir/
 
 # Symbol processing related
 android/app/src/main/res/raw/keep.xml
+android/local.properties
+**/GeneratedPluginRegistrant.java
 
 # Exceptions to above rules.
 !/packages/flutter_tools/test/data/dart_dependencies_test/**/.packages
