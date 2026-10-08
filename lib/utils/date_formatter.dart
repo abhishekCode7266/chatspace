@@ -6,6 +6,11 @@ class DateFormatter {
     return DateFormat('h:mm a').format(dateTime);
   }
 
+  /// Format general timestamp (e.g. 'MMM d, h:mm a')
+  static String formatTimestamp(DateTime dateTime) {
+    return DateFormat('MMM d, h:mm a').format(dateTime);
+  }
+
   /// Format date separator for message grouping (e.g., 'Today', 'Yesterday', 'October 5, 2026')
   static String formatDateSeparator(DateTime dateTime) {
     final now = DateTime.now();

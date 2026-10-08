@@ -724,16 +724,6 @@ class MockDataService {
     String currentUserId,
     String userText,
   ) {
-    final botUser = _mockUsers.firstWhere(
-      (u) => u.uid == botId,
-      orElse: () => UserModel(
-        uid: botId,
-        name: 'Universal Assistant',
-        email: 'assistant@universalchat.app',
-        createdAt: DateTime.now(),
-      ),
-    );
-
     // Start typing indicator after 800ms
     Timer(const Duration(milliseconds: 800), () {
       _typingControllers[chatId]?.add(true);

@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'package:crypto/crypto.dart' as crypto;
 
 /// Service managing End-to-End Encryption (E2EE) & Security Verifications
 class EncryptionService {

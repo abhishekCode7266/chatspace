@@ -150,7 +150,14 @@ class _PrivacySecurityScreenState extends State<PrivacySecurityScreen> {
             subtitle: const Text('Default PIN is 1234'),
             trailing: const Icon(Icons.chevron_right_rounded),
             onTap: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const AppLockScreen()));
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => AppLockScreen(
+                    onUnlocked: () => Navigator.pop(context),
+                  ),
+                ),
+              );
             },
           ),
 

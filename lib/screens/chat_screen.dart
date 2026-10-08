@@ -235,7 +235,7 @@ class _ChatScreenState extends State<ChatScreen> {
       MaterialPageRoute(
         builder: (_) => CallScreen(
           targetUser: widget.targetUser,
-          isVideo: true,
+          isVideoCall: true,
         ),
       ),
     );
@@ -286,7 +286,7 @@ class _ChatScreenState extends State<ChatScreen> {
       MaterialPageRoute(
         builder: (_) => CallScreen(
           targetUser: widget.targetUser,
-          isVideo: false,
+          isVideoCall: false,
         ),
       ),
     );

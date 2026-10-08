@@ -283,8 +283,7 @@ class DevBypassSheet extends StatelessWidget {
                             status: 'Calling you via Universal HD Call',
                             createdAt: DateTime.now(),
                           ),
-                          isVideo: true,
-                          isIncoming: true,
+                          isVideoCall: true,
                         ),
                       ),
                     );
@@ -308,8 +307,7 @@ class DevBypassSheet extends StatelessWidget {
                             status: 'Calling you via Universal Audio Call',
                             createdAt: DateTime.now(),
                           ),
-                          isVideo: false,
-                          isIncoming: true,
+                          isVideoCall: false,
                         ),
                       ),
                     );
