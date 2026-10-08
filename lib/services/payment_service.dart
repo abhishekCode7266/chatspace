@@ -258,7 +258,7 @@ class PaymentService {
     _bankAccounts.add(account);
   }
 
-  void removeBankAccount(String bankId) {
+  bool removeBankAccount(String bankId) {
     if (_bankAccounts.length > 1) {
       _bankAccounts.removeWhere((b) => b.id == bankId);
       if (!_bankAccounts.any((b) => b.isPrimary) && _bankAccounts.isNotEmpty) {
@@ -276,31 +276,38 @@ class PaymentService {
           country: _bankAccounts[0].country,
         );
       }
+      return true;
     }
+    return false;
   }
 
   BankAccountModel addNewBankAccount({
     required String bankName,
     required String accountNumber,
-    required String ifscOrSwift,
-    required String accountHolderName,
+    String? ifscOrSwift,
+    String? ifscCode,
+    String? accountHolderName,
     String accountType = 'Savings',
     bool isPrimary = false,
     bool isInternational = false,
     String country = 'India',
+    int? brandColorHex,
   }) {
+    final effectiveIfsc = (ifscOrSwift ?? ifscCode ?? 'SBIN0001234').toUpperCase();
+    final effectiveHolder = (accountHolderName != null && accountHolderName.isNotEmpty) ? accountHolderName : 'user';
     final last4 = accountNumber.length >= 4 ? accountNumber.substring(accountNumber.length - 4) : '0000';
     final safeBankCode = bankName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    final effectiveColor = brandColorHex ?? (isInternational ? 0xFF0D47A1 : 0xFF003366);
     final newAcc = BankAccountModel(
       id: 'bank_${DateTime.now().millisecondsSinceEpoch}',
       bankName: bankName,
       accountNumberMasked: '•••• $last4',
-      ifsc: ifscOrSwift.toUpperCase(),
+      ifsc: effectiveIfsc,
       accountType: accountType,
       isPrimary: isPrimary,
-      upiId: '${accountHolderName.toLowerCase().replaceAll(' ', '')}@ok$safeBankCode',
+      upiId: '${effectiveHolder.toLowerCase().replaceAll(' ', '')}@ok$safeBankCode',
       balance: 10000.0 + (DateTime.now().millisecond * 20),
-      brandColorHex: isInternational ? 0xFF0D47A1 : 0xFF003366,
+      brandColorHex: effectiveColor,
       isInternational: isInternational,
       country: country,
     );

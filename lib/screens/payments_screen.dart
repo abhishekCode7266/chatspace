@@ -632,7 +632,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                     subtitle: const Text('All outgoing & incoming payments default to this bank'),
                     onTap: () {
                       Navigator.pop(ctx);
-                      _paymentService.setPrimaryBank(bank.bankId);
+                      _paymentService.setPrimaryBank(bank.id);
                       setState(() {});
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(content: Text('${bank.bankName} set as primary bank account.')),
@@ -923,7 +923,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
             style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
             onPressed: () {
               Navigator.pop(ctx);
-              final success = _paymentService.removeBankAccount(bank.bankId);
+              final success = _paymentService.removeBankAccount(bank.id);
               setState(() {});
               if (success) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -1610,12 +1610,12 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                     ),
                     child: ListTile(
                       dense: true,
-                      leading: Text('₹${p['amt']!.toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                      leading: Text('₹${(p['amt'] as num).toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                       title: Text(p['desc'] as String, style: const TextStyle(fontSize: 12)),
                       trailing: isSel ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
                       onTap: () {
                         setModalState(() {
-                          selectedAmount = p['amt'] as double;
+                          selectedAmount = (p['amt'] as num).toDouble();
                           selectedPlan = p['desc'] as String;
                         });
                       },

@@ -90,6 +90,8 @@ class BankAccountModel {
   final bool isInternational;
   final String country;
 
+  String get bankId => id;
+
   BankAccountModel({
     required this.id,
     required this.bankName,
