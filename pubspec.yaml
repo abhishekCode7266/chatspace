@@ -1,7 +1,7 @@
 name: chatspace
 description: "Universal Chat App - All-in-One WhatsApp & Google Pay Super App: Text, HD Video Calls, Communities, In-Chat UPI Payments, Bill Recharges, Metro Tickets & Meta AI."
 publish_to: "none"
-version: 1.6.0+7
+version: 1.7.0+8
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -20,6 +20,7 @@ dependencies:
   intl: ^0.19.0
   uuid: ^4.5.1
   flutter_local_notifications: ^18.0.1
+  image_picker: ^1.2.4
 
 dev_dependencies:
   flutter_test:

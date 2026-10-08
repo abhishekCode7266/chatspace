@@ -306,6 +306,119 @@ class _ChatListScreenState extends State<ChatListScreen>
     );
   }
 
+  void _showCreateChannelDialog() {
+    final nameCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final handleCtrl = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.campaign_rounded, color: AppColors.primary),
+            SizedBox(width: 10),
+            Text('Create Channel (चैनल बनाएं)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Channels are a one-way broadcast tool for admins to send text, photos, and polls to unlimited followers.', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: nameCtrl,
+              decoration: const InputDecoration(labelText: 'Channel Name', hintText: 'e.g. AI News Hub'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: handleCtrl,
+              decoration: const InputDecoration(labelText: 'Handle', prefixText: '@', hintText: 'ai_news_hub'),
+            ),
+            const SizedBox(height: 8),
+            TextField(
+              controller: descCtrl,
+              maxLines: 2,
+              decoration: const InputDecoration(labelText: 'Description', hintText: 'What is this channel about?'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+            onPressed: () {
+              final n = nameCtrl.text.trim();
+              if (n.isNotEmpty) {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('✓ Channel "$n" created! You can now post broadcast updates.'),
+                    backgroundColor: AppColors.primary,
+                  ),
+                );
+              }
+            },
+            child: const Text('Create Channel'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCreateQuickActionMenu() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Create New', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 12),
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFF007AFF), child: Icon(Icons.groups_rounded, color: Colors.white)),
+                title: const Text('New Group (नया ग्रुप)'),
+                subtitle: const Text('Group chat with up to 1,024 members'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const GroupCreateScreen()));
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFF25D366), child: Icon(Icons.campaign_rounded, color: Colors.white)),
+                title: const Text('New Channel (नया चैनल)'),
+                subtitle: const Text('Broadcast channel with unlimited followers'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showCreateChannelDialog();
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFF9C27B0), child: Icon(Icons.public_rounded, color: Colors.white)),
+                title: const Text('New Community (कम्युनिटी)'),
+                subtitle: const Text('Organize related groups under one umbrella community'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showCreateCommunityDialog();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
@@ -361,6 +474,33 @@ class _ChatListScreenState extends State<ChatListScreen>
                 ],
               ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.camera_alt_outlined),
+            tooltip: 'Camera (कैमरा)',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const UsersListScreen()),
+              );
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Select a chat to share live camera photos!')),
+              );
+            },
+          ),
+          IconButton(
+            icon: Container(
+              padding: const EdgeInsets.all(2.5),
+              decoration: BoxDecoration(
+                border: Border.all(color: Colors.white, width: 1.5),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.currency_rupee_rounded, size: 15),
+            ),
+            tooltip: 'Universal Pay (पेमेंट्स)',
+            onPressed: () {
+              Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentsScreen()));
+            },
+          ),
           const AppBarDevCircleButton(),
           IconButton(
             icon: const Icon(Icons.qr_code_scanner_rounded),
@@ -750,6 +890,19 @@ class _ChatListScreenState extends State<ChatListScreen>
                 _buildFilterChip('Favorites ⭐', 'favorites', isDark),
                 const SizedBox(width: 8),
                 _buildFilterChip('Groups 👥', 'groups', isDark),
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: _showCreateQuickActionMenu,
+                  borderRadius: BorderRadius.circular(20),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: isDark ? const Color(0xFF233138) : Colors.grey.shade200,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.add, size: 18),
+                  ),
+                ),
               ],
             ),
           ),
@@ -1162,13 +1315,24 @@ class _ChatListScreenState extends State<ChatListScreen>
                   color: isDark ? Colors.white : Colors.black87,
                 ),
               ),
-              Text(
-                'Explore >',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.primary,
-                ),
+              Row(
+                children: [
+                  TextButton.icon(
+                    style: TextButton.styleFrom(visualDensity: VisualDensity.compact),
+                    icon: const Icon(Icons.add, size: 16),
+                    label: const Text('Create Channel', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                    onPressed: _showCreateChannelDialog,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Explore >',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),

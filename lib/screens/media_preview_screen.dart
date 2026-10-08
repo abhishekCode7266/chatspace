@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../utils/constants.dart';
 
@@ -53,6 +54,56 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
     });
   }
 
+  Widget _buildMediaViewer() {
+    final path = widget.imagePath;
+    if (path != null && path.isNotEmpty) {
+      if (path.startsWith('data:image')) {
+        try {
+          final commaIndex = path.indexOf(',');
+          final b64 = commaIndex != -1 ? path.substring(commaIndex + 1) : path;
+          final bytes = base64Decode(b64);
+          return Image.memory(
+            bytes,
+            fit: BoxFit.contain,
+            errorBuilder: (ctx, err, stack) => const Icon(Icons.broken_image, size: 80, color: Colors.white38),
+          );
+        } catch (_) {}
+      } else if (path.startsWith('http://') || path.startsWith('https://')) {
+        return Image.network(
+          path,
+          fit: BoxFit.contain,
+          errorBuilder: (ctx, err, stack) => const Icon(Icons.broken_image, size: 80, color: Colors.white38),
+        );
+      }
+      return Image.asset(
+        path,
+        fit: BoxFit.contain,
+        errorBuilder: (ctx, err, stack) => const Icon(Icons.broken_image, size: 80, color: Colors.white38),
+      );
+    }
+    return Container(
+      padding: const EdgeInsets.all(32),
+      decoration: BoxDecoration(
+        color: const Color(0xFF1E293B),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            widget.mediaType == 'document' ? Icons.description_rounded : Icons.videocam_rounded,
+            size: 72,
+            color: AppColors.primaryLight,
+          ),
+          const SizedBox(height: 16),
+          Text(widget.title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
+          Text(widget.fileSize ?? 'Ready for preview', style: const TextStyle(color: Colors.white70, fontSize: 12)),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -105,33 +156,7 @@ class _MediaPreviewScreenState extends State<MediaPreviewScreen> {
             child: InteractiveViewer(
               minScale: 0.8,
               maxScale: 4.0,
-              child: widget.imagePath != null
-                  ? Image.asset(
-                      widget.imagePath!,
-                      fit: BoxFit.contain,
-                      errorBuilder: (ctx, err, stack) => const Icon(Icons.broken_image, size: 80, color: Colors.white38),
-                    )
-                  : Container(
-                      padding: const EdgeInsets.all(32),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF1E293B),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(
-                            widget.mediaType == 'document' ? Icons.description_rounded : Icons.videocam_rounded,
-                            size: 72,
-                            color: AppColors.primaryLight,
-                          ),
-                          const SizedBox(height: 16),
-                          Text(widget.title, style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 8),
-                          Text(widget.fileSize ?? 'Ready for preview', style: const TextStyle(color: Colors.white70, fontSize: 12)),
-                        ],
-                      ),
-                    ),
+              child: _buildMediaViewer(),
             ),
           ),
 

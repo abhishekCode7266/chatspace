@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../models/message_model.dart';
 import '../screens/media_preview_screen.dart';
@@ -551,17 +552,7 @@ class _MessageBubbleState extends State<MessageBubble> {
               child: Stack(
                 alignment: Alignment.center,
                 children: [
-                  Image.asset(
-                    widget.message.mediaUrl ?? 'assets/images/app_logo.jpg',
-                    fit: BoxFit.cover,
-                    width: double.infinity,
-                    height: 180,
-                    errorBuilder: (ctx, err, stack) => Icon(
-                      Icons.image_rounded,
-                      size: 64,
-                      color: isDark ? Colors.white30 : Colors.blue.shade200,
-                    ),
-                  ),
+                  _buildImageThumbnail(isDark),
                   Positioned(
                     bottom: 8,
                     left: 8,
@@ -595,6 +586,53 @@ class _MessageBubbleState extends State<MessageBubble> {
             children: [_buildTimeStatusRow(timeColor)],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildImageThumbnail(bool isDark) {
+    final url = widget.message.mediaUrl;
+    if (url != null && url.isNotEmpty) {
+      if (url.startsWith('data:image')) {
+        try {
+          final commaIndex = url.indexOf(',');
+          final b64 = commaIndex != -1 ? url.substring(commaIndex + 1) : url;
+          final bytes = base64Decode(b64);
+          return Image.memory(
+            bytes,
+            fit: BoxFit.cover,
+            width: double.infinity,
+            height: 180,
+            errorBuilder: (ctx, err, stack) => Icon(
+              Icons.broken_image_rounded,
+              size: 64,
+              color: isDark ? Colors.white30 : Colors.blue.shade200,
+            ),
+          );
+        } catch (_) {}
+      } else if (url.startsWith('http://') || url.startsWith('https://')) {
+        return Image.network(
+          url,
+          fit: BoxFit.cover,
+          width: double.infinity,
+          height: 180,
+          errorBuilder: (ctx, err, stack) => Icon(
+            Icons.broken_image_rounded,
+            size: 64,
+            color: isDark ? Colors.white30 : Colors.blue.shade200,
+          ),
+        );
+      }
+    }
+    return Image.asset(
+      url ?? 'assets/images/app_logo.jpg',
+      fit: BoxFit.cover,
+      width: double.infinity,
+      height: 180,
+      errorBuilder: (ctx, err, stack) => Icon(
+        Icons.image_rounded,
+        size: 64,
+        color: isDark ? Colors.white30 : Colors.blue.shade200,
       ),
     );
   }

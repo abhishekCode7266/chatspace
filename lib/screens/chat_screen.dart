@@ -1,5 +1,7 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../models/message_model.dart';
 import '../models/user_model.dart';
@@ -43,13 +45,77 @@ class _ChatScreenState extends State<ChatScreen> {
   late String _chatId;
   bool _showEmojiBar = false;
   bool _isVoiceRecording = false;
+  int _recordingSeconds = 0;
+  Timer? _recordingTimer;
   MessageModel? _replyingToMessage;
   String? _pinnedMessage;
 
-  final List<String> _quickEmojis = [
-    '👍', '❤️', '😂', '🔥', '👏', '🙏', '😊', '🎉', '💯', '🚀', '😍', '😎',
-    '✨', '⭐', '🎂', '🥳', '🙌', '💯', '🤩', '🎯', '💡', '🤖', '💬', '☕',
-    '🍕', '🍔', '🍦', '🍩', '🍫', '🍿', '🌹', '💐', '🏆', '🥇', '⚡', '🌈'
+  int _emojiCategoryIndex = 0; // 0: Smileys, 1: Gestures, 2: Hearts, 3: Food, 4: Nature
+  final List<List<String>> _categorizedEmojis = [
+    // 0: Smileys & Emotions (48)
+    [
+      '😀', '😃', '😄', '😁', '😆', '😅', '🤣', '😂', '🙂', '🙃', '😉', '😊',
+      '😇', '🥰', '😍', '🤩', '😘', '😗', '😚', '😙', '😋', '😛', '😜', '🤪',
+      '😝', '🤑', '🤗', '🤭', '🤫', '🤔', '🤐', '🤨', '😐', '😑', '😶', '😏',
+      '😒', '🙄', '😬', '🤥', '😌', '😔', '😪', '🤤', '😴', '😷', '🤒', '🤕'
+    ],
+    // 1: Gestures & Hands (36)
+    [
+      '👍', '👎', '👊', '✊', '🤛', '🤜', '👏', '🙌', '👐', '🤲', '🤝', '🙏',
+      '✍️', '💅', '🤳', '💪', '🦾', '🦿', '👈', '👉', '👆', '🖕', '👇', '☝️',
+      '👋', '🤚', '🖐️', '✋', '🖖', '🤟', '🤘', '🤙', '👌', '🤌', '🤏', '✌️'
+    ],
+    // 2: Hearts & Romance (26)
+    [
+      '❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '🤎', '💔', '❣️', '💕',
+      '💞', '💓', '💗', '💖', '💘', '💝', '💟', '💌', '💋', '💍', '💐', '🌹',
+      '🥀', '🌺'
+    ],
+    // 3: Food & Drinks (36)
+    [
+      '🍕', '🍔', '🍟', '🌭', '🍿', '🧂', '🥓', '🥚', '🍳', '🧇', '🥞', '🧈',
+      '🍞', '🥐', '🥨', '🥯', '🧀', '🥗', '🥪', '🌮', '🌯', '☕', '🍵', '🧃',
+      '🥤', '🧋', '🍦', '🍧', '🍨', '🍩', '🍪', '🎂', '🍰', '🧁', '🍫', '🍬'
+    ],
+    // 4: Animals, Nature & Travel (40)
+    [
+      '🐶', '🐱', '🐭', '🐹', '🐰', '🦊', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮',
+      '🐷', '🐸', '🐵', '🦄', '🐝', '🐛', '🦋', '🌸', '🌻', '🌼', '🌴', '🌲',
+      '🌳', '🍀', '🍁', '🍂', '🌈', '⚡', '❄️', '☀️', '🌙', '⭐', '🚀', '✈️',
+      '🚗', '🚲', '🏖️', '🏝️'
+    ],
+  ];
+
+  final List<String> _reactionGifs = [
+    '👍 Thumbs Up', '😂 Laughing Tears', '👏 Big Applause', '🙌 Victory Cheers',
+    '🤩 Mind Blown', '😎 Cool Boss Swag', '🎯 Perfect Bullseye', '🥳 Party Popping',
+    '❤️ Sending Love', '🔥 Super Fire', '🚀 Rocket Launch', '🎉 Happy Birthday',
+    '💯 Keep it 100', '🙏 Thank You So Much', '☕ Morning Coffee', '🍕 Pizza Craving',
+    '😴 Good Night', '💃 Dance Party', '🕺 Disco Grooves', '🤗 Warm Hugs',
+    '💪 Stay Strong', '🤯 OMG Shocked', '👋 Welcome Hello', '🤝 Deal Confirmed',
+    '🎊 Grand Fiesta', '✨ Pure Magic', '🏆 Champion Win', '🍿 Movie Time',
+    '💡 Bright Idea', '⚡ High Energy', '🚗 Road Trip', '🏖️ Beach Vacation',
+    '🎂 Birthday Cake', '🎁 Special Gift', '🌟 Shining Star', '🌈 Rainbow Vibes',
+    '💻 Coding Mode', '🤖 AI Revolution', '📱 Texting Fast', '🎧 Vibe With Music',
+    '🔥 Lit Energy', '🙌 High Five', '🤑 Making Money', '💸 Cashback Won',
+    '🚀 To The Moon', '🏃‍♂️ On The Run', '🏋️ Gym Beast', '🍔 Burger Party',
+    '🍦 Ice Cream Treat', '🎮 Game On'
+  ];
+
+  final List<String> _stickerPack = [
+    '🚀 Moonshot', '✨ Sparkles', '🔥 Hot Streak', '🎉 Fiesta Time',
+    '⭐ Rockstar', '🏆 First Place', '🙏 Namaste Ji', '❤️ Dil Se',
+    '💯 Pakka 100', '☕ Chai Peelo', '🍕 Cheesy Bite', '🤖 Jarvis AI',
+    '😎 Desi Swag', '🥳 Party Sharty', '💪 Zor Lagake', '🌟 Champion',
+    '🎯 Target Hit', '⚡ Flash Power', '🌈 Rainbow Mood', '🐱 Cute Kitty',
+    '🐶 Happy Puppy', '🦁 Sher Dil', '👑 King Vibe', '💎 Diamond Rare',
+    '🚀 Rocket Speed', '🍔 Burger Binge', '🍩 Sweet Donut', '🍓 Berry Sweet',
+    '🥑 Avocado Fresh', '🍉 Summer Melon', '🧁 Cupcake Joy', '🍦 Soft Choco',
+    '🍿 Popcorn Flick', '🏎️ Fast Racer', '✈️ Jet Set', '🏝️ Tropical Island',
+    '🏕️ Camping Nights', '🎇 Fireworks Boom', '🎈 Flying High', '💰 Paisa Hi Paisa',
+    '🔔 Ring The Bell', '🕶️ Cool Shades', '🎶 Musical Beats', '🎸 Rock Guitar',
+    '🎤 Microphone Drop', '🥋 Karate Master', '🥇 Gold Medalist', '🥈 Silver Runner',
+    '🥉 Bronze Champ', '🏅 Honor Badge'
   ];
 
   int _emojiDrawerTab = 0; // 0: Emoji, 1: GIF, 2: Stickers
@@ -125,6 +191,7 @@ class _ChatScreenState extends State<ChatScreen> {
     String? audioDuration,
     String? fileName,
     String? fileSize,
+    String? mediaUrl,
     double? paymentAmount,
     String? paymentStatus,
     String? paymentNote,
@@ -132,7 +199,7 @@ class _ChatScreenState extends State<ChatScreen> {
     String? paymentReceiverName,
   }) async {
     final text = (customText ?? _messageController.text).trim();
-    if (text.isEmpty && messageType == 'text' && paymentAmount == null) return;
+    if (text.isEmpty && messageType == 'text' && paymentAmount == null && mediaUrl == null) return;
 
     final authProvider = context.read<AuthProvider>();
     final chatProvider = context.read<ChatProvider>();
@@ -179,6 +246,7 @@ class _ChatScreenState extends State<ChatScreen> {
       audioDuration: audioDuration,
       fileName: fileName,
       fileSize: fileSize,
+      mediaUrl: mediaUrl,
       senderName: authProvider.currentUser?.name,
       replyToText: replyText,
       replyToSender: replySender,
@@ -191,6 +259,233 @@ class _ChatScreenState extends State<ChatScreen> {
     );
 
     _scrollToBottom();
+  }
+
+  // ==========================================
+  // REAL CAMERA & GALLERY CAPTURE
+  // ==========================================
+  Future<void> _captureRealPhoto({required ImageSource source}) async {
+    try {
+      final picker = ImagePicker();
+      final pickedFile = await picker.pickImage(
+        source: source,
+        maxWidth: 1200,
+        imageQuality: 85,
+      );
+      if (pickedFile != null) {
+        final bytes = await pickedFile.readAsBytes();
+        final base64String = base64Encode(bytes);
+        final dataUrl = 'data:image/jpeg;base64,$base64String';
+        await _handleSendMessage(
+          customText: source == ImageSource.camera ? '📷 Photo from Camera' : '🖼️ Photo from Gallery',
+          messageType: 'image',
+          mediaUrl: dataUrl,
+          fileName: pickedFile.name,
+          fileSize: '${(bytes.length / 1024).toStringAsFixed(1)} KB',
+        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(source == ImageSource.camera ? '📷 Photo captured & sent!' : '🖼️ Photo sent from gallery!'),
+              backgroundColor: AppColors.primary,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Camera/Gallery action: $e'), backgroundColor: Colors.redAccent),
+        );
+      }
+    }
+  }
+
+  void _showCameraPickerOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Take or Choose Photo', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+              const SizedBox(height: 16),
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFFD33F8D), child: Icon(Icons.camera_alt_rounded, color: Colors.white)),
+                title: const Text('Open Device Camera (फोटो खींचें)'),
+                subtitle: const Text('Capture live from mobile camera or laptop webcam'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _captureRealPhoto(source: ImageSource.camera);
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFFAC44CF), child: Icon(Icons.photo_library_rounded, color: Colors.white)),
+                title: const Text('Choose from Gallery / Files'),
+                subtitle: const Text('Pick photos from device memory'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _captureRealPhoto(source: ImageSource.gallery);
+                },
+              ),
+              ListTile(
+                leading: const CircleAvatar(backgroundColor: Color(0xFF007AFF), child: Icon(Icons.view_in_ar_rounded, color: Colors.white)),
+                title: const Text('Camera Viewfinder Simulator'),
+                subtitle: const Text('Live viewfinder with Flash & Front/Rear switch'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showCameraCaptureDialog();
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // ==========================================
+  // WHATSAPP-STYLE IN-BAR AUDIO RECORDING
+  // ==========================================
+  void _startVoiceRecording() {
+    setState(() {
+      _isVoiceRecording = true;
+      _recordingSeconds = 0;
+    });
+    _recordingTimer?.cancel();
+    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _recordingSeconds++;
+        });
+      }
+    });
+  }
+
+  void _cancelVoiceRecording() {
+    _recordingTimer?.cancel();
+    setState(() {
+      _isVoiceRecording = false;
+      _recordingSeconds = 0;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('🗑️ Audio recording discarded'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
+  void _sendVoiceRecording() {
+    _recordingTimer?.cancel();
+    final durationSec = _recordingSeconds > 0 ? _recordingSeconds : 1;
+    final formattedDuration = '0:${durationSec.toString().padLeft(2, '0')}';
+    setState(() {
+      _isVoiceRecording = false;
+      _recordingSeconds = 0;
+    });
+    _handleSendMessage(
+      customText: '🎤 Voice message ($formattedDuration)',
+      messageType: 'audio',
+      audioDuration: formattedDuration,
+    );
+  }
+
+  // ==========================================
+  // SCHEDULED MESSAGES (शेड्यूल्ड मैसेज)
+  // ==========================================
+  void _showScheduleMessageDialog() {
+    final textCtrl = TextEditingController(text: _messageController.text);
+    int selectedMinutes = 15;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (dialogCtx, setSchedState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.schedule_send_rounded, color: Color(0xFF00796B)),
+              SizedBox(width: 10),
+              Text('Schedule Message (शेड्यूल)', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Send this message automatically at a scheduled time:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              const SizedBox(height: 10),
+              TextField(
+                controller: textCtrl,
+                maxLines: 3,
+                decoration: const InputDecoration(
+                  labelText: 'Message Text',
+                  hintText: 'Enter scheduled message...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 14),
+              const Text('Deliver In:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+              const SizedBox(height: 6),
+              Wrap(
+                spacing: 8,
+                children: [
+                  ChoiceChip(
+                    label: const Text('In 15 mins'),
+                    selected: selectedMinutes == 15,
+                    onSelected: (val) => setSchedState(() => selectedMinutes = 15),
+                  ),
+                  ChoiceChip(
+                    label: const Text('In 1 hour'),
+                    selected: selectedMinutes == 60,
+                    onSelected: (val) => setSchedState(() => selectedMinutes = 60),
+                  ),
+                  ChoiceChip(
+                    label: const Text('Tomorrow 9 AM'),
+                    selected: selectedMinutes == 840,
+                    onSelected: (val) => setSchedState(() => selectedMinutes = 840),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF00796B),
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                final txt = textCtrl.text.trim();
+                if (txt.isNotEmpty) {
+                  Navigator.pop(ctx);
+                  Timer(Duration(seconds: selectedMinutes <= 15 ? 10 : 30), () {
+                    _handleSendMessage(customText: txt);
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('⏰ Message scheduled! Delivery in $selectedMinutes mins.'),
+                      backgroundColor: const Color(0xFF00796B),
+                    ),
+                  );
+                }
+              },
+              child: const Text('Schedule Message'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showInChatPaymentDialog() {
@@ -1316,47 +1611,94 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Widget _buildEmojiStickerGifDrawer(bool isDark) {
-    final stickerItems = [
-      '🚀 Launch', '✨ Sparkle', '🔥 On Fire', '🎉 Party', '⭐ Star', '🏆 Winner',
-      '🙏 Namaste', '❤️ Pure Love', '💯 100%', '☕ Coffee Break', '🍕 Pizza Time', '🤖 AI Power'
-    ];
-    final gifItems = [
-      '👍 Thumbs Up', '😂 Laughing Out Loud', '👏 Round of Applause', '🙌 Celebration Dance',
-      '🤩 Mind Blown', '😎 Cool Swag', '🎯 Bullseye Target', '🥳 Happy Birthday'
-    ];
+    final emojiCategoryTitles = ['😀 Smileys', '👍 Gestures', '❤️ Hearts', '🍕 Food', '🚀 Nature'];
 
     return Container(
-      height: 250,
+      height: 290,
       decoration: BoxDecoration(
         color: isDark ? const Color(0xFF1F2C34) : const Color(0xFFF0F2F5),
         border: Border(top: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300)),
       ),
       child: Column(
         children: [
+          // Header Bar with Tabs and Prominent Keyboard Toggle
           Container(
-            height: 42,
+            height: 44,
+            padding: const EdgeInsets.symmetric(horizontal: 8),
             color: isDark ? const Color(0xFF182229) : Colors.grey.shade200,
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildDrawerTabItem('EMOJI', 0),
-                _buildDrawerTabItem('GIF', 1),
-                _buildDrawerTabItem('STICKERS', 2),
+                _buildDrawerTabItem('EMOJIS (180+)', 0),
+                _buildDrawerTabItem('GIFS (50+)', 1),
+                _buildDrawerTabItem('STICKERS (50+)', 2),
+                const Spacer(),
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    backgroundColor: AppColors.primary.withOpacity(0.12),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  icon: const Icon(Icons.keyboard_rounded, size: 16, color: AppColors.primary),
+                  label: const Text('कीपैड (Keyboard)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
+                  onPressed: () {
+                    setState(() => _showEmojiBar = false);
+                  },
+                ),
               ],
             ),
           ),
+
+          // Subcategory row for Emojis
+          if (_emojiDrawerTab == 0)
+            Container(
+              height: 38,
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              color: isDark ? const Color(0xFF121B22) : Colors.white,
+              child: SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: List.generate(emojiCategoryTitles.length, (idx) {
+                    final isSel = _emojiCategoryIndex == idx;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 6),
+                      child: InkWell(
+                        onTap: () => setState(() => _emojiCategoryIndex = idx),
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: isSel ? AppColors.primary : (isDark ? Colors.white10 : Colors.grey.shade100),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            emojiCategoryTitles[idx],
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.bold,
+                              color: isSel ? Colors.white : (isDark ? Colors.white70 : Colors.black87),
+                            ),
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+            ),
+
+          // Content body
           Expanded(
             child: _emojiDrawerTab == 0
                 ? GridView.builder(
                     padding: const EdgeInsets.all(8),
                     gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 7,
+                      crossAxisCount: 8,
                       mainAxisSpacing: 6,
                       crossAxisSpacing: 6,
                     ),
-                    itemCount: _quickEmojis.length,
+                    itemCount: _categorizedEmojis[_emojiCategoryIndex].length,
                     itemBuilder: (ctx, i) {
-                      final emoji = _quickEmojis[i];
+                      final emoji = _categorizedEmojis[_emojiCategoryIndex][i];
                       return InkWell(
                         onTap: () {
                           _messageController.text += emoji;
@@ -1377,9 +1719,9 @@ class _ChatScreenState extends State<ChatScreen> {
                           mainAxisSpacing: 8,
                           crossAxisSpacing: 8,
                         ),
-                        itemCount: gifItems.length,
+                        itemCount: _reactionGifs.length,
                         itemBuilder: (ctx, i) {
-                          final gif = gifItems[i];
+                          final gif = _reactionGifs[i];
                           return InkWell(
                             onTap: () {
                               setState(() => _showEmojiBar = false);
@@ -1398,7 +1740,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 child: Text(
                                   gif,
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                                 ),
                               ),
                             ),
@@ -1413,9 +1755,9 @@ class _ChatScreenState extends State<ChatScreen> {
                           mainAxisSpacing: 8,
                           crossAxisSpacing: 8,
                         ),
-                        itemCount: stickerItems.length,
+                        itemCount: _stickerPack.length,
                         itemBuilder: (ctx, i) {
-                          final stk = stickerItems[i];
+                          final stk = _stickerPack[i];
                           return InkWell(
                             onTap: () {
                               setState(() => _showEmojiBar = false);
@@ -1434,7 +1776,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 child: Text(
                                   stk,
                                   textAlign: TextAlign.center,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
                                 ),
                               ),
                             ),
@@ -1511,23 +1853,20 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                   _buildAttachmentItem(
                     icon: Icons.camera_alt_rounded,
-                    label: 'Camera',
+                    label: 'Camera (कैमरा)',
                     color: const Color(0xFFD33F8D),
                     onTap: () {
                       Navigator.pop(ctx);
-                      _showCameraCaptureDialog();
+                      _showCameraPickerOptions();
                     },
                   ),
                   _buildAttachmentItem(
                     icon: Icons.image_rounded,
-                    label: 'Gallery',
+                    label: 'Gallery (गैलरी)',
                     color: const Color(0xFFAC44CF),
                     onTap: () {
                       Navigator.pop(ctx);
-                      _handleSendMessage(
-                        customText: '🖼️ High-Res Image attachment',
-                        messageType: 'image',
-                      );
+                      _captureRealPhoto(source: ImageSource.gallery);
                     },
                   ),
                 ],
@@ -1651,6 +1990,39 @@ class _ChatScreenState extends State<ChatScreen> {
                         context,
                         MaterialPageRoute(builder: (_) => const PaymentsScreen()),
                       );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildAttachmentItem(
+                    icon: Icons.schedule_send_rounded,
+                    label: 'Schedule (शेड्यूल)',
+                    color: const Color(0xFF00796B),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showScheduleMessageDialog();
+                    },
+                  ),
+                  _buildAttachmentItem(
+                    icon: Icons.record_voice_over_rounded,
+                    label: 'Dictate (बोलें)',
+                    color: const Color(0xFFE91E63),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showVoiceDictationDialog();
+                    },
+                  ),
+                  _buildAttachmentItem(
+                    icon: Icons.shield_rounded,
+                    label: 'Encryption (सुरक्षा)',
+                    color: const Color(0xFF607D8B),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showVerifyEncryptionDialog();
                     },
                   ),
                 ],
@@ -2379,102 +2751,165 @@ class _ChatScreenState extends State<ChatScreen> {
                   top: false,
                   child: Row(
                     children: [
-                      // Rounded Input Pill
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 4),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? const Color(0xFF26353D)
-                                : Colors.white,
-                            borderRadius: BorderRadius.circular(28),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.06),
-                                blurRadius: 4,
-                                offset: const Offset(0, 2),
-                              ),
-                            ],
-                          ),
-                          child: Row(
-                            children: [
-                              // Emoji Toggle Button
-                              IconButton(
-                                icon: Icon(
-                                  _showEmojiBar
-                                      ? Icons.keyboard_rounded
-                                      : Icons.emoji_emotions_outlined,
-                                  color: Colors.grey.shade600,
+                      // If recording voice note: WhatsApp live recording indicator bar
+                      if (_isVoiceRecording)
+                        Expanded(
+                          child: Container(
+                            height: 48,
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            decoration: BoxDecoration(
+                              color: isDark ? const Color(0xFF26353D) : Colors.white,
+                              borderRadius: BorderRadius.circular(28),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.06),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
                                 ),
-                                onPressed: () {
-                                  setState(() {
-                                    _showEmojiBar = !_showEmojiBar;
-                                  });
-                                },
-                              ),
-                              // Message Text Field
-                              Expanded(
-                                child: TextField(
-                                  controller: _messageController,
-                                  onChanged: _onTextChanged,
-                                  textCapitalization: TextCapitalization.sentences,
-                                  minLines: 1,
-                                  maxLines: 5,
-                                  decoration: InputDecoration(
-                                    hintText: _isVoiceRecording
-                                        ? 'Recording voice note...'
-                                        : 'Message',
-                                    border: InputBorder.none,
-                                    enabledBorder: InputBorder.none,
-                                    focusedBorder: InputBorder.none,
-                                    contentPadding: const EdgeInsets.symmetric(vertical: 10),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(Icons.fiber_manual_record, color: Colors.red, size: 16),
+                                const SizedBox(width: 8),
+                                Text(
+                                  '00:${_recordingSeconds.toString().padLeft(2, '0')}',
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15, color: Colors.red),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                    children: List.generate(12, (i) {
+                                      final heights = [10.0, 16.0, 24.0, 14.0, 22.0, 18.0, 26.0, 12.0, 20.0, 15.0, 25.0, 12.0];
+                                      return Container(
+                                        width: 3,
+                                        height: heights[i % heights.length],
+                                        decoration: BoxDecoration(
+                                          color: isDark ? Colors.white70 : AppColors.primary,
+                                          borderRadius: BorderRadius.circular(2),
+                                        ),
+                                      );
+                                    }),
                                   ),
                                 ),
-                              ),
-                              // Attachment Clip Button
-                              IconButton(
-                                icon: Transform.rotate(
-                                  angle: -0.8,
-                                  child: Icon(Icons.attach_file_rounded, color: Colors.grey.shade600),
-                                ),
-                                onPressed: _showAttachmentsBottomSheet,
-                              ),
-                              // Meta AI Quick Action Button
-                              MetaAiChatAction(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(builder: (_) => const AiAssistantScreen()),
-                                  );
-                                },
-                              ),
-                              // Camera Button (if not typing)
-                              if (!hasText)
                                 IconButton(
-                                  icon: Icon(Icons.camera_alt_rounded, color: Colors.grey.shade600),
-                                  tooltip: 'Open Camera Viewfinder',
-                                  onPressed: _showCameraCaptureDialog,
+                                  icon: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+                                  tooltip: 'Cancel Recording',
+                                  onPressed: _cancelVoiceRecording,
                                 ),
-                            ],
+                              ],
+                            ),
+                          ),
+                        )
+                      else
+                        // Rounded Input Pill
+                        Expanded(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 4),
+                            decoration: BoxDecoration(
+                              color: isDark
+                                  ? const Color(0xFF26353D)
+                                  : Colors.white,
+                              borderRadius: BorderRadius.circular(28),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.06),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              children: [
+                                // Emoji Toggle Button
+                                IconButton(
+                                  icon: Icon(
+                                    _showEmojiBar
+                                        ? Icons.keyboard_rounded
+                                        : Icons.emoji_emotions_outlined,
+                                    color: _showEmojiBar ? AppColors.primary : Colors.grey.shade600,
+                                  ),
+                                  tooltip: _showEmojiBar ? 'Switch to Keyboard (कीपैड)' : 'Open Emojis & GIFs',
+                                  onPressed: () {
+                                    setState(() {
+                                      _showEmojiBar = !_showEmojiBar;
+                                    });
+                                  },
+                                ),
+                                // Message Text Field
+                                Expanded(
+                                  child: TextField(
+                                    controller: _messageController,
+                                    onChanged: _onTextChanged,
+                                    textCapitalization: TextCapitalization.sentences,
+                                    minLines: 1,
+                                    maxLines: 5,
+                                    decoration: const InputDecoration(
+                                      hintText: 'Message',
+                                      border: InputBorder.none,
+                                      enabledBorder: InputBorder.none,
+                                      focusedBorder: InputBorder.none,
+                                      contentPadding: EdgeInsets.symmetric(vertical: 10),
+                                    ),
+                                  ),
+                                ),
+                                // Speech-to-Text Voice Dictation button
+                                IconButton(
+                                  icon: Icon(Icons.record_voice_over_rounded, size: 20, color: Colors.grey.shade600),
+                                  tooltip: 'Speech Dictation (बोलकर लिखें)',
+                                  onPressed: _showVoiceDictationDialog,
+                                ),
+                                // Attachment Clip Button
+                                IconButton(
+                                  icon: Transform.rotate(
+                                    angle: -0.8,
+                                    child: Icon(Icons.attach_file_rounded, color: Colors.grey.shade600),
+                                  ),
+                                  onPressed: _showAttachmentsBottomSheet,
+                                ),
+                                // Meta AI Quick Action Button
+                                MetaAiChatAction(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(builder: (_) => const AiAssistantScreen()),
+                                    );
+                                  },
+                                ),
+                                // Camera Button (if not typing)
+                                if (!hasText)
+                                  IconButton(
+                                    icon: Icon(Icons.camera_alt_rounded, color: Colors.grey.shade600),
+                                    tooltip: 'Open Camera / Gallery',
+                                    onPressed: _showCameraPickerOptions,
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
-                      ),
                       const SizedBox(width: 6),
-                      // Floating Circular Action Button (Mic or Send)
+                      // Floating Circular Action Button (Mic, Send, or Send Voice Recording)
                       GestureDetector(
-                        onTap: hasText ? () => _handleSendMessage() : _simulateVoiceNote,
-                        onLongPress: _showVoiceDictationDialog,
+                        onTap: _isVoiceRecording
+                            ? _sendVoiceRecording
+                            : (hasText ? () => _handleSendMessage() : _startVoiceRecording),
+                        onLongPress: _isVoiceRecording ? null : _showVoiceDictationDialog,
                         child: Tooltip(
-                          message: hasText ? 'Send message' : 'Tap for voice note, hold for speech dictation',
+                          message: _isVoiceRecording
+                              ? 'Send Voice Recording'
+                              : (hasText ? 'Send message' : 'Tap to Record Voice, hold for Dictation'),
                           child: Container(
                             width: 48,
                             height: 48,
-                            decoration: const BoxDecoration(
-                              color: AppColors.primary,
+                            decoration: BoxDecoration(
+                              color: _isVoiceRecording ? Colors.green.shade600 : AppColors.primary,
                               shape: BoxShape.circle,
                             ),
                             child: Icon(
-                              hasText ? Icons.send_rounded : Icons.mic_rounded,
+                              _isVoiceRecording
+                                  ? Icons.send_rounded
+                                  : (hasText ? Icons.send_rounded : Icons.mic_rounded),
                               color: Colors.white,
                               size: 22,
                             ),

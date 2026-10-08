@@ -185,6 +185,764 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
   }
 
   // ==========================================
+  // 1B. SEARCHABLE ADD BANK MODAL (INDIAN & INTERNATIONAL)
+  // ==========================================
+  void _showAddBankSearchModal() {
+    String searchQuery = '';
+    String selectedTab = 'All'; // 'All', 'Popular', 'Indian 🇮🇳', 'International 🌐'
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setModalState) {
+          final isDark = Theme.of(ctx).brightness == Brightness.dark;
+          final allBanks = PaymentService.allSupportedBanks;
+
+          final filteredBanks = allBanks.where((b) {
+            final name = (b['name'] as String).toLowerCase();
+            final code = (b['code'] as String).toLowerCase();
+            final country = (b['country'] as String).toLowerCase();
+            final matchesQuery = searchQuery.isEmpty ||
+                name.contains(searchQuery.toLowerCase()) ||
+                code.contains(searchQuery.toLowerCase()) ||
+                country.contains(searchQuery.toLowerCase());
+
+            if (!matchesQuery) return false;
+
+            if (selectedTab == 'Popular') {
+              return b['isPopular'] == true;
+            } else if (selectedTab == 'Indian 🇮🇳') {
+              return b['isInternational'] == false;
+            } else if (selectedTab == 'International 🌐') {
+              return b['isInternational'] == true;
+            }
+            return true;
+          }).toList();
+
+          return Container(
+            height: MediaQuery.of(ctx).size.height * 0.85,
+            padding: const EdgeInsets.only(top: 20),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            'Select Your Bank (बैंक चुनें)',
+                            style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                          ),
+                          Text(
+                            '65+ Indian & Global International Banks supported',
+                            style: TextStyle(fontSize: 11.5, color: Colors.grey.shade500),
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: TextField(
+                    onChanged: (val) => setModalState(() => searchQuery = val),
+                    decoration: InputDecoration(
+                      hintText: 'Search SBI, HDFC, Chase, HSBC, Wells Fargo...',
+                      prefixIcon: const Icon(Icons.search_rounded),
+                      filled: true,
+                      fillColor: isDark ? const Color(0xFF121B22) : Colors.grey.shade100,
+                      contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: ['All', 'Popular', 'Indian 🇮🇳', 'International 🌐'].map((tab) {
+                      final isSelected = selectedTab == tab;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(tab, style: TextStyle(fontWeight: isSelected ? FontWeight.bold : FontWeight.normal, fontSize: 12)),
+                          selected: isSelected,
+                          selectedColor: AppColors.primary.withOpacity(0.2),
+                          onSelected: (_) => setModalState(() => selectedTab = tab),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const Divider(height: 20),
+                Expanded(
+                  child: filteredBanks.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.search_off_rounded, size: 48, color: Colors.grey.shade400),
+                              const SizedBox(height: 8),
+                              Text('No banks found matching "$searchQuery"', style: const TextStyle(color: Colors.grey)),
+                            ],
+                          ),
+                        )
+                      : ListView.separated(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          itemCount: filteredBanks.length,
+                          separatorBuilder: (_, __) => const Divider(height: 1),
+                          itemBuilder: (ctx, i) {
+                            final b = filteredBanks[i];
+                            final color = Color(b['color'] as int);
+                            final isIntl = b['isInternational'] as bool;
+                            return ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: color.withOpacity(0.15),
+                                child: Text(
+                                  b['code'] as String,
+                                  style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 11),
+                                ),
+                              ),
+                              title: Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      b['name'] as String,
+                                      style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 14),
+                                    ),
+                                  ),
+                                  if (b['isPopular'] == true)
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.amber.withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Text('POPULAR', style: TextStyle(fontSize: 9, fontWeight: FontWeight.bold, color: Colors.amber)),
+                                    ),
+                                ],
+                              ),
+                              subtitle: Text(
+                                '${b["country"]} • ${isIntl ? "International Swift UPI" : "NPCI RuPay/UPI Enabled"}',
+                                style: const TextStyle(fontSize: 11, color: Colors.grey),
+                              ),
+                              trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: Colors.grey),
+                              onTap: () {
+                                Navigator.pop(ctx);
+                                _showAddBankDetailsForm(b);
+                              },
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showAddBankDetailsForm(Map<String, dynamic> bank) {
+    final accNoController = TextEditingController();
+    final confirmAccNoController = TextEditingController();
+    final isIntl = bank['isInternational'] as bool;
+    final code = bank['code'] as String;
+    final defaultCode = isIntl ? '${code}US33XXX' : '${code}0001234';
+    final ifscController = TextEditingController(text: defaultCode);
+    final holderNameController = TextEditingController(text: 'Rajnesh Kumar');
+    String selectedAccType = isIntl ? 'Checking Account' : 'Savings Account';
+    final accTypes = isIntl
+        ? ['Checking Account', 'Savings Account', 'International Multi-Currency', 'NRI Account']
+        : ['Savings Account', 'Current Account', 'Salary Account', 'NRI Account'];
+    String? formError;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setFormState) {
+          final isDark = Theme.of(ctx).brightness == Brightness.dark;
+          final brandColor = Color(bank['color'] as int);
+
+          return Container(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+              top: 24,
+              left: 24,
+              right: 24,
+            ),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      CircleAvatar(
+                        backgroundColor: brandColor.withOpacity(0.15),
+                        radius: 20,
+                        child: Text(code, style: TextStyle(color: brandColor, fontWeight: FontWeight.bold, fontSize: 11)),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              bank['name'] as String,
+                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                            ),
+                            Text(
+                              '${bank["country"]} • Enter Account Details',
+                              style: const TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded),
+                        onPressed: () => Navigator.pop(ctx),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  if (formError != null)
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline_rounded, color: Colors.red, size: 16),
+                          const SizedBox(width: 8),
+                          Expanded(child: Text(formError!, style: const TextStyle(color: Colors.red, fontSize: 12))),
+                        ],
+                      ),
+                    ),
+                  TextField(
+                    controller: accNoController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Account Number (खाता संख्या)',
+                      hintText: 'e.g. 501004829104',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: confirmAccNoController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Re-enter Account Number (पुनः खाता संख्या दर्ज करें)',
+                      hintText: 'e.g. 501004829104',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: ifscController,
+                    textCapitalization: TextCapitalization.characters,
+                    decoration: InputDecoration(
+                      labelText: isIntl ? 'SWIFT / BIC Code' : 'IFSC Code (आईएफएससी कोड)',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: holderNameController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: InputDecoration(
+                      labelText: 'Account Holder Name (खाताधारक का नाम)',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  DropdownButtonFormField<String>(
+                    value: selectedAccType,
+                    decoration: InputDecoration(
+                      labelText: 'Account Type',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    items: accTypes.map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+                    onChanged: (val) {
+                      if (val != null) setFormState(() => selectedAccType = val);
+                    },
+                  ),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        final acc1 = accNoController.text.trim();
+                        final acc2 = confirmAccNoController.text.trim();
+                        final ifsc = ifscController.text.trim();
+
+                        if (acc1.isEmpty || acc1.length < 6) {
+                          setFormState(() => formError = 'Please enter a valid account number.');
+                          return;
+                        }
+                        if (acc1 != acc2) {
+                          setFormState(() => formError = 'Account numbers do not match. Please verify.');
+                          return;
+                        }
+                        if (ifsc.isEmpty) {
+                          setFormState(() => formError = 'Please enter IFSC / SWIFT code.');
+                          return;
+                        }
+
+                        Navigator.pop(ctx);
+                        _paymentService.addNewBankAccount(
+                          bankName: bank['name'] as String,
+                          accountNumber: acc1,
+                          accountType: selectedAccType,
+                          ifscCode: ifsc,
+                          brandColorHex: bank['color'] as int,
+                          isInternational: isIntl,
+                          country: bank['country'] as String,
+                        );
+                        setState(() {});
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('✓ ${bank["name"]} account linked successfully! UPI ID active.'),
+                            backgroundColor: AppColors.primary,
+                          ),
+                        );
+                      },
+                      child: const Text('Link Bank Account with UPI', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  void _showManageBankAccountSheet(BankAccountModel bank) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      backgroundColor: Color(bank.brandColorHex).withOpacity(0.15),
+                      child: Icon(Icons.account_balance_rounded, color: Color(bank.brandColorHex)),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(bank.bankName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                          Text('A/C: ${bank.accountNumberMasked} • ${bank.accountType}', style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                          Text('UPI ID: ${bank.upiId}', style: const TextStyle(fontSize: 12, color: AppColors.primary)),
+                        ],
+                      ),
+                    ),
+                    if (bank.isPrimary)
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Text('PRIMARY', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                      ),
+                  ],
+                ),
+                const Divider(height: 24),
+                ListTile(
+                  leading: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary),
+                  title: const Text('View Account Balance (बैलेंस देखें)'),
+                  subtitle: const Text('Requires 4-digit UPI PIN (Default 1234)'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showCheckBalanceDialog(bank);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.pin_rounded, color: Colors.orange),
+                  title: const Text('Change UPI PIN (पिन बदलें)'),
+                  subtitle: const Text('Update your 4-digit secret UPI PIN'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showChangeUpiPinDialog(bank);
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.lock_reset_rounded, color: Colors.blue),
+                  title: const Text('Forgot / Reset UPI PIN (पिन रीसेट करें)'),
+                  subtitle: const Text('Reset PIN via OTP verification (Demo OTP 123456)'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showResetUpiPinDialog(bank);
+                  },
+                ),
+                if (!bank.isPrimary)
+                  ListTile(
+                    leading: const Icon(Icons.star_rounded, color: Colors.amber),
+                    title: const Text('Set as Primary Bank Account'),
+                    subtitle: const Text('All outgoing & incoming payments default to this bank'),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _paymentService.setPrimaryBank(bank.bankId);
+                      setState(() {});
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('${bank.bankName} set as primary bank account.')),
+                      );
+                    },
+                  ),
+                ListTile(
+                  leading: const Icon(Icons.swap_horiz_rounded, color: Colors.teal),
+                  title: const Text('Switch Payment Provider Engine'),
+                  subtitle: Text('Current Engine: ${_paymentService.paymentProvider}'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showSwitchProviderDialog();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.phone_android_rounded, color: Colors.indigo),
+                  title: const Text('Link UPI Number'),
+                  subtitle: Text('Current UPI Number: ${_paymentService.upiNumber}'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showUpdateUpiNumberDialog();
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.share_rounded, color: Colors.purple),
+                  title: const Text('Share UPI & Invite Friends'),
+                  subtitle: const Text('Invite friends to Universal Chat and earn ₹201 cashback'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text('UPI Invite Link copied! Share: upi://pay?pa=${bank.upiId}')),
+                    );
+                  },
+                ),
+                ListTile(
+                  leading: const Icon(Icons.support_agent_rounded, color: Colors.green),
+                  title: const Text('24/7 Bank Helpline & Support'),
+                  subtitle: const Text('Toll-Free 1800-425-BANK / 24x7 Customer Care'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Connecting to Bank 24/7 Helpline: 1800-425-BANK...')),
+                    );
+                  },
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                  title: const Text('Remove Bank Account (खाता हटाएं)', style: TextStyle(color: Colors.red)),
+                  subtitle: const Text('De-link this bank account from Universal Pay'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _showRemoveBankConfirmation(bank);
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showChangeUpiPinDialog(BankAccountModel bank) {
+    final oldPinCtrl = TextEditingController();
+    final newPinCtrl = TextEditingController();
+    final confirmPinCtrl = TextEditingController();
+    String? error;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setPinState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('Change UPI PIN (${bank.bankName})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (error != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+                ),
+              TextField(
+                controller: oldPinCtrl,
+                obscureText: true,
+                maxLength: 4,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Old UPI PIN (Default 1234)'),
+              ),
+              TextField(
+                controller: newPinCtrl,
+                obscureText: true,
+                maxLength: 4,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'New 4-Digit UPI PIN'),
+              ),
+              TextField(
+                controller: confirmPinCtrl,
+                obscureText: true,
+                maxLength: 4,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Confirm New UPI PIN'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+              onPressed: () {
+                final oldPin = oldPinCtrl.text.trim();
+                final newPin = newPinCtrl.text.trim();
+                final confirmPin = confirmPinCtrl.text.trim();
+                if (newPin != confirmPin) {
+                  setPinState(() => error = 'New PINs do not match.');
+                  return;
+                }
+                if (newPin.length != 4) {
+                  setPinState(() => error = 'PIN must be 4 digits.');
+                  return;
+                }
+                final ok = _paymentService.changeUpiPin(oldPin, newPin);
+                if (ok) {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('✓ UPI PIN updated successfully!'), backgroundColor: AppColors.primary),
+                  );
+                } else {
+                  setPinState(() => error = 'Incorrect old PIN. Default is 1234.');
+                }
+              },
+              child: const Text('Update PIN'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showResetUpiPinDialog(BankAccountModel bank) {
+    final otpCtrl = TextEditingController(text: '123456');
+    final newPinCtrl = TextEditingController();
+    String? error;
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setOtpState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text('Reset UPI PIN (${bank.bankName})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text('Enter 6-digit OTP sent to linked mobile number (Demo OTP: 123456):', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              const SizedBox(height: 8),
+              if (error != null)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: Text(error!, style: const TextStyle(color: Colors.red, fontSize: 12)),
+                ),
+              TextField(
+                controller: otpCtrl,
+                maxLength: 6,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: '6-Digit Bank OTP'),
+              ),
+              TextField(
+                controller: newPinCtrl,
+                obscureText: true,
+                maxLength: 4,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(labelText: 'Set New 4-Digit UPI PIN'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+              onPressed: () {
+                final otp = otpCtrl.text.trim();
+                final newPin = newPinCtrl.text.trim();
+                if (newPin.length != 4) {
+                  setOtpState(() => error = 'New PIN must be 4 digits.');
+                  return;
+                }
+                final ok = _paymentService.resetUpiPin(otp, newPin);
+                if (ok) {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('✓ UPI PIN successfully reset with OTP!'), backgroundColor: AppColors.primary),
+                  );
+                } else {
+                  setOtpState(() => error = 'Invalid OTP. Please enter 123456.');
+                }
+              },
+              child: const Text('Reset PIN'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showSwitchProviderDialog() {
+    final providers = ['NPCI UPI 2.0 (Official)', 'PhonePe UPI Stack (Yes Bank PSP)', 'Google Pay Engine (Axis Bank PSP)'];
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Switch UPI Payment Provider', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: providers.map((prov) {
+            final isSel = _paymentService.paymentProvider == prov;
+            return ListTile(
+              leading: Icon(isSel ? Icons.radio_button_checked : Icons.radio_button_off, color: AppColors.primary),
+              title: Text(prov, style: TextStyle(fontWeight: isSel ? FontWeight.bold : FontWeight.normal, fontSize: 13)),
+              onTap: () {
+                _paymentService.switchPaymentProvider(prov);
+                Navigator.pop(ctx);
+                setState(() {});
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Switched to payment provider: $prov')),
+                );
+              },
+            );
+          }).toList(),
+        ),
+      ),
+    );
+  }
+
+  void _showUpdateUpiNumberDialog() {
+    final phoneCtrl = TextEditingController(text: _paymentService.upiNumber);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Link UPI Number', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Link your 10-digit mobile number to receive money across any UPI app directly to your primary bank:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+            const SizedBox(height: 12),
+            TextField(
+              controller: phoneCtrl,
+              maxLength: 10,
+              keyboardType: TextInputType.phone,
+              decoration: const InputDecoration(labelText: '10-Digit Mobile Number', prefixText: '+91 '),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+            onPressed: () {
+              final ph = phoneCtrl.text.trim();
+              if (ph.length == 10) {
+                _paymentService.updateUpiNumber(ph);
+                Navigator.pop(ctx);
+                setState(() {});
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('✓ UPI Number $ph linked successfully to primary bank!')),
+                );
+              }
+            },
+            child: const Text('Save UPI Number'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showRemoveBankConfirmation(BankAccountModel bank) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text('Remove ${bank.bankName}?', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+        content: Text('Are you sure you want to remove account ${bank.accountNumberMasked}? You can link it again anytime with your registered mobile number.'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
+            onPressed: () {
+              Navigator.pop(ctx);
+              final success = _paymentService.removeBankAccount(bank.bankId);
+              setState(() {});
+              if (success) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('✓ ${bank.bankName} removed from Universal Pay.')),
+                );
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Cannot remove the only remaining bank account.')),
+                );
+              }
+            },
+            child: const Text('Remove Bank'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================
   // 2. PAY TO MOBILE NUMBER / CONTACTS DIALOG
   // ==========================================
   void _showPayToMobileDialog() {
@@ -1869,13 +2627,10 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                   style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
                 ),
                 const Spacer(),
-                TextButton(
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Simulated: New Bank Account linked successfully!')),
-                    );
-                  },
-                  child: const Text('+ Add Bank'),
+                TextButton.icon(
+                  icon: const Icon(Icons.add, size: 16),
+                  label: const Text('+ Add Bank (सभी बैंक)'),
+                  onPressed: _showAddBankSearchModal,
                 ),
               ],
             ),
@@ -2033,6 +2788,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
         ),
       ),
       child: ListTile(
+        onTap: () => _showManageBankAccountSheet(bank),
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
@@ -2041,27 +2797,34 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
           ),
           child: Icon(Icons.account_balance_rounded, color: Color(bank.brandColorHex)),
         ),
-        title: Text(bank.bankName, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('A/C: ${bank.accountNumberMasked} • ${bank.accountType}\nUPI: ${bank.upiId}'),
-        isThreeLine: true,
-        trailing: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          crossAxisAlignment: CrossAxisAlignment.end,
+        title: Row(
           children: [
+            Expanded(child: Text(bank.bankName, style: const TextStyle(fontWeight: FontWeight.bold))),
             if (bank.isPrimary)
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
                   color: AppColors.primary,
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text('PRIMARY', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                child: const Text('PRIMARY', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
               ),
-            const SizedBox(height: 4),
+          ],
+        ),
+        subtitle: Text('A/C: ${bank.accountNumberMasked} • ${bank.accountType}\nUPI: ${bank.upiId}'),
+        isThreeLine: true,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
             TextButton(
-              style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: EdgeInsets.zero),
+              style: TextButton.styleFrom(visualDensity: VisualDensity.compact, padding: const EdgeInsets.symmetric(horizontal: 6)),
               onPressed: () => _showCheckBalanceDialog(bank),
-              child: const Text('Check Balance', style: TextStyle(fontSize: 11)),
+              child: const Text('Balance', style: TextStyle(fontSize: 11)),
+            ),
+            IconButton(
+              icon: const Icon(Icons.more_vert_rounded, size: 20),
+              tooltip: 'Manage Bank Account',
+              onPressed: () => _showManageBankAccountSheet(bank),
             ),
           ],
         ),

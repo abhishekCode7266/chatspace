@@ -16,15 +16,67 @@
 ## 📱 Quick Links & Downloads
 
 - 🌐 **Live Web App Preview**: [https://abhishekcode7266.github.io/chatspace/](https://abhishekcode7266.github.io/chatspace/)
-- 📦 **Download Android APK (Direct Install)**: [GitHub Releases - app-release.apk (v1.6.0)](https://github.com/abhishekCode7266/chatspace/releases/download/v1.6.0/app-release.apk)
-- 🏬 **Google Play Store App Bundle**: [GitHub Releases - app-release.aab (v1.6.0)](https://github.com/abhishekCode7266/chatspace/releases/download/v1.6.0/app-release.aab)
+- 📦 **Download Android APK (Direct Install)**: [GitHub Releases - app-release.apk (v1.7.0)](https://github.com/abhishekCode7266/chatspace/releases/download/v1.7.0/app-release.apk)
+- 🏬 **Google Play Store App Bundle**: [GitHub Releases - app-release.aab (v1.7.0)](https://github.com/abhishekCode7266/chatspace/releases/download/v1.7.0/app-release.aab)
 - 🎨 **Google Play Store 512x512 High-Res Icon**: `playstore_assets/universal_chat_icon_512.jpg`
 
 ---
 
-## 🌟 Core Highlights & Feature Matrix
+## 🌟 Core Highlights & Feature Matrix (v1.7.0)
 
-### 1. 💸 Google Pay & PhonePe Unified Payments Ecosystem (पेमेंट्स, रिचार्ज व बिल भुगतान)
+### 1. 🏦 All Indian & Global Banks Ecosystem (सभी 65+ भारतीय और अंतरराष्ट्रीय बैंक)
+- **Comprehensive Bank Catalog**: Searchable list with tabs (`All`, `Popular ⭐`, `Indian 🇮🇳`, `International 🌐`) featuring 65+ banks:
+  - **Indian Banks**: State Bank of India (SBI), HDFC Bank, ICICI Bank, Punjab National Bank (PNB), Bank of Baroda, Axis Bank, Kotak Mahindra Bank, Canara Bank, Union Bank of India, Bank of India, Indian Bank, IndusInd Bank, Yes Bank, IDBI Bank, Central Bank, UCO Bank, Federal Bank, Bandhan Bank, Paytm Payments Bank, Airtel Payments Bank, Jio Payments Bank, etc.
+  - **International Banks**: JPMorgan Chase, Bank of America, Wells Fargo, Citibank, HSBC Global, Barclays UK, BNP Paribas, Deutsche Bank, UBS Switzerland, DBS Bank Singapore, Standard Chartered, Royal Bank of Canada (RBC), Santander, etc.
+- **Add Bank Form**: Account number, confirm account, IFSC / SWIFT code validation, account holder name, and account type (Savings, Current, NRI/NRO).
+- **Full Bank Card Management Menu**:
+  - **Check Balance**: Enter 4-digit UPI PIN (Default: `1234`) for instant balance display.
+  - **Change UPI PIN**: Update current PIN to a new 4-digit PIN.
+  - **Reset UPI PIN**: 6-digit OTP verification (Default: `123456`) to reset forgotten PIN.
+  - **Set Primary / Default**: Assign default bank for sending and receiving payments.
+  - **Switch Payment Provider**: Toggle between NPCI UPI 2.0 Network, PhonePe Infrastructure Stack, and Google Pay Core Engine.
+  - **Link UPI Number**: Link 10-digit mobile number as UPI ID.
+  - **Invite & Earn ₹201**: Referral rewards for onboarding friends.
+  - **24/7 Helpline & Remove Bank Account**.
+
+### 2. 📸 Real Device Camera Photo Capture
+- **Real Device Hardware Camera & Gallery**: Uses `image_picker` to take live photos on mobile phones or laptop webcams, or select existing gallery images.
+- **Base64 Data URL Image Memory Rendering**: Photos are encoded into memory data URLs and displayed in chat bubbles (`MessageBubble`) and full-screen preview (`MediaPreviewScreen`) with zero server upload bottleneck.
+
+### 3. 🎙️ WhatsApp-Style Live Mic Recording & Voice Dictation
+- **In-Bar Live Recording Experience**: Tapping the microphone switches the input bar to live recording mode with:
+  - Pulsing red recording dot 🔴.
+  - Live recording stopwatch timer (`00:01`, `00:02`, `00:03`).
+  - Real-time animated audio waveforms.
+  - Trash can 🗑️ button to discard recording.
+  - Send button ➤ to transmit voice note immediately.
+- **Speech Dictation (बोलकर लिखें)**: Dedicated dictation button to convert spoken voice to text.
+
+### 4. 😀 186 Categorized Emojis, 50 GIFs, 50 Stickers & Keyboard Switcher
+- **5 Emoji Categories (186 total)**:
+  - Smileys & Emotions (48)
+  - Gestures & People (36)
+  - Hearts & Love (26)
+  - Food & Drinks (36)
+  - Nature & Travel (40)
+- **Dedicated Keyboard (कीपैड) Switcher**: ⌨️ button in the drawer header and input bar to instantly toggle back to typing.
+- **50 Reaction GIFs & 50 Custom Stickers**.
+
+### 5. 🔝 Top Bar & Filter Quick Create Menu
+- **AppBar Actions**: Camera button 📷, Rupee circular button (₹), QR Scanner, Search, and 3-dot menu.
+- **Filter Pills**: `All`, `Unread`, `Favorites ⭐`, `Groups 👥`, and Quick Action `+` button opening a creation menu (New Group, New Channel, New Community).
+
+### 6. ⏰ Scheduled Messages & 📢 Channels
+- **Schedule Messages (शेड्यूल्ड मैसेज)**: Set future dispatch times for automated delivery.
+- **Broadcast Channels (चैनल्स)**: Create public broadcast channels with follower stats and announcement feed.
+
+### 7. 🎬 3-4 Minute AI Animation Video Generator (एनीमेशन वीडियो जनरेटर)
+- **AI Animation Studio**: Generates 3-4 minute narrative video concepts with 4-scene narrative breakdown, style presets (`3D Pixar Animated Cartoon`, `Anime 2D Cinema`, `Cyberpunk Sci-Fi 3D`, `Stop-Motion Clay`), 16:9 simulated video player with play/pause scrubber, and 1-tap chat share.
+
+### 8. 🌐 Universal Multilingual Translator
+- **30+ Global & Regional Languages**: Instant translation across Hindi, English, Spanish, French, German, Japanese, Chinese, Arabic, Russian, Bengali, Marathi, Telugu, Tamil, Gujarati, Urdu, Punjabi, etc.
+
+### 9. 💸 Google Pay & PhonePe Unified Payments Ecosystem (पेमेंट्स, रिचार्ज व बिल भुगतान)
 - **Scan Any UPI QR Code**: Scan any peer or merchant UPI QR code with interactive simulated scanning laser viewfinder.
 - **Pay to Mobile Number**: Transfer money directly to 10-digit mobile numbers with instant bank UPI deduction and receipt.
 - **Receive Money QR (पैसे प्राप्त करें)**: Generate personal UPI QR codes with custom requested amount, share options, and simulated instant payment credit notification.
@@ -37,7 +89,7 @@
   - **Cable DTH, Credit Card Bill, Loan EMI Repayment, Travel & Movie Tickets**.
 - **Transaction History & Digital Receipts**: Filter transactions by `All`, `Paid`, `Received`, `Recharge`, and `Bills` with full shareable digital receipt view and 24/7 Help & Support.
 
-### 2. 🏛️ Communities Section (कम्युनिटीज)
+### 10. 🏛️ Communities Section (कम्युनिटीज)
 - **Top 4-Tab Navigation**: `CHATS`, `UPDATES`, `COMMUNITIES`, `CALLS`.
 - **Create Communities**: Create custom organization or neighborhood communities with topic tags.
 - **Official Announcement Channels**: Megaphone / loudspeaker broadcast channel for verified community-wide broadcasts.

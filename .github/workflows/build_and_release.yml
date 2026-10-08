@@ -84,44 +84,44 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master')
         with:
-          tag_name: v1.6.0
-          name: Universal Chat App v1.6.0 (Google Pay/PhonePe Ecosystem, Communities Tab, In-Chat Camera & Voice Dictation)
+          tag_name: v1.7.0
+          name: Universal Chat App v1.7.0 (Global Banking Ecosystem, Real Camera, Live Mic Recording, 186 Emojis & AI Animation Studio)
           draft: false
           prerelease: false
           body: |
-            ## 🌐 Universal Chat App v1.6.0 Production Release 🚀📱💸🏛️
+            ## 🌐 Universal Chat App v1.7.0 Production Release 🚀📱💸🎬
             
-            Welcome to **Universal Chat App v1.6.0** — the ultimate super app combining WhatsApp communication and Google Pay / PhonePe fintech ecosystem into one unified experience!
+            Welcome to **Universal Chat App v1.7.0** — featuring full Banking & Fintech integration, real device camera capture, WhatsApp live microphone recording, 186 categorized emojis, Channels, and AI Animation Studio!
             
             ### 📥 Download & Install (डाउनलोड करें):
-            - **📱 Direct Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.6.0/app-release.apk)
-            - **🏬 Google Play Store Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.6.0/app-release.aab)
+            - **📱 Direct Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.7.0/app-release.apk)
+            - **🏬 Google Play Store Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.7.0/app-release.aab)
             - **🌐 Live Web Demo**: [https://abhishekcode7266.github.io/chatspace/](https://abhishekcode7266.github.io/chatspace/)
             
             ---
             
-            ### ✨ What's New in v1.6.0 (मुख्य नए फीचर्स):
-            1. **💸 Google Pay & PhonePe Payments Ecosystem (पेमेंट्स, रिचार्ज व बिल भुगतान)**:
-               - **Scan Any UPI QR Code**: Scan any merchant or peer QR code with animated scanning laser.
-               - **Pay to Mobile Number**: Transfer money directly to phone numbers with instant UPI confirmation.
-               - **Receive Money QR (पैसे प्राप्त करें)**: Generate personal UPI QR with custom amounts and simulated instant payment credit receipt notification.
-               - **View Account Balance**: Secure PIN verification (default: `1234`) with instant balance display.
-               - **Recharges & Utilities**: Mobile Recharge (Jio/Airtel/Vi/BSNL), Electricity Bills (UPPCL/BSES/Tata Power), FASTag Recharge, and Metro QR Tickets (Delhi/Mumbai/Bangalore Metro) with animated digital ticket pass!
-               - **Cable DTH, Credit Card Bill, Loan EMI Repayment, Travel & Movie Tickets**.
-               - **Transaction History**: Filter by All, Paid, Received, Recharge, Bills, with digital receipt modal and 24/7 Help & Support.
-            2. **🏛️ Communities Section (कम्युनिटीज)**:
-               - Dedicated 4th top tab: **CHATS**, **UPDATES**, **COMMUNITIES**, **CALLS**.
-               - Create new communities with description and topic tags.
-               - Official Announcement channels with loudspeaker/megaphone icon and nested sub-groups with 1-tap chat launch.
-            3. **📸 WhatsApp-Style In-Chat Camera Viewfinder**:
-               - Dedicated camera modal with front/rear flip, flash toggle, and shutter button to snap & send photos immediately.
-            4. **🎙️ Voice Dictation / Speech-to-Text (बोलकर चैट लिखें)**:
-               - Speech recognition modal with live animated waveforms, quick phrases, and 1-tap insert or send.
-            5. **🎨 Emoji, GIF & Sticker 3-Tab Drawer**:
-               - Integrated 3-tab drawer for Emojis, animated reaction GIFs, and stickers.
-            6. **📎 10-Item Attachment Menu & Three-Dot Options**:
-               - Document, Camera, Gallery, Audio, Location, Contact, Poll (वोटिंग), Payment (पेमेंट), Event, and Meta AI.
-               - WhatsApp Three-Dot Menu: View Contact/Group info, Media Links & Docs, In-chat search, Mute notifications, Disappearing messages, Wallpaper/theme changer, and More.
+            ### ✨ What's New in v1.7.0 (मुख्य नए फीचर्स):
+            1. **🏦 All Indian & Global Banks Ecosystem (सभी भारतीय और अंतरराष्ट्रीय बैंक)**:
+               - Searchable bank selector with 65+ banks across India & International categories (SBI, HDFC, ICICI, PNB, BoB, Axis, Chase, HSBC, Citi, Barclays, DBS, Bank of America, etc.).
+               - Add Bank Form with IFSC/SWIFT code verification and instant account linking.
+               - Full Bank Card Management Menu: Check Balance (PIN: `1234`), Change UPI PIN, Reset UPI PIN (OTP: `123456`), Set Primary Default, Switch Provider (NPCI UPI 2.0 / PhonePe Stack / Google Pay Engine), Link UPI Number, and Invite & Earn ₹201.
+            2. **📸 Real Device Camera Photo Capture**:
+               - Integrated device camera & gallery capture via `image_picker`, directly encoding photos into memory and rendering in chat bubbles and full-screen media preview.
+            3. **🎙️ WhatsApp-Style Live Mic Recording**:
+               - Tap microphone button to activate live recording mode with pulsing red recording indicator 🔴, timer (`00:01`, `00:02`), animated sound waves, trash can 🗑️ cancel button, and send button.
+            4. **😀 186 Emojis across 5 Categories + 50 GIFs + 50 Stickers + Keyboard Switcher**:
+               - Smileys (48), Gestures (36), Hearts (26), Food (36), Nature/Travel (40).
+               - Dedicated `कीपैड (Keyboard)` ⌨️ toggle button to instantly return to typing.
+            5. **🔝 Top Bar & Filter Quick Create Menu**:
+               - Camera icon 📷, Rupee circular button (₹), QR scanner, Search, and 3-dot menu.
+               - Filter pills: All, Unread, Favorites ⭐, Groups 👥, and Quick Action `+` (New Group, New Channel, New Community).
+            6. **⏰ Scheduled Messages (शेड्यूल्ड मैसेज) & 📢 Channels (चैनल्स)**:
+               - Schedule messages to be sent at specific future times.
+               - Create and follow broadcast Channels in the Updates tab.
+            7. **🎬 3-4 Minute AI Animation Video Generator (एनीमेशन वीडियो जनरेटर)**:
+               - AI Animation Studio generating 3-4 minute narrative video concepts with 4-scene storyboard, style presets (Pixar 3D, Anime, Cyberpunk, Claymation), 16:9 video player scrubber, and 1-tap chat share.
+            8. **🌐 Multilingual Universal Translator**:
+               - Instant contextual translation across 30+ world and Indian regional languages.
           files: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab

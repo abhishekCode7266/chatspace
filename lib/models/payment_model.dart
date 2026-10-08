@@ -87,6 +87,9 @@ class BankAccountModel {
   final double balance;
   final int brandColorHex;
 
+  final bool isInternational;
+  final String country;
+
   BankAccountModel({
     required this.id,
     required this.bankName,
@@ -97,6 +100,8 @@ class BankAccountModel {
     required this.upiId,
     this.balance = 25480.50,
     this.brandColorHex = 0xFF1A5276,
+    this.isInternational = false,
+    this.country = 'India',
   });
 
   Map<String, dynamic> toMap() {
@@ -110,6 +115,8 @@ class BankAccountModel {
       'upiId': upiId,
       'balance': balance,
       'brandColorHex': brandColorHex,
+      'isInternational': isInternational,
+      'country': country,
     };
   }
 
@@ -124,6 +131,8 @@ class BankAccountModel {
       upiId: map['upiId'] as String? ?? 'user@universalpay',
       balance: (map['balance'] as num?)?.toDouble() ?? 0.0,
       brandColorHex: map['brandColorHex'] as int? ?? 0xFF1A5276,
+      isInternational: map['isInternational'] as bool? ?? false,
+      country: map['country'] as String? ?? 'India',
     );
   }
 }

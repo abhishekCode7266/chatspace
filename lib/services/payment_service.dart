@@ -205,6 +205,14 @@ class PaymentService {
   void toggleBiometricPay(bool enabled) => _biometricPayEnabled = enabled;
 
   // --- Security & PIN ---
+  String _upiNumber = '9876543210';
+  String get upiNumber => _upiNumber;
+  void updateUpiNumber(String newNum) => _upiNumber = newNum;
+
+  String _paymentProvider = 'NPCI UPI 2.0 Engine';
+  String get paymentProvider => _paymentProvider;
+  void switchPaymentProvider(String provider) => _paymentProvider = provider;
+
   bool verifyUpiPin(String enteredPin) {
     return enteredPin == _upiPin;
   }
@@ -213,6 +221,22 @@ class PaymentService {
     if (newPin.length == 4) {
       _upiPin = newPin;
     }
+  }
+
+  bool changeUpiPin(String oldPin, String newPin) {
+    if (verifyUpiPin(oldPin) && newPin.length == 4) {
+      _upiPin = newPin;
+      return true;
+    }
+    return false;
+  }
+
+  bool resetUpiPin(String otp, String newPin) {
+    if (otp.trim().isNotEmpty && newPin.length == 4) {
+      _upiPin = newPin;
+      return true;
+    }
+    return false;
   }
 
   // --- AI Quota Methods ---
@@ -234,6 +258,135 @@ class PaymentService {
     _bankAccounts.add(account);
   }
 
+  void removeBankAccount(String bankId) {
+    if (_bankAccounts.length > 1) {
+      _bankAccounts.removeWhere((b) => b.id == bankId);
+      if (!_bankAccounts.any((b) => b.isPrimary) && _bankAccounts.isNotEmpty) {
+        _bankAccounts[0] = BankAccountModel(
+          id: _bankAccounts[0].id,
+          bankName: _bankAccounts[0].bankName,
+          accountNumberMasked: _bankAccounts[0].accountNumberMasked,
+          ifsc: _bankAccounts[0].ifsc,
+          accountType: _bankAccounts[0].accountType,
+          isPrimary: true,
+          upiId: _bankAccounts[0].upiId,
+          balance: _bankAccounts[0].balance,
+          brandColorHex: _bankAccounts[0].brandColorHex,
+          isInternational: _bankAccounts[0].isInternational,
+          country: _bankAccounts[0].country,
+        );
+      }
+    }
+  }
+
+  BankAccountModel addNewBankAccount({
+    required String bankName,
+    required String accountNumber,
+    required String ifscOrSwift,
+    required String accountHolderName,
+    String accountType = 'Savings',
+    bool isPrimary = false,
+    bool isInternational = false,
+    String country = 'India',
+  }) {
+    final last4 = accountNumber.length >= 4 ? accountNumber.substring(accountNumber.length - 4) : '0000';
+    final safeBankCode = bankName.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]'), '');
+    final newAcc = BankAccountModel(
+      id: 'bank_${DateTime.now().millisecondsSinceEpoch}',
+      bankName: bankName,
+      accountNumberMasked: '•••• $last4',
+      ifsc: ifscOrSwift.toUpperCase(),
+      accountType: accountType,
+      isPrimary: isPrimary,
+      upiId: '${accountHolderName.toLowerCase().replaceAll(' ', '')}@ok$safeBankCode',
+      balance: 10000.0 + (DateTime.now().millisecond * 20),
+      brandColorHex: isInternational ? 0xFF0D47A1 : 0xFF003366,
+      isInternational: isInternational,
+      country: country,
+    );
+
+    if (isPrimary) {
+      setPrimaryBank(newAcc.id);
+    }
+    _bankAccounts.add(newAcc);
+    return newAcc;
+  }
+
+  static const List<Map<String, dynamic>> allSupportedBanks = [
+    // Popular Indian Banks
+    {'name': 'State Bank of India', 'code': 'SBIN', 'country': 'India', 'isInternational': false, 'popular': true, 'color': 0xFF003366},
+    {'name': 'HDFC Bank', 'code': 'HDFC', 'country': 'India', 'isInternational': false, 'popular': true, 'color': 0xFF004B87},
+    {'name': 'ICICI Bank', 'code': 'ICIC', 'country': 'India', 'isInternational': false, 'popular': true, 'color': 0xFF9C1D26},
+    {'name': 'Punjab National Bank', 'code': 'PUNB', 'country': 'India', 'isInternational': false, 'popular': true, 'color': 0xFFA00028},
+    {'name': 'Bank of Baroda', 'code': 'BARB', 'country': 'India', 'isInternational': false, 'popular': true, 'color': 0xFFF26522},
+    {'name': 'Axis Bank', 'code': 'UTIB', 'country': 'India', 'isInternational': false, 'popular': true, 'color': 0xFF97144D},
+    {'name': 'Kotak Mahindra Bank', 'code': 'KKBK', 'country': 'India', 'isInternational': false, 'popular': true, 'color': 0xFFED1C24},
+    {'name': 'Canara Bank', 'code': 'CNRB', 'country': 'India', 'isInternational': false, 'popular': true, 'color': 0xFF0085C8},
+    {'name': 'Union Bank of India', 'code': 'UBIN', 'country': 'India', 'isInternational': false, 'popular': true, 'color': 0xFF005A9C},
+    {'name': 'IndusInd Bank', 'code': 'INDB', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFF8B1D41},
+    {'name': 'IDFC FIRST Bank', 'code': 'IDFB', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFF9D2235},
+    {'name': 'Yes Bank', 'code': 'YESB', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFF00519E},
+    {'name': 'Federal Bank', 'code': 'FDRL', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFF002B49},
+    {'name': 'Central Bank of India', 'code': 'CBIN', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFF004A80},
+    {'name': 'Indian Bank', 'code': 'IDIB', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFF1B365D},
+    {'name': 'UCO Bank', 'code': 'UCBA', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFF00539B},
+    {'name': 'Bank of India', 'code': 'BKID', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFFE31B23},
+    {'name': 'Punjab & Sind Bank', 'code': 'PSIB', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFFBF1E2E},
+    {'name': 'RBL Bank', 'code': 'RATN', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFF0C2074},
+    {'name': 'Bandhan Bank', 'code': 'BDBL', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFF003057},
+    {'name': 'Paytm Payments Bank', 'code': 'PYTM', 'country': 'India', 'isInternational': false, 'popular': true, 'color': 0xFF00B9F5},
+    {'name': 'Airtel Payments Bank', 'code': 'AIRP', 'country': 'India', 'isInternational': false, 'popular': true, 'color': 0xFFE40000},
+    {'name': 'India Post Payments Bank (IPPB)', 'code': 'IPOS', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFFED1C24},
+    {'name': 'Jio Payments Bank', 'code': 'JIOP', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFF0A2885},
+    {'name': 'AU Small Finance Bank', 'code': 'AUBL', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFF6C1D45},
+    {'name': 'Equitas Small Finance Bank', 'code': 'ESFB', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFF00529B},
+    {'name': 'South Indian Bank', 'code': 'SIBL', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFFBF2026},
+    {'name': 'Karur Vysya Bank', 'code': 'KVBL', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFF003366},
+    {'name': 'Karnataka Bank', 'code': 'KARB', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFF8A1538},
+    {'name': 'Standard Chartered India', 'code': 'SCBL', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFF007A3D},
+    {'name': 'Citibank India', 'code': 'CITI', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFF003B70},
+    {'name': 'HSBC India', 'code': 'HSBC', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFFDB0011},
+    {'name': 'DBS Bank India', 'code': 'DBSS', 'country': 'India', 'isInternational': false, 'popular': false, 'color': 0xFFFF3300},
+
+    // International Banks
+    {'name': 'JPMorgan Chase', 'code': 'CHASUS', 'country': 'United States', 'isInternational': true, 'popular': true, 'color': 0xFF117ACA},
+    {'name': 'Bank of America', 'code': 'BOFAUS', 'country': 'United States', 'isInternational': true, 'popular': true, 'color': 0xFFE31837},
+    {'name': 'Wells Fargo', 'code': 'WFBIUS', 'country': 'United States', 'isInternational': true, 'popular': true, 'color': 0xFFD71E28},
+    {'name': 'Citibank Global', 'code': 'CITIUS', 'country': 'United States', 'isInternational': true, 'popular': true, 'color': 0xFF003B70},
+    {'name': 'Goldman Sachs', 'code': 'GSCOUS', 'country': 'United States', 'isInternational': true, 'popular': false, 'color': 0xFF004B87},
+    {'name': 'Morgan Stanley', 'code': 'MSCOUS', 'country': 'United States', 'isInternational': true, 'popular': false, 'color': 0xFF1C355E},
+    {'name': 'HSBC Global', 'code': 'MIDLGB', 'country': 'United Kingdom', 'isInternational': true, 'popular': true, 'color': 0xFFDB0011},
+    {'name': 'Barclays Bank', 'code': 'BARCGB', 'country': 'United Kingdom', 'isInternational': true, 'popular': true, 'color': 0xFF00AEEF},
+    {'name': 'Lloyds Bank', 'code': 'LOYDGB', 'country': 'United Kingdom', 'isInternational': true, 'popular': false, 'color': 0xFF006A4E},
+    {'name': 'Standard Chartered Global', 'code': 'SCBLGB', 'country': 'United Kingdom', 'isInternational': true, 'popular': false, 'color': 0xFF007A3D},
+    {'name': 'Deutsche Bank', 'code': 'DEUTDE', 'country': 'Germany', 'isInternational': true, 'popular': true, 'color': 0xFF0018A8},
+    {'name': 'Commerzbank', 'code': 'COBADE', 'country': 'Germany', 'isInternational': true, 'popular': false, 'color': 0xFFFFCC00},
+    {'name': 'BNP Paribas', 'code': 'BNPAFR', 'country': 'France', 'isInternational': true, 'popular': true, 'color': 0xFF00965E},
+    {'name': 'Crédit Agricole', 'code': 'AGRIFR', 'country': 'France', 'isInternational': true, 'popular': false, 'color': 0xFF006D44},
+    {'name': 'Société Générale', 'code': 'SOGEFR', 'country': 'France', 'isInternational': true, 'popular': false, 'color': 0xFFE2001A},
+    {'name': 'UBS Group', 'code': 'UBSWCH', 'country': 'Switzerland', 'isInternational': true, 'popular': true, 'color': 0xFFE60000},
+    {'name': 'Santander Bank', 'code': 'BSCHES', 'country': 'Spain', 'isInternational': true, 'popular': true, 'color': 0xFFEC0000},
+    {'name': 'BBVA', 'code': 'BBVAES', 'country': 'Spain', 'isInternational': true, 'popular': false, 'color': 0xFF004481},
+    {'name': 'ING Bank', 'code': 'INGBNL', 'country': 'Netherlands', 'isInternational': true, 'popular': false, 'color': 0xFFFF6200},
+    {'name': 'Royal Bank of Canada (RBC)', 'code': 'ROYCCA', 'country': 'Canada', 'isInternational': true, 'popular': false, 'color': 0xFF0051A5},
+    {'name': 'Toronto-Dominion Bank (TD)', 'code': 'TDOMCA', 'country': 'Canada', 'isInternational': true, 'popular': false, 'color': 0xFF008A00},
+    {'name': 'Bank of Nova Scotia (Scotiabank)', 'code': 'NOSCCA', 'country': 'Canada', 'isInternational': true, 'popular': false, 'color': 0xFFEE1C25},
+    {'name': 'Mitsubishi UFJ (MUFG)', 'code': 'BOTKJP', 'country': 'Japan', 'isInternational': true, 'popular': false, 'color': 0xFFE60012},
+    {'name': 'Sumitomo Mitsui (SMBC)', 'code': 'SMBCJP', 'country': 'Japan', 'isInternational': true, 'popular': false, 'color': 0xFF007536},
+    {'name': 'Mizuho Bank', 'code': 'MHCBJP', 'country': 'Japan', 'isInternational': true, 'popular': false, 'color': 0xFF002244},
+    {'name': 'DBS Bank Global', 'code': 'DBSSSG', 'country': 'Singapore', 'isInternational': true, 'popular': true, 'color': 0xFFFF3300},
+    {'name': 'OCBC Bank', 'code': 'OCBCSG', 'country': 'Singapore', 'isInternational': true, 'popular': false, 'color': 0xFFED1C24},
+    {'name': 'United Overseas Bank (UOB)', 'code': 'UOVBSG', 'country': 'Singapore', 'isInternational': true, 'popular': false, 'color': 0xFF002060},
+    {'name': 'Bank of China', 'code': 'BKCHCN', 'country': 'China', 'isInternational': true, 'popular': false, 'color': 0xFFB1001C},
+    {'name': 'Industrial and Commercial Bank of China (ICBC)', 'code': 'ICBCCN', 'country': 'China', 'isInternational': true, 'popular': false, 'color': 0xFFC7000B},
+    {'name': 'Commonwealth Bank of Australia', 'code': 'CTBAAU', 'country': 'Australia', 'isInternational': true, 'popular': false, 'color': 0xFFFFCC00},
+    {'name': 'Westpac Banking Corp', 'code': 'WPACAU', 'country': 'Australia', 'isInternational': true, 'popular': false, 'color': 0xFFDA1710},
+    {'name': 'ANZ Bank', 'code': 'ANZBAU', 'country': 'Australia', 'isInternational': true, 'popular': false, 'color': 0xFF007DBA},
+    {'name': 'Emirates NBD', 'code': 'EBILAE', 'country': 'United Arab Emirates', 'isInternational': true, 'popular': false, 'color': 0xFF002060},
+    {'name': 'First Abu Dhabi Bank (FAB)', 'code': 'NBADAE', 'country': 'United Arab Emirates', 'isInternational': true, 'popular': false, 'color': 0xFF005596},
+    {'name': 'Qatar National Bank (QNB)', 'code': 'QNBAQA', 'country': 'Qatar', 'isInternational': true, 'popular': false, 'color': 0xFF5D1224},
+  ];
+
   void setPrimaryBank(String bankId) {
     for (int i = 0; i < _bankAccounts.length; i++) {
       final b = _bankAccounts[i];
@@ -247,6 +400,8 @@ class PaymentService {
         upiId: b.upiId,
         balance: b.balance,
         brandColorHex: b.brandColorHex,
+        isInternational: b.isInternational,
+        country: b.country,
       );
     }
   }
