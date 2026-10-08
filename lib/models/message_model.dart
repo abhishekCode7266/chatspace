@@ -8,13 +8,29 @@ class MessageModel {
   final DateTime timestamp;
   final bool isSeen;
   final String? reaction; // e.g. '👍', '❤️', '😂', '😮', '😢', '🙏'
-  final String messageType; // 'text', 'audio', 'image', 'video', 'document', 'call'
+  final String messageType; // 'text', 'audio', 'image', 'video', 'document', 'location', 'contact', 'sticker', 'call'
   final String? audioDuration; // e.g. '0:14'
   final String? senderName; // for group messages
   final String? mediaUrl;
   final String? fileName;
   final String? fileSize;
   final bool isDisappearing;
+
+  // New WhatsApp Pro & Universal Chat Features
+  final String? replyToText;
+  final String? replyToSender;
+  final bool isPinned;
+  final bool isStarred;
+  final bool isEdited;
+  final bool isDeletedForEveryone;
+  final bool isDeletedForMe;
+  final String? locationName;
+  final String? locationCoords;
+  final String? contactName;
+  final String? contactPhone;
+  final String? stickerUrl;
+  final double? uploadProgress;
+  final int forwardCount;
 
   MessageModel({
     required this.messageId,
@@ -31,6 +47,20 @@ class MessageModel {
     this.fileName,
     this.fileSize,
     this.isDisappearing = false,
+    this.replyToText,
+    this.replyToSender,
+    this.isPinned = false,
+    this.isStarred = false,
+    this.isEdited = false,
+    this.isDeletedForEveryone = false,
+    this.isDeletedForMe = false,
+    this.locationName,
+    this.locationCoords,
+    this.contactName,
+    this.contactPhone,
+    this.stickerUrl,
+    this.uploadProgress,
+    this.forwardCount = 0,
   });
 
   Map<String, dynamic> toMap() {
@@ -49,6 +79,20 @@ class MessageModel {
       'fileName': fileName,
       'fileSize': fileSize,
       'isDisappearing': isDisappearing,
+      'replyToText': replyToText,
+      'replyToSender': replyToSender,
+      'isPinned': isPinned,
+      'isStarred': isStarred,
+      'isEdited': isEdited,
+      'isDeletedForEveryone': isDeletedForEveryone,
+      'isDeletedForMe': isDeletedForMe,
+      'locationName': locationName,
+      'locationCoords': locationCoords,
+      'contactName': contactName,
+      'contactPhone': contactPhone,
+      'stickerUrl': stickerUrl,
+      'uploadProgress': uploadProgress,
+      'forwardCount': forwardCount,
     };
   }
 
@@ -75,6 +119,20 @@ class MessageModel {
       fileName: map['fileName'] as String?,
       fileSize: map['fileSize'] as String?,
       isDisappearing: map['isDisappearing'] as bool? ?? false,
+      replyToText: map['replyToText'] as String?,
+      replyToSender: map['replyToSender'] as String?,
+      isPinned: map['isPinned'] as bool? ?? false,
+      isStarred: map['isStarred'] as bool? ?? false,
+      isEdited: map['isEdited'] as bool? ?? false,
+      isDeletedForEveryone: map['isDeletedForEveryone'] as bool? ?? false,
+      isDeletedForMe: map['isDeletedForMe'] as bool? ?? false,
+      locationName: map['locationName'] as String?,
+      locationCoords: map['locationCoords'] as String?,
+      contactName: map['contactName'] as String?,
+      contactPhone: map['contactPhone'] as String?,
+      stickerUrl: map['stickerUrl'] as String?,
+      uploadProgress: (map['uploadProgress'] as num?)?.toDouble(),
+      forwardCount: map['forwardCount'] as int? ?? 0,
     );
   }
 
@@ -98,6 +156,20 @@ class MessageModel {
     String? fileName,
     String? fileSize,
     bool? isDisappearing,
+    String? replyToText,
+    String? replyToSender,
+    bool? isPinned,
+    bool? isStarred,
+    bool? isEdited,
+    bool? isDeletedForEveryone,
+    bool? isDeletedForMe,
+    String? locationName,
+    String? locationCoords,
+    String? contactName,
+    String? contactPhone,
+    String? stickerUrl,
+    double? uploadProgress,
+    int? forwardCount,
   }) {
     return MessageModel(
       messageId: messageId ?? this.messageId,
@@ -114,6 +186,20 @@ class MessageModel {
       fileName: fileName ?? this.fileName,
       fileSize: fileSize ?? this.fileSize,
       isDisappearing: isDisappearing ?? this.isDisappearing,
+      replyToText: replyToText ?? this.replyToText,
+      replyToSender: replyToSender ?? this.replyToSender,
+      isPinned: isPinned ?? this.isPinned,
+      isStarred: isStarred ?? this.isStarred,
+      isEdited: isEdited ?? this.isEdited,
+      isDeletedForEveryone: isDeletedForEveryone ?? this.isDeletedForEveryone,
+      isDeletedForMe: isDeletedForMe ?? this.isDeletedForMe,
+      locationName: locationName ?? this.locationName,
+      locationCoords: locationCoords ?? this.locationCoords,
+      contactName: contactName ?? this.contactName,
+      contactPhone: contactPhone ?? this.contactPhone,
+      stickerUrl: stickerUrl ?? this.stickerUrl,
+      uploadProgress: uploadProgress ?? this.uploadProgress,
+      forwardCount: forwardCount ?? this.forwardCount,
     );
   }
 }

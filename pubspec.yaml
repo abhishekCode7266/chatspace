@@ -1,7 +1,7 @@
 name: chatspace
 description: "Universal Chat App - Modern, AI-friendly, secure communication app with Text, HD Voice/Video Calls, Groups, Channels, Status, and E2EE."
 publish_to: "none"
-version: 1.3.0+4
+version: 1.4.0+5
 
 environment:
   sdk: ">=3.0.0 <4.0.0"

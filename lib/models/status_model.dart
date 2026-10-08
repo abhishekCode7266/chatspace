@@ -10,6 +10,10 @@ class StatusModel {
   final int backgroundColorHex;
   final DateTime timestamp;
   final bool isViewed;
+  final int viewCount;
+  final List<String> viewers;
+  final String statusType; // 'text', 'photo', 'video', 'gif'
+  final String? caption;
 
   StatusModel({
     required this.statusId,
@@ -21,6 +25,10 @@ class StatusModel {
     this.backgroundColorHex = 0xFF005C4B,
     required this.timestamp,
     this.isViewed = false,
+    this.viewCount = 0,
+    this.viewers = const [],
+    this.statusType = 'text',
+    this.caption,
   });
 
   Map<String, dynamic> toMap() {
@@ -34,6 +42,10 @@ class StatusModel {
       'backgroundColorHex': backgroundColorHex,
       'timestamp': Timestamp.fromDate(timestamp),
       'isViewed': isViewed,
+      'viewCount': viewCount,
+      'viewers': viewers,
+      'statusType': statusType,
+      'caption': caption,
     };
   }
 
@@ -43,6 +55,12 @@ class StatusModel {
       if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
       if (val is String) return DateTime.tryParse(val) ?? DateTime.now();
       return DateTime.now();
+    }
+
+    final rawViewers = map['viewers'];
+    List<String> viewersList = [];
+    if (rawViewers is List) {
+      viewersList = rawViewers.map((e) => e.toString()).toList();
     }
 
     return StatusModel(
@@ -55,6 +73,10 @@ class StatusModel {
       backgroundColorHex: map['backgroundColorHex'] as int? ?? 0xFF005C4B,
       timestamp: map['timestamp'] != null ? parseDate(map['timestamp']) : DateTime.now(),
       isViewed: map['isViewed'] as bool? ?? false,
+      viewCount: map['viewCount'] as int? ?? (viewersList.isNotEmpty ? viewersList.length : 0),
+      viewers: viewersList,
+      statusType: map['statusType'] as String? ?? 'text',
+      caption: map['caption'] as String?,
     );
   }
 
@@ -73,6 +95,10 @@ class StatusModel {
     int? backgroundColorHex,
     DateTime? timestamp,
     bool? isViewed,
+    int? viewCount,
+    List<String>? viewers,
+    String? statusType,
+    String? caption,
   }) {
     return StatusModel(
       statusId: statusId ?? this.statusId,
@@ -84,6 +110,10 @@ class StatusModel {
       backgroundColorHex: backgroundColorHex ?? this.backgroundColorHex,
       timestamp: timestamp ?? this.timestamp,
       isViewed: isViewed ?? this.isViewed,
+      viewCount: viewCount ?? this.viewCount,
+      viewers: viewers ?? this.viewers,
+      statusType: statusType ?? this.statusType,
+      caption: caption ?? this.caption,
     );
   }
 }

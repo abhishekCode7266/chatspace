@@ -84,52 +84,59 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master')
         with:
-          tag_name: v1.3.0
-          name: Universal Chat App v1.3.0 (Groups, Channels, Voice & Video Call Sections, Filters & Play Store Ready)
+          tag_name: v1.4.0
+          name: Universal Chat App v1.4.0 (AI Suite, Group Video Calls, Business Hub, Admin Panel & Floating Dev Circle Bypass)
           draft: false
           prerelease: false
           body: |
-            ## 🌐 Universal Chat App v1.3.0 Production Release 🚀📱
+            ## 🌐 Universal Chat App v1.4.0 Production Release 🚀📱🤖
             
-            Welcome to **Universal Chat App** (Universal App) — the modern, AI-friendly, professional, and secure next-generation communication platform. Designed for fast mobile messaging, group collaboration, broadcast channels, high-definition voice and video calls, and bank-grade privacy!
+            Welcome to **Universal Chat App v1.4.0** — the ultimate all-in-one next-generation communication platform. Designed for fast mobile messaging, group collaboration, broadcast channels, high-definition group voice/video calls, enterprise business features, built-in AI intelligence, bank-grade E2EE privacy, and complete developer tools!
             
             ### 📥 Download & Install (डाउनलोड करें):
-            - **📱 Direct Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.3.0/app-release.apk)
-            - **🏬 Google Play Store Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.3.0/app-release.aab)
+            - **📱 Direct Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.4.0/app-release.apk)
+            - **🏬 Google Play Store Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.4.0/app-release.aab)
             - **🌐 Live Web Demo**: [https://abhishekcode7266.github.io/chatspace/](https://abhishekcode7266.github.io/chatspace/)
             
             ---
             
-            ### ✨ What's New in v1.3.0 (मुख्य नए फीचर्स):
-            1. **🌟 Universal Chat App Rebranding & 3D Logo**:
-               - Modern, AI-friendly, tech-focused brand identity.
-               - Official 512x512 glowing cyan/emerald 3D neural globe app logo (`playstore_assets/universal_chat_icon_512.jpg`).
-            2. **👥 Group Chats (ग्रुप चैट)**:
-               - Create custom groups with custom names, descriptions, and avatars.
-               - Multi-participant messaging with sender name indicators.
-               - Group badges in chat lists and dedicated group member actions.
-            3. **🏷️ WhatsApp-Style Quick Filter Chips (चैट फिल्टर्स)**:
-               - **All (सभी)**: Complete list of all chats.
-               - **Unread (अनरीड)**: Instant filter for unread conversations.
-               - **Favorites ⭐ (पसंदीदा)**: Starred conversations pinned for fast access (long-press to toggle favorite).
-               - **Groups 👥 (ग्रुप्स)**: Dedicated view for community and team groups.
-            4. **📢 Updates & Tech News Channels (अपडेट्स और न्यूज़ चैनल)**:
-               - WhatsApp-style Status stories with 24-hour expiry and full-screen story viewer.
-               - **Universal Channels Feed**: Follow broadcast channels like *Universal AI Tech Feed*, *Flutter & Mobile Ecosystem*, and *CyberSecurity & E2EE Watch*.
-            5. **📞 Segmented Voice & Video Calls (अलग-अलग वॉइस और वीडियो कॉल)**:
-               - Separate views and filter tabs for **📞 Voice Calls** and **📹 Video Calls**.
-               - Call duration, direction indicators (incoming, outgoing, missed), and 1-tap call triggers.
-            6. **📎 Rich Media & Document Sharing (मल्टीमीडिया और डॉक्यूमेंट्स)**:
-               - Send & receive photos, video clips, and PDF/office documents with file sizes.
-               - Interactive voice notes with audio waveform visualization and play/pause controls.
-               - Long-press message emoji reactions (`👍`, `❤️`, `😂`, `😮`, `😢`, `🙏`).
-            7. **🛡️ Military-Grade Security & Privacy (सुरक्षा)**:
-               - 256-bit End-to-End Encryption (E2EE) cryptographic badges.
-               - 60-digit safety verification code with QR share code.
-               - Disappearing messages option (24 hours, 7 days, 90 days).
-               - 4-digit PIN App Lock & Biometrics ready.
-            8. **🔓 Developer Mode Bypass (डेवलपर मोड बाईपास)**:
-               - 1-click **Developer Mode Bypass** on the login screen or 4-tap on the splash logo to test all features instantly without requiring SMS or Firebase backend setup.
+            ### ✨ What's New in v1.4.0 (मुख्य नए फीचर्स):
+            1. **⚡ Floating Developer Circle Bypass (छोटा सा गोला)**:
+               - Prominent pulsating draggable circular button floating on top of all screens.
+               - 1-tap instant Developer Mode Bypass to unlock all authentication, screens, and administrative features without requiring phone numbers or SMS setup.
+               - Includes quick simulation triggers (switch users, clear mock data, reset PIN, inject test chats).
+            2. **🤖 Optimal Universal AI Suite**:
+               - **Universal AI Chat Assistant**: Smart multi-turn generative companion.
+               - **Message Summarizer**: Condenses long chat histories or documents into bulleted action items.
+               - **Real-Time Language Translator**: Instant translation across English, Hindi, Spanish, French, German, Arabic, Chinese, and Japanese.
+               - **3D AI Image Generation**: Text-to-image prompt visualization for social posts and avatars.
+               - **Document & PDF Analysis**: Intelligent keyword and structure extraction from documents.
+            3. **👥 Group Voice & Video Calling (मल्टी-पार्टिसिपेंट ग्रुप कॉलिंग)**:
+               - High-definition 2x2 responsive video grid with active speaker glow indicators.
+               - Controls for mute/unmute, front/rear camera toggle, screen sharing simulation, and speaker/earpiece route.
+            4. **💼 Business Platform & Commerce**:
+               - Official Business Profile with verified badge, hours, address, and website.
+               - Product Catalog with prices, photos, and customer ordering workflow.
+               - Automated greeting messages, away responses, and customer support tracking.
+            5. **🛡️ Admin Command Center & Moderation**:
+               - Real-time system telemetry (active users, total groups, message counts, server uptime %, network latency ms).
+               - User management with instant ban/unban controls.
+               - Spam detection, content reports moderation, and global broadcast announcements.
+            6. **💬 Advanced Next-Gen Messaging**:
+               - Quoted replies, message editing with `(edited)` tag, and delete for me/everyone.
+               - Pinned messages header banner in chat rooms.
+               - Starred / bookmarked messages repository screen.
+               - Location cards, contact vCard sharing, stickers, and interactive voice notes.
+               - Full-screen media preview viewer with zoom and download progress.
+            7. **💻 Linked Devices & Multi-Device Sync**:
+               - Manage active Web and Desktop sessions with QR code scanner pairing.
+            8. **☁️ Cloud Backup & Restore**:
+               - Encrypted backup size estimation, Google Drive / Cloud sync, and 1-tap restore.
+            9. **🔒 Bank-Grade Privacy & Security**:
+               - 256-bit AES End-to-End Encryption with 60-digit verification fingerprint.
+               - App Lock with 4-digit PIN, Biometrics toggle, 2-Step Verification, and Blocked Contacts manager.
+            10. **🔍 Global Search Hub**:
+                - Universal search across users, chats, messages, media, audio, documents, and links with date filters.
           files: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab

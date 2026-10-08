@@ -13,6 +13,14 @@ class ChatModel {
   final String? groupAvatar;
   final bool isFavorite;
 
+  // New Universal Chat Capabilities
+  final bool isCommunity;
+  final String? pinnedMessageId;
+  final String? pinnedMessageText;
+  final List<String> admins;
+  final String? inviteCode;
+  final bool isAiAssistant;
+
   ChatModel({
     required this.chatId,
     required this.participants,
@@ -25,6 +33,12 @@ class ChatModel {
     this.groupAdminId,
     this.groupAvatar,
     this.isFavorite = false,
+    this.isCommunity = false,
+    this.pinnedMessageId,
+    this.pinnedMessageText,
+    this.admins = const [],
+    this.inviteCode,
+    this.isAiAssistant = false,
   });
 
   /// Returns the other user's ID in a 1-to-1 conversation
@@ -54,6 +68,12 @@ class ChatModel {
       'groupAdminId': groupAdminId,
       'groupAvatar': groupAvatar,
       'isFavorite': isFavorite,
+      'isCommunity': isCommunity,
+      'pinnedMessageId': pinnedMessageId,
+      'pinnedMessageText': pinnedMessageText,
+      'admins': admins,
+      'inviteCode': inviteCode,
+      'isAiAssistant': isAiAssistant,
     };
   }
 
@@ -80,6 +100,14 @@ class ChatModel {
       participantsList = rawParticipants.map((e) => e.toString()).toList();
     }
 
+    final rawAdmins = map['admins'];
+    List<String> adminsList = [];
+    if (rawAdmins is List) {
+      adminsList = rawAdmins.map((e) => e.toString()).toList();
+    } else if (map['groupAdminId'] != null) {
+      adminsList = [map['groupAdminId'].toString()];
+    }
+
     return ChatModel(
       chatId: documentId ?? map['chatId'] as String? ?? '',
       participants: participantsList,
@@ -92,6 +120,12 @@ class ChatModel {
       groupAdminId: map['groupAdminId'] as String?,
       groupAvatar: map['groupAvatar'] as String?,
       isFavorite: map['isFavorite'] as bool? ?? false,
+      isCommunity: map['isCommunity'] as bool? ?? false,
+      pinnedMessageId: map['pinnedMessageId'] as String?,
+      pinnedMessageText: map['pinnedMessageText'] as String?,
+      admins: adminsList,
+      inviteCode: map['inviteCode'] as String?,
+      isAiAssistant: map['isAiAssistant'] as bool? ?? false,
     );
   }
 
@@ -112,6 +146,12 @@ class ChatModel {
     String? groupAdminId,
     String? groupAvatar,
     bool? isFavorite,
+    bool? isCommunity,
+    String? pinnedMessageId,
+    String? pinnedMessageText,
+    List<String>? admins,
+    String? inviteCode,
+    bool? isAiAssistant,
   }) {
     return ChatModel(
       chatId: chatId ?? this.chatId,
@@ -125,6 +165,12 @@ class ChatModel {
       groupAdminId: groupAdminId ?? this.groupAdminId,
       groupAvatar: groupAvatar ?? this.groupAvatar,
       isFavorite: isFavorite ?? this.isFavorite,
+      isCommunity: isCommunity ?? this.isCommunity,
+      pinnedMessageId: pinnedMessageId ?? this.pinnedMessageId,
+      pinnedMessageText: pinnedMessageText ?? this.pinnedMessageText,
+      admins: admins ?? this.admins,
+      inviteCode: inviteCode ?? this.inviteCode,
+      isAiAssistant: isAiAssistant ?? this.isAiAssistant,
     );
   }
 }

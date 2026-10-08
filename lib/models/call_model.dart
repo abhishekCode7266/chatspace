@@ -11,6 +11,8 @@ class CallModel {
   final bool isVideo;
   final bool isMissed;
   final bool isOutgoing;
+  final bool isGroupCall;
+  final List<String> participantNames;
 
   CallModel({
     required this.callId,
@@ -23,6 +25,8 @@ class CallModel {
     required this.isVideo,
     this.isMissed = false,
     required this.isOutgoing,
+    this.isGroupCall = false,
+    this.participantNames = const [],
   });
 
   Map<String, dynamic> toMap() {
@@ -37,6 +41,8 @@ class CallModel {
       'isVideo': isVideo,
       'isMissed': isMissed,
       'isOutgoing': isOutgoing,
+      'isGroupCall': isGroupCall,
+      'participantNames': participantNames,
     };
   }
 
@@ -46,6 +52,12 @@ class CallModel {
       if (val is int) return DateTime.fromMillisecondsSinceEpoch(val);
       if (val is String) return DateTime.tryParse(val) ?? DateTime.now();
       return DateTime.now();
+    }
+
+    final rawParticipants = map['participantNames'];
+    List<String> participants = [];
+    if (rawParticipants is List) {
+      participants = rawParticipants.map((e) => e.toString()).toList();
     }
 
     return CallModel(
@@ -58,7 +70,9 @@ class CallModel {
       durationSeconds: map['durationSeconds'] as int? ?? 0,
       isVideo: map['isVideo'] as bool? ?? false,
       isMissed: map['isMissed'] as bool? ?? false,
-      isOutgoing: map['isOutgoing'] as bool? ?? false,
+      isOutgoing: map['isOutgoing'] as bool? ?? true,
+      isGroupCall: map['isGroupCall'] as bool? ?? false,
+      participantNames: participants,
     );
   }
 
@@ -78,6 +92,8 @@ class CallModel {
     bool? isVideo,
     bool? isMissed,
     bool? isOutgoing,
+    bool? isGroupCall,
+    List<String>? participantNames,
   }) {
     return CallModel(
       callId: callId ?? this.callId,
@@ -90,6 +106,8 @@ class CallModel {
       isVideo: isVideo ?? this.isVideo,
       isMissed: isMissed ?? this.isMissed,
       isOutgoing: isOutgoing ?? this.isOutgoing,
+      isGroupCall: isGroupCall ?? this.isGroupCall,
+      participantNames: participantNames ?? this.participantNames,
     );
   }
 }

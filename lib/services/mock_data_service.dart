@@ -547,7 +547,7 @@ class MockDataService {
     }
   }
 
-  // Send message in mock mode + auto-reply simulator (Text, Media, Docs, Audio)
+  // Send message in mock mode + auto-reply simulator (Text, Media, Docs, Audio, Location, Contact, Stickers)
   Future<void> sendMessage({
     required String chatId,
     required String senderId,
@@ -559,6 +559,13 @@ class MockDataService {
     String? fileName,
     String? fileSize,
     String? mediaUrl,
+    String? replyToText,
+    String? replyToSender,
+    String? locationName,
+    String? locationCoords,
+    String? contactName,
+    String? contactPhone,
+    String? stickerUrl,
   }) async {
     final now = DateTime.now();
     final newMsg = MessageModel(
@@ -574,6 +581,13 @@ class MockDataService {
       fileName: fileName,
       fileSize: fileSize,
       mediaUrl: mediaUrl,
+      replyToText: replyToText,
+      replyToSender: replyToSender,
+      locationName: locationName,
+      locationCoords: locationCoords,
+      contactName: contactName,
+      contactPhone: contactPhone,
+      stickerUrl: stickerUrl,
     );
 
     if (!_mockMessages.containsKey(chatId)) {
@@ -796,6 +810,73 @@ class MockDataService {
     _currentDevUser = _currentDevUser.copyWith(name: name, status: status);
   }
 
+  Future<void> editMessage(String chatId, String messageId, String newText) async {
+    final msgs = _mockMessages[chatId];
+    if (msgs != null) {
+      final idx = msgs.indexWhere((m) => m.messageId == messageId);
+      if (idx >= 0) {
+        msgs[idx] = msgs[idx].copyWith(text: newText, isEdited: true);
+        _messagesControllers[chatId]?.add(List.from(msgs));
+      }
+    }
+  }
+
+  Future<void> deleteMessage(String chatId, String messageId, {required bool everyone}) async {
+    final msgs = _mockMessages[chatId];
+    if (msgs != null) {
+      final idx = msgs.indexWhere((m) => m.messageId == messageId);
+      if (idx >= 0) {
+        if (everyone) {
+          msgs[idx] = msgs[idx].copyWith(isDeletedForEveryone: true);
+        } else {
+          msgs[idx] = msgs[idx].copyWith(isDeletedForMe: true);
+        }
+        _messagesControllers[chatId]?.add(List.from(msgs));
+      }
+    }
+  }
+
+  Future<void> toggleStarMessage(String chatId, String messageId) async {
+    final msgs = _mockMessages[chatId];
+    if (msgs != null) {
+      final idx = msgs.indexWhere((m) => m.messageId == messageId);
+      if (idx >= 0) {
+        final cur = msgs[idx].isStarred;
+        msgs[idx] = msgs[idx].copyWith(isStarred: !cur);
+        _messagesControllers[chatId]?.add(List.from(msgs));
+      }
+    }
+  }
+
+  Future<void> pinMessage(String chatId, String messageId, String text) async {
+    final msgs = _mockMessages[chatId];
+    if (msgs != null) {
+      for (int i = 0; i < msgs.length; i++) {
+        msgs[i] = msgs[i].copyWith(isPinned: msgs[i].messageId == messageId);
+      }
+      _messagesControllers[chatId]?.add(List.from(msgs));
+    }
+    final chatIdx = _mockChats.indexWhere((c) => c.chatId == chatId);
+    if (chatIdx >= 0) {
+      _mockChats[chatIdx] = _mockChats[chatIdx].copyWith(
+        pinnedMessageId: messageId,
+        pinnedMessageText: text,
+      );
+      _chatsController.add(List.from(_mockChats));
+    }
+  }
+
+  Future<void> unpinMessage(String chatId) async {
+    final chatIdx = _mockChats.indexWhere((c) => c.chatId == chatId);
+    if (chatIdx >= 0) {
+      _mockChats[chatIdx] = _mockChats[chatIdx].copyWith(
+        pinnedMessageId: null,
+        pinnedMessageText: null,
+      );
+      _chatsController.add(List.from(_mockChats));
+    }
+  }
+
   UserModel? getUserById(String uid) {
     if (uid == AppConstants.devUserId) return _currentDevUser;
     final idx = _mockUsers.indexWhere((u) => u.uid == uid);
@@ -803,3 +884,4 @@ class MockDataService {
     return null;
   }
 }
+

@@ -143,7 +143,7 @@ class ChatProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Send message (text, voice note, photo, video, document)
+  /// Send message (text, voice note, photo, video, document, location, contact, stickers, replies)
   Future<bool> sendMessage({
     required String chatId,
     required String senderId,
@@ -156,6 +156,13 @@ class ChatProvider with ChangeNotifier {
     String? fileName,
     String? fileSize,
     String? mediaUrl,
+    String? replyToText,
+    String? replyToSender,
+    String? locationName,
+    String? locationCoords,
+    String? contactName,
+    String? contactPhone,
+    String? stickerUrl,
   }) async {
     final trimmed = text.trim();
     if (trimmed.isEmpty && messageType == 'text') return false;
@@ -177,6 +184,13 @@ class ChatProvider with ChangeNotifier {
           fileName: fileName,
           fileSize: fileSize,
           mediaUrl: mediaUrl,
+          replyToText: replyToText,
+          replyToSender: replyToSender,
+          locationName: locationName,
+          locationCoords: locationCoords,
+          contactName: contactName,
+          contactPhone: contactPhone,
+          stickerUrl: stickerUrl,
         );
       } else {
         await _chatService.sendMessage(
@@ -194,6 +208,68 @@ class ChatProvider with ChangeNotifier {
       _isSending = false;
       notifyListeners();
       return false;
+    }
+  }
+
+  /// Edit existing message
+  Future<void> editMessage({
+    required String chatId,
+    required String messageId,
+    required String newText,
+    required bool isDevBypass,
+  }) async {
+    if (isDevBypass) {
+      await _mockDataService.editMessage(chatId, messageId, newText);
+      notifyListeners();
+    }
+  }
+
+  /// Delete message
+  Future<void> deleteMessage({
+    required String chatId,
+    required String messageId,
+    required bool everyone,
+    required bool isDevBypass,
+  }) async {
+    if (isDevBypass) {
+      await _mockDataService.deleteMessage(chatId, messageId, everyone: everyone);
+      notifyListeners();
+    }
+  }
+
+  /// Toggle star bookmark on message
+  Future<void> toggleStarMessage({
+    required String chatId,
+    required String messageId,
+    required bool isDevBypass,
+  }) async {
+    if (isDevBypass) {
+      await _mockDataService.toggleStarMessage(chatId, messageId);
+      notifyListeners();
+    }
+  }
+
+  /// Pin message to chat header
+  Future<void> pinMessage({
+    required String chatId,
+    required String messageId,
+    required String text,
+    required bool isDevBypass,
+  }) async {
+    if (isDevBypass) {
+      await _mockDataService.pinMessage(chatId, messageId, text);
+      notifyListeners();
+    }
+  }
+
+  /// Unpin message from chat header
+  Future<void> unpinMessage({
+    required String chatId,
+    required bool isDevBypass,
+  }) async {
+    if (isDevBypass) {
+      await _mockDataService.unpinMessage(chatId);
+      notifyListeners();
     }
   }
 

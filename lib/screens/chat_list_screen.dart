@@ -10,6 +10,7 @@ import '../providers/chat_provider.dart';
 import '../utils/constants.dart';
 import '../utils/date_formatter.dart';
 import '../widgets/chat_tile.dart';
+import '../widgets/floating_dev_circle.dart';
 import 'chat_screen.dart';
 import 'call_screen.dart';
 import 'profile_screen.dart';
@@ -17,6 +18,16 @@ import 'users_list_screen.dart';
 import 'status_view_screen.dart';
 import 'group_create_screen.dart';
 import 'channel_screen.dart';
+import 'ai_assistant_screen.dart';
+import 'business_profile_screen.dart';
+import 'admin_dashboard_screen.dart';
+import 'linked_devices_screen.dart';
+import 'backup_sync_screen.dart';
+import 'privacy_security_screen.dart';
+import 'starred_messages_screen.dart';
+import 'search_screen.dart';
+import 'community_screen.dart';
+
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -345,17 +356,15 @@ class _ChatListScreenState extends State<ChatListScreen>
                 ],
               ),
         actions: [
+          const AppBarDevCircleButton(),
           IconButton(
             icon: Icon(_isSearching ? Icons.close_rounded : Icons.search_rounded),
             tooltip: _isSearching ? 'Close Search' : 'Search',
             onPressed: () {
-              setState(() {
-                if (_isSearching) {
-                  _searchController.clear();
-                  _searchQuery = '';
-                }
-                _isSearching = !_isSearching;
-              });
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const SearchScreen()),
+              );
             },
           ),
           IconButton(
@@ -372,20 +381,27 @@ class _ChatListScreenState extends State<ChatListScreen>
             tooltip: 'More options',
             onSelected: (val) {
               if (val == 'new_group') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const GroupCreateScreen()),
-                );
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const GroupCreateScreen()));
               } else if (val == 'contacts') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const UsersListScreen()),
-                );
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const UsersListScreen()));
+              } else if (val == 'ai_suite') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const AiAssistantScreen()));
+              } else if (val == 'business') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const BusinessProfileScreen()));
+              } else if (val == 'admin') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
+              } else if (val == 'linked_devices') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const LinkedDevicesScreen()));
+              } else if (val == 'community') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const CommunityScreen()));
+              } else if (val == 'starred') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const StarredMessagesScreen()));
+              } else if (val == 'backup') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupSyncScreen()));
+              } else if (val == 'privacy') {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacySecurityScreen()));
               } else if (val == 'settings') {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const ProfileScreen()),
-                );
+                Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
               } else if (val == 'bypass') {
                 authProvider.toggleDevBypass();
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -402,6 +418,37 @@ class _ChatListScreenState extends State<ChatListScreen>
             },
             itemBuilder: (ctx) => [
               const PopupMenuItem(
+                value: 'ai_suite',
+                child: Row(
+                  children: [
+                    Icon(Icons.auto_awesome_rounded, color: AppColors.aiPurple, size: 20),
+                    SizedBox(width: 12),
+                    Text('Universal AI Suite'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'business',
+                child: Row(
+                  children: [
+                    Icon(Icons.storefront_rounded, color: AppColors.businessBlue, size: 20),
+                    SizedBox(width: 12),
+                    Text('Business Hub & Catalog'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'admin',
+                child: Row(
+                  children: [
+                    Icon(Icons.admin_panel_settings_rounded, color: AppColors.adminGold, size: 20),
+                    SizedBox(width: 12),
+                    Text('Admin Dashboard'),
+                  ],
+                ),
+              ),
+              const PopupMenuDivider(),
+              const PopupMenuItem(
                 value: 'new_group',
                 child: Row(
                   children: [
@@ -412,12 +459,52 @@ class _ChatListScreenState extends State<ChatListScreen>
                 ),
               ),
               const PopupMenuItem(
-                value: 'contacts',
+                value: 'community',
                 child: Row(
                   children: [
-                    Icon(Icons.person_add_rounded, size: 20),
+                    Icon(Icons.public_rounded, size: 20),
                     SizedBox(width: 12),
-                    Text('New Contact'),
+                    Text('Community Announcements'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'linked_devices',
+                child: Row(
+                  children: [
+                    Icon(Icons.devices_rounded, size: 20),
+                    SizedBox(width: 12),
+                    Text('Linked Devices'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'starred',
+                child: Row(
+                  children: [
+                    Icon(Icons.star_rounded, color: Colors.amber, size: 20),
+                    SizedBox(width: 12),
+                    Text('Starred Messages'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'backup',
+                child: Row(
+                  children: [
+                    Icon(Icons.cloud_sync_rounded, size: 20),
+                    SizedBox(width: 12),
+                    Text('Chat Backup & Sync'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'privacy',
+                child: Row(
+                  children: [
+                    Icon(Icons.security_rounded, size: 20),
+                    SizedBox(width: 12),
+                    Text('Privacy & Security'),
                   ],
                 ),
               ),
@@ -427,10 +514,11 @@ class _ChatListScreenState extends State<ChatListScreen>
                   children: [
                     Icon(Icons.settings_rounded, size: 20),
                     SizedBox(width: 12),
-                    Text('Settings & Privacy'),
+                    Text('Settings'),
                   ],
                 ),
               ),
+              const PopupMenuDivider(),
               PopupMenuItem(
                 value: 'bypass',
                 child: Row(
@@ -462,42 +550,47 @@ class _ChatListScreenState extends State<ChatListScreen>
           ],
         ),
       ),
-      body: Column(
+      body: Stack(
         children: [
-          // Developer Mode Banner if active
-          if (isDevBypass)
-            Container(
-              width: double.infinity,
-              color: Colors.amber.shade100,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-              child: Row(
-                children: [
-                  Icon(Icons.admin_panel_settings_rounded, size: 18, color: Colors.amber.shade900),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Universal Developer Mode Active (बाईपास चालू है): Instant simulation for Groups, Channels & Calls enabled.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.amber.shade900,
-                        fontWeight: FontWeight.w600,
+          Column(
+            children: [
+              // Developer Mode Banner if active
+              if (isDevBypass)
+                Container(
+                  width: double.infinity,
+                  color: Colors.amber.shade100,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+                  child: Row(
+                    children: [
+                      Icon(Icons.admin_panel_settings_rounded, size: 18, color: Colors.amber.shade900),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Universal Developer Mode Active (बाईपास चालू है): Instant simulation for Groups, Channels & Calls enabled.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.amber.shade900,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
+              // Tab views
+              Expanded(
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildChatsTab(currentUser, isDevBypass, isDark),
+                    _buildUpdatesTab(currentUser, isDevBypass, isDark),
+                    _buildCallsTab(currentUser, isDevBypass, isDark),
+                  ],
+                ),
               ),
-            ),
-          // Tab views
-          Expanded(
-            child: TabBarView(
-              controller: _tabController,
-              children: [
-                _buildChatsTab(currentUser, isDevBypass, isDark),
-                _buildUpdatesTab(currentUser, isDevBypass, isDark),
-                _buildCallsTab(currentUser, isDevBypass, isDark),
-              ],
-            ),
+            ],
           ),
+          const FloatingDevCircle(),
         ],
       ),
       floatingActionButton: _buildFab(),

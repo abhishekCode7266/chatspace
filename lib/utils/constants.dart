@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 class AppConstants {
   // App Info
   static const String appName = 'Universal Chat App';
-  static const String appShortName = 'Universal App';
-  static const String appTagline = 'Next-Gen Intelligent Messaging, HD Calling & Media Sharing';
-  static const String appVersion = '1.3.0';
+  static const String appShortName = 'Universal Chat';
+  static const String appTagline = 'Next-Gen Intelligent Messaging, AI Companion, HD Group Calling & Business Hub';
+  static const String appVersion = '1.4.0';
 
   // Firestore Collections
   static const String usersCollection = 'users';
@@ -14,23 +14,31 @@ class AppConstants {
   static const String callsCollection = 'calls';
   static const String statusCollection = 'statuses';
   static const String channelsCollection = 'channels';
+  static const String businessCollection = 'business_profiles';
+  static const String productsCollection = 'products';
+  static const String ordersCollection = 'orders';
+  static const String reportsCollection = 'moderation_reports';
 
   // SharedPreferences Keys
   static const String prefThemeMode = 'theme_mode';
   static const String prefDevBypass = 'developer_bypass_enabled';
   static const String prefCurrentUserId = 'current_user_id';
   static const String prefFavoriteChats = 'favorite_chat_ids';
+  static const String prefUserRole = 'user_active_role'; // 'developer', 'admin', 'business', 'user'
+  static const String prefPinLock = 'security_pin_code';
+  static const String prefBiometrics = 'biometrics_enabled';
+  static const String pref2Fa = 'two_factor_auth_enabled';
 
   // Notification Channel
   static const String notificationChannelId = 'universal_chat_high_importance_channel';
-  static const String notificationChannelName = 'Universal Chat App Alerts';
-  static const String notificationChannelDesc = 'Real-time messages, HD calls, and channel updates';
+  static const String notificationChannelName = 'Universal Chat Alerts';
+  static const String notificationChannelDesc = 'Real-time messages, HD group calls, AI alerts & business orders';
 
   // Developer Bypass Defaults
   static const String devUserId = 'dev_user_universal_99';
   static const String devUserName = 'Developer (Admin)';
   static const String devUserEmail = 'developer@universalchat.app';
-  static const String devUserStatus = '🌐 Universal Chat App Dev Active | Testing Mode';
+  static const String devUserStatus = '🌐 Universal Chat SuperDev Active | Testing & Admin Mode';
 }
 
 class AppColors {
@@ -40,6 +48,12 @@ class AppColors {
   static const Color primaryLight = Color(0xFF25D366);
   static const Color secondary = Color(0xFF128C7E);
   static const Color accent = Color(0xFF34B7F1);
+
+  // Futuristic AI & Admin Accents
+  static const Color aiPurple = Color(0xFF8A2BE2);
+  static const Color aiCyan = Color(0xFF00E5FF);
+  static const Color adminGold = Color(0xFFFFB300);
+  static const Color businessBlue = Color(0xFF1976D2);
 
   // Status colors
   static const Color online = Color(0xFF25D366);

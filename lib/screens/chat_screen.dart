@@ -12,7 +12,10 @@ import '../services/security_service.dart';
 import '../utils/constants.dart';
 import '../utils/date_formatter.dart';
 import '../widgets/message_bubble.dart';
+import '../widgets/floating_dev_circle.dart';
 import 'call_screen.dart';
+import 'group_call_screen.dart';
+import 'ai_assistant_screen.dart';
 
 class ChatScreen extends StatefulWidget {
   final UserModel targetUser;
@@ -36,10 +39,13 @@ class _ChatScreenState extends State<ChatScreen> {
   late String _chatId;
   bool _showEmojiBar = false;
   bool _isVoiceRecording = false;
+  MessageModel? _replyingToMessage;
+  String? _pinnedMessage;
 
   final List<String> _quickEmojis = [
     '👍', '❤️', '😂', '🔥', '👏', '🙏', '😊', '🎉', '💯', '🚀', '😍', '😎'
   ];
+
 
   @override
   void initState() {
@@ -139,6 +145,14 @@ class _ChatScreenState extends State<ChatScreen> {
     );
 
     final receiverId = widget.groupChat != null ? widget.groupChat!.chatId : widget.targetUser.uid;
+    final replyText = _replyingToMessage?.text;
+    final replySender = _replyingToMessage?.senderName ?? 'User';
+
+    if (_replyingToMessage != null) {
+      setState(() {
+        _replyingToMessage = null;
+      });
+    }
 
     await chatProvider.sendMessage(
       chatId: _chatId,
@@ -150,6 +164,8 @@ class _ChatScreenState extends State<ChatScreen> {
       fileName: fileName,
       fileSize: fileSize,
       senderName: authProvider.currentUser?.name,
+      replyToText: replyText,
+      replyToSender: replySender,
       isDevBypass: authProvider.isDevBypass,
     );
 
@@ -197,6 +213,19 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _startVideoCall() async {
+    if (widget.groupChat != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => GroupCallScreen(
+            groupName: widget.groupChat!.groupName ?? 'Group Video Call',
+            isVideo: true,
+          ),
+        ),
+      );
+      return;
+    }
+
     final authProvider = context.read<AuthProvider>();
     final chatProvider = context.read<ChatProvider>();
     final currentUserId = authProvider.currentUser?.uid ?? '';
@@ -206,7 +235,7 @@ class _ChatScreenState extends State<ChatScreen> {
       MaterialPageRoute(
         builder: (_) => CallScreen(
           targetUser: widget.targetUser,
-          isVideoCall: true,
+          isVideo: true,
         ),
       ),
     );
@@ -217,7 +246,7 @@ class _ChatScreenState extends State<ChatScreen> {
         callId: 'call_${DateTime.now().millisecondsSinceEpoch}',
         callerId: currentUserId,
         receiverId: widget.targetUser.uid,
-        callerName: widget.groupChat != null ? widget.groupChat!.groupName ?? 'Group' : widget.targetUser.name,
+        callerName: widget.targetUser.name,
         timestamp: DateTime.now(),
         durationSeconds: dur,
         isVideo: true,
@@ -235,6 +264,19 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _startVoiceCall() async {
+    if (widget.groupChat != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => GroupCallScreen(
+            groupName: widget.groupChat!.groupName ?? 'Group Voice Call',
+            isVideo: false,
+          ),
+        ),
+      );
+      return;
+    }
+
     final authProvider = context.read<AuthProvider>();
     final chatProvider = context.read<ChatProvider>();
     final currentUserId = authProvider.currentUser?.uid ?? '';
@@ -244,7 +286,7 @@ class _ChatScreenState extends State<ChatScreen> {
       MaterialPageRoute(
         builder: (_) => CallScreen(
           targetUser: widget.targetUser,
-          isVideoCall: false,
+          isVideo: false,
         ),
       ),
     );
@@ -374,7 +416,52 @@ class _ChatScreenState extends State<ChatScreen> {
                     color: const Color(0xFF0F9D58),
                     onTap: () {
                       Navigator.pop(ctx);
-                      _handleSendMessage(customText: '📍 Live location shared (Universal HQ)');
+                      _handleSendMessage(
+                        customText: '📍 Live location shared (Silicon Tech Hub)',
+                        messageType: 'location',
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildAttachmentItem(
+                    icon: Icons.person_rounded,
+                    label: 'Contact',
+                    color: const Color(0xFF0284C7),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _handleSendMessage(
+                        customText: '👤 Contact card shared',
+                        messageType: 'contact',
+                      );
+                    },
+                  ),
+                  _buildAttachmentItem(
+                    icon: Icons.auto_awesome_rounded,
+                    label: 'AI Suite',
+                    color: AppColors.aiPurple,
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const AiAssistantScreen()),
+                      );
+                    },
+                  ),
+                  _buildAttachmentItem(
+                    icon: Icons.emoji_emotions_rounded,
+                    label: 'Sticker',
+                    color: const Color(0xFFF59E0B),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _handleSendMessage(
+                        customText: '🎉 Sticker',
+                        messageType: 'sticker',
+                      );
                     },
                   ),
                 ],
@@ -548,6 +635,42 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void _showEditMessageDialog(MessageModel msg) {
+    final controller = TextEditingController(text: msg.text);
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Edit Message'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          decoration: const InputDecoration(labelText: 'Edited message text'),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+            onPressed: () {
+              final newText = controller.text.trim();
+              if (newText.isNotEmpty) {
+                final chatProvider = context.read<ChatProvider>();
+                final authProvider = context.read<AuthProvider>();
+                chatProvider.editMessage(
+                  chatId: _chatId,
+                  messageId: msg.messageId,
+                  newText: newText,
+                  isDevBypass: authProvider.isDevBypass,
+                );
+                Navigator.pop(ctx);
+              }
+            },
+            child: const Text('Save', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final authProvider = context.watch<AuthProvider>();
@@ -639,6 +762,7 @@ class _ChatScreenState extends State<ChatScreen> {
           ],
         ),
         actions: [
+          const AppBarDevCircleButton(),
           IconButton(
             icon: const Icon(Icons.videocam_rounded),
             tooltip: 'Video Call',
@@ -720,6 +844,31 @@ class _ChatScreenState extends State<ChatScreen> {
             : AppColors.lightChatBackground,
         child: Column(
           children: [
+            // Pinned Message Banner
+            if (_pinnedMessage != null)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                color: isDark ? const Color(0xFF1E293B) : Colors.amber.shade50,
+                child: Row(
+                  children: [
+                    const Icon(Icons.push_pin_rounded, size: 16, color: Colors.deepOrange),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Pinned: $_pinnedMessage',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                    InkWell(
+                      onTap: () => setState(() => _pinnedMessage = null),
+                      child: const Icon(Icons.close_rounded, size: 16),
+                    ),
+                  ],
+                ),
+              ),
+
             // Messages Stream
             Expanded(
               child: StreamBuilder<List<MessageModel>>(
@@ -837,6 +986,41 @@ class _ChatScreenState extends State<ChatScreen> {
                             isDevBypass: isDevBypass,
                           );
                         },
+                        onReply: (msg) {
+                          setState(() {
+                            _replyingToMessage = msg;
+                          });
+                        },
+                        onPin: (msg) {
+                          setState(() {
+                            _pinnedMessage = msg.text;
+                          });
+                          chatProvider.pinMessage(
+                            chatId: _chatId,
+                            messageId: msg.messageId,
+                            text: msg.text,
+                            isDevBypass: isDevBypass,
+                          );
+                        },
+                        onStar: (msg) {
+                          chatProvider.toggleStarMessage(
+                            chatId: _chatId,
+                            messageId: msg.messageId,
+                            isDevBypass: isDevBypass,
+                          );
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Message star updated')),
+                          );
+                        },
+                        onEdit: (msg) => _showEditMessageDialog(msg),
+                        onDelete: (msg, everyone) {
+                          chatProvider.deleteMessage(
+                            chatId: _chatId,
+                            messageId: msg.messageId,
+                            everyone: everyone,
+                            isDevBypass: isDevBypass,
+                          );
+                        },
                       );
                     },
                   );
@@ -866,6 +1050,44 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     );
                   },
+                ),
+              ),
+
+            // Quoted Reply Banner
+            if (_replyingToMessage != null)
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(12),
+                  border: const Border(left: BorderSide(color: AppColors.primary, width: 4)),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Replying to ${_replyingToMessage!.senderName ?? "User"}',
+                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: AppColors.primary),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            _replyingToMessage!.text,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close_rounded, size: 18),
+                      onPressed: () => setState(() => _replyingToMessage = null),
+                    ),
+                  ],
                 ),
               ),
 

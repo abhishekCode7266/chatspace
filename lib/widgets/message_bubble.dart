@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/message_model.dart';
+import '../screens/media_preview_screen.dart';
 import '../utils/constants.dart';
 import '../utils/date_formatter.dart';
 
@@ -10,6 +11,12 @@ class MessageBubble extends StatefulWidget {
   final String? dateSeparatorText;
   final bool isGroupChat;
   final void Function(String emoji)? onReactionSelected;
+  final void Function(MessageModel message)? onReply;
+  final void Function(MessageModel message)? onForward;
+  final void Function(MessageModel message)? onPin;
+  final void Function(MessageModel message)? onStar;
+  final void Function(MessageModel message)? onEdit;
+  final void Function(MessageModel message, bool everyone)? onDelete;
 
   const MessageBubble({
     super.key,
@@ -19,6 +26,12 @@ class MessageBubble extends StatefulWidget {
     this.dateSeparatorText,
     this.isGroupChat = false,
     this.onReactionSelected,
+    this.onReply,
+    this.onForward,
+    this.onPin,
+    this.onStar,
+    this.onEdit,
+    this.onDelete,
   });
 
   @override
@@ -28,77 +41,128 @@ class MessageBubble extends StatefulWidget {
 class _MessageBubbleState extends State<MessageBubble> {
   bool _isPlayingAudio = false;
 
-  void _showReactionMenu(BuildContext context) {
-    if (widget.onReactionSelected == null) return;
+  void _showContextMenu(BuildContext context) {
+    final message = widget.message;
+    final isMe = widget.isMe;
 
-    final RenderBox? overlay =
-        Overlay.of(context).context.findRenderObject() as RenderBox?;
-    final RenderBox? renderBox = context.findRenderObject() as RenderBox?;
-    if (renderBox == null || overlay == null) return;
-
-    final position = renderBox.localToGlobal(Offset.zero, ancestor: overlay);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final emojis = ['👍', '❤️', '😂', '😮', '😢', '🙏'];
-
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      barrierColor: Colors.black26,
-      builder: (ctx) {
-        return Stack(
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Positioned(
-              left: widget.isMe
-                  ? (position.dx - 120).clamp(16.0, overlay.size.width - 240)
-                  : position.dx.clamp(16.0, overlay.size.width - 240),
-              top: (position.dy - 60).clamp(60.0, overlay.size.height - 100),
-              child: Material(
-                color: Colors.transparent,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF233138) : Colors.white,
-                    borderRadius: BorderRadius.circular(28),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: emojis.map((emoji) {
-                      final isSelected = widget.message.reaction == emoji;
-                      return InkWell(
-                        onTap: () {
-                          Navigator.pop(ctx);
-                          widget.onReactionSelected!(emoji);
-                        },
-                        borderRadius: BorderRadius.circular(20),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: isSelected
-                                ? (isDark ? Colors.white12 : Colors.grey.shade200)
-                                : Colors.transparent,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Text(
-                            emoji,
-                            style: const TextStyle(fontSize: 24),
-                          ),
-                        ),
-                      );
-                    }).toList(),
-                  ),
-                ),
+            // Emoji reaction row
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: ['👍', '❤️', '😂', '😮', '😢', '🙏'].map((emoji) {
+                  return InkWell(
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      widget.onReactionSelected?.call(emoji);
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Padding(
+                      padding: const EdgeInsets.all(6.0),
+                      child: Text(emoji, style: const TextStyle(fontSize: 26)),
+                    ),
+                  );
+                }).toList(),
               ),
             ),
+            const Divider(height: 1),
+
+            // Actions list
+            ListTile(
+              leading: const Icon(Icons.reply_rounded, color: AppColors.primary),
+              title: const Text('Reply'),
+              onTap: () {
+                Navigator.pop(ctx);
+                widget.onReply?.call(message);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.forward_rounded, color: Colors.blueAccent),
+              title: const Text('Forward'),
+              onTap: () {
+                Navigator.pop(ctx);
+                widget.onForward?.call(message);
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                message.isStarred ? Icons.star_rounded : Icons.star_border_rounded,
+                color: Colors.amber,
+              ),
+              title: Text(message.isStarred ? 'Unstar Message' : 'Star Message'),
+              onTap: () {
+                Navigator.pop(ctx);
+                widget.onStar?.call(message);
+              },
+            ),
+            ListTile(
+              leading: Icon(
+                message.isPinned ? Icons.push_pin_outlined : Icons.push_pin_rounded,
+                color: Colors.deepOrange,
+              ),
+              title: Text(message.isPinned ? 'Unpin Message' : 'Pin Message to Top'),
+              onTap: () {
+                Navigator.pop(ctx);
+                widget.onPin?.call(message);
+              },
+            ),
+            if (isMe && !message.isDeletedForEveryone && message.messageType == 'text')
+              ListTile(
+                leading: const Icon(Icons.edit_rounded, color: Colors.teal),
+                title: const Text('Edit Message'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  widget.onEdit?.call(message);
+                },
+              ),
+            ListTile(
+              leading: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
+              title: const Text('Delete Message'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _showDeleteDialog(context);
+              },
+            ),
           ],
-        );
-      },
+        ),
+      ),
+    );
+  }
+
+  void _showDeleteDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Delete Message?'),
+        content: const Text('Do you want to delete this message for yourself or for everyone?'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              widget.onDelete?.call(widget.message, false);
+            },
+            child: const Text('Delete for Me'),
+          ),
+          if (widget.isMe)
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              onPressed: () {
+                Navigator.pop(ctx);
+                widget.onDelete?.call(widget.message, true);
+              },
+              child: const Text('Delete for Everyone', style: TextStyle(color: Colors.white)),
+            ),
+        ],
+      ),
     );
   }
 
@@ -107,6 +171,8 @@ class _MessageBubbleState extends State<MessageBubble> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final message = widget.message;
     final isMe = widget.isMe;
+
+    if (message.isDeletedForMe) return const SizedBox.shrink();
 
     final Color bubbleColor = isMe
         ? (isDark ? AppColors.darkSentBubble : AppColors.lightSentBubble)
@@ -125,19 +191,19 @@ class _MessageBubbleState extends State<MessageBubble> {
         Align(
           alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
           child: GestureDetector(
-            onLongPress: () => _showReactionMenu(context),
+            onLongPress: () => _showContextMenu(context),
             child: Stack(
               clipBehavior: Clip.none,
               children: [
                 Container(
                   constraints: BoxConstraints(
-                    maxWidth: MediaQuery.of(context).size.width * 0.82,
+                    maxWidth: MediaQuery.of(context).size.width * 0.84,
                   ),
                   margin: EdgeInsets.only(
                     top: 3,
                     bottom: message.reaction != null ? 14 : 3,
-                    left: isMe ? 48 : 8,
-                    right: isMe ? 8 : 48,
+                    left: isMe ? 44 : 8,
+                    right: isMe ? 8 : 44,
                   ),
                   padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                   decoration: BoxDecoration(
@@ -159,6 +225,20 @@ class _MessageBubbleState extends State<MessageBubble> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      // Forwarded Header
+                      if (message.forwardCount > 0)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.forward_rounded, size: 13, color: Colors.grey),
+                              SizedBox(width: 4),
+                              Text('Forwarded', style: TextStyle(fontSize: 11, fontStyle: FontStyle.italic, color: Colors.grey)),
+                            ],
+                          ),
+                        ),
+
                       // Group sender name
                       if (!isMe && widget.isGroupChat && message.senderName != null) ...[
                         Text(
@@ -171,8 +251,15 @@ class _MessageBubbleState extends State<MessageBubble> {
                         ),
                         const SizedBox(height: 3),
                       ],
+
+                      // Quoted Reply Banner
+                      if (message.replyToText != null)
+                        _buildQuotedReplyBox(message, isDark),
+
                       // Message Content according to type
-                      if (message.messageType == 'audio')
+                      if (message.isDeletedForEveryone)
+                        _buildDeletedContent(textColor, timeColor)
+                      else if (message.messageType == 'audio')
                         _buildVoiceNoteContent(textColor, timeColor, isDark)
                       else if (message.messageType == 'image')
                         _buildImageContent(textColor, timeColor, isDark)
@@ -180,11 +267,18 @@ class _MessageBubbleState extends State<MessageBubble> {
                         _buildVideoContent(textColor, timeColor, isDark)
                       else if (message.messageType == 'document')
                         _buildDocumentContent(textColor, timeColor, isDark)
+                      else if (message.messageType == 'location')
+                        _buildLocationContent(textColor, timeColor, isDark)
+                      else if (message.messageType == 'contact')
+                        _buildContactContent(textColor, timeColor, isDark)
+                      else if (message.messageType == 'sticker')
+                        _buildStickerContent(timeColor)
                       else
                         _buildTextContent(textColor, timeColor),
                     ],
                   ),
                 ),
+
                 // Reaction emoji pill badge
                 if (message.reaction != null)
                   Positioned(
@@ -192,7 +286,7 @@ class _MessageBubbleState extends State<MessageBubble> {
                     right: isMe ? 18 : null,
                     left: !isMe ? 18 : null,
                     child: GestureDetector(
-                      onTap: () => _showReactionMenu(context),
+                      onTap: () => _showContextMenu(context),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
@@ -225,6 +319,59 @@ class _MessageBubbleState extends State<MessageBubble> {
     );
   }
 
+  Widget _buildQuotedReplyBox(MessageModel message, bool isDark) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: isDark ? Colors.black26 : Colors.black12,
+        borderRadius: BorderRadius.circular(8),
+        border: Border(
+          left: BorderSide(
+            color: widget.isMe ? AppColors.primaryLight : AppColors.primary,
+            width: 3.5,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            message.replyToSender ?? 'Replying',
+            style: TextStyle(
+              fontSize: 11.5,
+              fontWeight: FontWeight.bold,
+              color: widget.isMe ? AppColors.primaryLight : AppColors.primary,
+            ),
+          ),
+          const SizedBox(height: 2),
+          Text(
+            message.replyToText ?? '',
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 12, color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDeletedContent(Color textColor, Color timeColor) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const Icon(Icons.block_rounded, size: 15, color: Colors.grey),
+        const SizedBox(width: 6),
+        const Text(
+          'This message was deleted',
+          style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey, fontSize: 14),
+        ),
+        const SizedBox(width: 8),
+        _buildTimeStatusRow(timeColor),
+      ],
+    );
+  }
+
   Color _getSenderColor(String name) {
     final colors = [
       const Color(0xFFE91E63),
@@ -253,142 +400,76 @@ class _MessageBubbleState extends State<MessageBubble> {
             ),
           ),
         ),
+        if (widget.message.isEdited)
+          const Padding(
+            padding: EdgeInsets.only(right: 4, bottom: 2),
+            child: Text(
+              '(edited)',
+              style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: Colors.grey),
+            ),
+          ),
         _buildTimeStatusRow(timeColor),
       ],
     );
   }
 
-  Widget _buildImageContent(Color textColor, Color timeColor, bool isDark) {
+  Widget _buildLocationContent(Color textColor, Color timeColor, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            height: 180,
-            width: double.infinity,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: isDark
-                    ? [const Color(0xFF2A3942), const Color(0xFF1E2A30)]
-                    : [const Color(0xFFE1F5FE), const Color(0xFFB3E5FC)],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Stack(
-              alignment: Alignment.center,
+        Container(
+          width: double.infinity,
+          height: 120,
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1E293B) : Colors.green.shade50,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: Colors.green.withOpacity(0.4)),
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(
-                  Icons.image_rounded,
-                  size: 64,
-                  color: isDark ? Colors.white30 : Colors.blue.shade200,
+                const Icon(Icons.location_on_rounded, size: 40, color: Colors.redAccent),
+                const SizedBox(height: 4),
+                Text(
+                  widget.message.locationName ?? 'Live Location Shared',
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
                 ),
-                Positioned(
-                  bottom: 8,
-                  left: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.photo_camera, size: 12, color: Colors.white),
-                        SizedBox(width: 4),
-                        Text('HD Photo', style: TextStyle(color: Colors.white, fontSize: 11)),
-                      ],
-                    ),
-                  ),
+                Text(
+                  widget.message.locationCoords ?? '28.6139° N, 77.2090° E',
+                  style: const TextStyle(fontSize: 11, color: Colors.grey),
                 ),
               ],
             ),
           ),
         ),
-        if (widget.message.text.isNotEmpty && widget.message.text != '📷 Photo') ...[
-          const SizedBox(height: 6),
-          Text(widget.message.text, style: TextStyle(color: textColor, fontSize: 14)),
-        ],
-        const SizedBox(height: 4),
-        Align(
-          alignment: Alignment.bottomRight,
-          child: _buildTimeStatusRow(timeColor),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Tap to view map', style: TextStyle(fontSize: 11, color: AppColors.primary)),
+            _buildTimeStatusRow(timeColor),
+          ],
         ),
       ],
     );
   }
 
-  Widget _buildVideoContent(Color textColor, Color timeColor, bool isDark) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            height: 180,
-            width: double.infinity,
-            color: Colors.black87,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Container(
-                  width: 52,
-                  height: 52,
-                  decoration: const BoxDecoration(
-                    color: Colors.white24,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 36),
-                ),
-                Positioned(
-                  bottom: 8,
-                  left: 8,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: Colors.black54,
-                      borderRadius: BorderRadius.circular(6),
-                    ),
-                    child: const Text('0:28 • 4.8 MB', style: TextStyle(color: Colors.white, fontSize: 11)),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: 4),
-        Align(
-          alignment: Alignment.bottomRight,
-          child: _buildTimeStatusRow(timeColor),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDocumentContent(Color textColor, Color timeColor, bool isDark) {
-    final fileName = widget.message.fileName ?? 'Universal_Document.pdf';
-    final fileSize = widget.message.fileSize ?? '1.8 MB';
-
+  Widget _buildContactContent(Color textColor, Color timeColor, bool isDark) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
-            color: isDark ? Colors.white10 : Colors.black.withOpacity(0.04),
+            color: isDark ? const Color(0xFF1E293B) : Colors.blue.shade50,
             borderRadius: BorderRadius.circular(10),
           ),
           child: Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade400,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.picture_as_pdf_rounded, color: Colors.white, size: 24),
+              const CircleAvatar(
+                backgroundColor: AppColors.primary,
+                child: Icon(Icons.person_rounded, color: Colors.white),
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -396,114 +477,310 @@ class _MessageBubbleState extends State<MessageBubble> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      fileName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(fontWeight: FontWeight.bold, color: textColor, fontSize: 14),
+                      widget.message.contactName ?? 'Shared Contact',
+                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
                     ),
                     Text(
-                      '$fileSize • PDF Document',
-                      style: TextStyle(color: timeColor, fontSize: 11.5),
+                      widget.message.contactPhone ?? '+91 98765 43210',
+                      style: const TextStyle(fontSize: 12, color: Colors.grey),
                     ),
                   ],
                 ),
               ),
-              const Icon(Icons.download_for_offline_rounded, color: AppColors.primary),
             ],
           ),
         ),
-        const SizedBox(height: 4),
-        Align(
-          alignment: Alignment.bottomRight,
-          child: _buildTimeStatusRow(timeColor),
+        const SizedBox(height: 6),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Contact Card', style: TextStyle(fontSize: 11, color: Colors.grey)),
+            _buildTimeStatusRow(timeColor),
+          ],
         ),
       ],
     );
   }
 
+  Widget _buildStickerContent(Color timeColor) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        const Center(
+          child: Text('🎉', style: TextStyle(fontSize: 64)),
+        ),
+        _buildTimeStatusRow(timeColor),
+      ],
+    );
+  }
+
+  Widget _buildImageContent(Color textColor, Color timeColor, bool isDark) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MediaPreviewScreen(
+              title: widget.message.fileName ?? 'Photo Preview',
+              imagePath: widget.message.mediaUrl ?? 'assets/images/app_logo.jpg',
+              senderName: widget.message.senderName ?? 'User',
+              timestamp: widget.message.timestamp,
+              mediaType: 'image',
+              fileSize: widget.message.fileSize ?? '1.8 MB',
+            ),
+          ),
+        );
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              height: 180,
+              width: double.infinity,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: isDark
+                      ? [const Color(0xFF2A3942), const Color(0xFF1E2A30)]
+                      : [const Color(0xFFE1F5FE), const Color(0xFFB3E5FC)],
+                ),
+              ),
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Image.asset(
+                    widget.message.mediaUrl ?? 'assets/images/app_logo.jpg',
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    height: 180,
+                    errorBuilder: (ctx, err, stack) => Icon(
+                      Icons.image_rounded,
+                      size: 64,
+                      color: isDark ? Colors.white30 : Colors.blue.shade200,
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: const Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.photo_camera, size: 12, color: Colors.white),
+                          SizedBox(width: 4),
+                          Text('Photo', style: TextStyle(color: Colors.white, fontSize: 11)),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (widget.message.text.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Text(widget.message.text, style: TextStyle(color: textColor, fontSize: 14)),
+          ],
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [_buildTimeStatusRow(timeColor)],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildVideoContent(Color textColor, Color timeColor, bool isDark) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MediaPreviewScreen(
+              title: widget.message.fileName ?? 'Video Clip',
+              imagePath: widget.message.mediaUrl ?? 'assets/images/app_logo.jpg',
+              senderName: widget.message.senderName ?? 'User',
+              timestamp: widget.message.timestamp,
+              mediaType: 'video',
+              fileSize: widget.message.fileSize ?? '8.4 MB',
+            ),
+          ),
+        );
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              height: 170,
+              width: double.infinity,
+              color: isDark ? const Color(0xFF1E293B) : Colors.black87,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Container(
+                    width: 50,
+                    height: 50,
+                    decoration: BoxDecoration(
+                      color: Colors.black54,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                    child: const Icon(Icons.play_arrow_rounded, color: Colors.white, size: 32),
+                  ),
+                  Positioned(
+                    bottom: 8,
+                    left: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: Colors.black54,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        widget.message.fileSize ?? '0:32 • 8.4 MB',
+                        style: const TextStyle(color: Colors.white, fontSize: 11),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [_buildTimeStatusRow(timeColor)],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDocumentContent(Color textColor, Color timeColor, bool isDark) {
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (_) => MediaPreviewScreen(
+              title: widget.message.fileName ?? 'Document.pdf',
+              senderName: widget.message.senderName ?? 'User',
+              timestamp: widget.message.timestamp,
+              mediaType: 'document',
+              fileSize: widget.message.fileSize ?? '4.2 MB',
+            ),
+          ),
+        );
+      },
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1E293B) : Colors.grey.shade100,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.picture_as_pdf_rounded, color: Colors.redAccent, size: 36),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.message.fileName ?? 'Universal_Document.pdf',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      Text(
+                        widget.message.fileSize ?? '4.2 MB • PDF',
+                        style: const TextStyle(fontSize: 11, color: Colors.grey),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.download_rounded, color: AppColors.primary, size: 20),
+              ],
+            ),
+          ),
+          const SizedBox(height: 4),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [_buildTimeStatusRow(timeColor)],
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildVoiceNoteContent(Color textColor, Color timeColor, bool isDark) {
+    final duration = widget.message.audioDuration ?? '0:14';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // Play / Pause Circular Button
-            GestureDetector(
-              onTap: () {
-                setState(() {
-                  _isPlayingAudio = !_isPlayingAudio;
-                });
-              },
+            InkWell(
+              onTap: () => setState(() => _isPlayingAudio = !_isPlayingAudio),
+              borderRadius: BorderRadius.circular(24),
               child: Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: widget.isMe ? AppColors.primary : AppColors.secondary,
+                width: 36,
+                height: 36,
+                decoration: const BoxDecoration(
+                  color: AppColors.primary,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   _isPlayingAudio ? Icons.pause_rounded : Icons.play_arrow_rounded,
                   color: Colors.white,
-                  size: 24,
+                  size: 22,
                 ),
               ),
             ),
             const SizedBox(width: 10),
-            // Simulated Audio Waveform
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: List.generate(22, (index) {
-                      final heights = [
-                        8.0, 14.0, 20.0, 10.0, 16.0, 24.0, 12.0, 18.0, 22.0,
-                        15.0, 26.0, 18.0, 12.0, 22.0, 16.0, 10.0, 20.0, 14.0,
-                        24.0, 16.0, 12.0, 8.0,
-                      ];
-                      final isPlayed = _isPlayingAudio && index < 12;
-                      return Container(
-                        margin: const EdgeInsets.symmetric(horizontal: 1.2),
-                        width: 2.5,
-                        height: heights[index % heights.length],
-                        decoration: BoxDecoration(
-                          color: isPlayed
-                              ? AppColors.accent
-                              : (isDark ? Colors.white38 : Colors.black38),
-                          borderRadius: BorderRadius.circular(2),
-                        ),
-                      );
-                    }),
-                  ),
-                  const SizedBox(height: 4),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(
-                        _isPlayingAudio ? '0:06' : (widget.message.audioDuration ?? '0:14'),
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: timeColor,
-                          fontWeight: FontWeight.w500,
-                        ),
+              child: SizedBox(
+                height: 28,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [14, 22, 18, 26, 12, 28, 20, 16, 24, 18, 22, 14, 20, 12].map((height) {
+                    return Container(
+                      width: 3,
+                      height: height.toDouble(),
+                      decoration: BoxDecoration(
+                        color: _isPlayingAudio ? AppColors.primaryLight : (isDark ? Colors.white38 : Colors.grey.shade400),
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                      const Icon(
-                        Icons.mic_rounded,
-                        size: 14,
-                        color: AppColors.accent,
-                      ),
-                    ],
-                  ),
-                ],
+                    );
+                  }).toList(),
+                ),
               ),
             ),
+            const SizedBox(width: 8),
+            const Icon(Icons.mic_rounded, color: AppColors.primaryLight, size: 18),
           ],
         ),
         const SizedBox(height: 4),
-        Align(
-          alignment: Alignment.bottomRight,
-          child: _buildTimeStatusRow(timeColor),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(duration, style: TextStyle(fontSize: 11, color: timeColor)),
+            _buildTimeStatusRow(timeColor),
+          ],
         ),
       ],
     );
@@ -513,25 +790,24 @@ class _MessageBubbleState extends State<MessageBubble> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        if (widget.message.isDisappearing) ...[
-          Icon(Icons.timer_outlined, size: 12, color: timeColor),
+        if (widget.message.isPinned) ...[
+          const Icon(Icons.push_pin_rounded, size: 12, color: Colors.deepOrange),
+          const SizedBox(width: 3),
+        ],
+        if (widget.message.isStarred) ...[
+          const Icon(Icons.star_rounded, size: 12, color: Colors.amber),
           const SizedBox(width: 3),
         ],
         Text(
-          DateFormatter.formatMessageTime(widget.message.timestamp),
-          style: TextStyle(
-            fontSize: 11,
-            color: timeColor,
-          ),
+          DateFormatter.formatTimestamp(widget.message.timestamp),
+          style: TextStyle(fontSize: 11, color: timeColor),
         ),
         if (widget.isMe) ...[
           const SizedBox(width: 4),
           Icon(
             widget.message.isSeen ? Icons.done_all : Icons.done,
-            size: 15,
-            color: widget.message.isSeen
-                ? AppColors.seenTick
-                : AppColors.sentTick,
+            size: 16,
+            color: widget.message.isSeen ? AppColors.seenTick : AppColors.sentTick,
           ),
         ],
       ],
@@ -541,24 +817,17 @@ class _MessageBubbleState extends State<MessageBubble> {
   Widget _buildDateSeparator(BuildContext context, bool isDark) {
     return Container(
       margin: const EdgeInsets.symmetric(vertical: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E282E) : const Color(0xFFE1E4E8),
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 1,
-            offset: const Offset(0, 1),
-          ),
-        ],
+        color: isDark ? const Color(0xFF1F2C34) : const Color(0xFFEFEFEF),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         widget.dateSeparatorText!,
         style: TextStyle(
           fontSize: 12,
-          fontWeight: FontWeight.w500,
-          color: isDark ? Colors.white70 : Colors.black87,
+          fontWeight: FontWeight.w600,
+          color: isDark ? Colors.white70 : Colors.black54,
         ),
       ),
     );
