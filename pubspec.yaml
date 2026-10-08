@@ -1,7 +1,7 @@
 name: chatspace
-description: "Universal Chat App - Modern, AI-friendly, secure communication app with Text, HD Voice/Video Calls, Groups, Channels, Status, and E2EE."
+description: "Universal Chat App - All-in-One WhatsApp & Google Pay Super App: Text, HD Video Calls, Communities, In-Chat UPI Payments, Bill Recharges, Metro Tickets & Meta AI."
 publish_to: "none"
-version: 1.5.0+6
+version: 1.6.0+7
 
 environment:
   sdk: ">=3.0.0 <4.0.0"

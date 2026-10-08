@@ -12,6 +12,8 @@ class PaymentTransactionModel {
   final String upiRefId;
   final String bankName;
   final String paymentMethod; // 'UPI', 'Bank Account', 'Paytm Wallet'
+  final String category; // 'UPI', 'RECHARGE', 'ELECTRICITY', 'FASTAG', 'METRO', 'DTH', 'CREDIT_CARD', 'LOAN', 'TICKETS'
+  final String details;
 
   PaymentTransactionModel({
     required this.id,
@@ -27,6 +29,8 @@ class PaymentTransactionModel {
     required this.upiRefId,
     this.bankName = 'State Bank of India',
     this.paymentMethod = 'UPI',
+    this.category = 'UPI',
+    this.details = '',
   });
 
   Map<String, dynamic> toMap() {
@@ -44,6 +48,8 @@ class PaymentTransactionModel {
       'upiRefId': upiRefId,
       'bankName': bankName,
       'paymentMethod': paymentMethod,
+      'category': category,
+      'details': details,
     };
   }
 
@@ -64,6 +70,8 @@ class PaymentTransactionModel {
       upiRefId: map['upiRefId'] as String? ?? 'UPI${DateTime.now().millisecondsSinceEpoch}',
       bankName: map['bankName'] as String? ?? 'State Bank of India',
       paymentMethod: map['paymentMethod'] as String? ?? 'UPI',
+      category: map['category'] as String? ?? 'UPI',
+      details: map['details'] as String? ?? '',
     );
   }
 }

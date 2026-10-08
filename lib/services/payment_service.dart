@@ -328,6 +328,349 @@ class PaymentService {
     return txn;
   }
 
+  // --- Bank Balance Helpers ---
+  void _deductFromPrimaryBank(double amount) {
+    final idx = _bankAccounts.indexWhere((b) => b.isPrimary);
+    if (idx != -1) {
+      final b = _bankAccounts[idx];
+      final newBal = (b.balance - amount).clamp(0.0, 999999999.0);
+      _bankAccounts[idx] = BankAccountModel(
+        id: b.id,
+        bankName: b.bankName,
+        accountNumberMasked: b.accountNumberMasked,
+        ifsc: b.ifsc,
+        accountType: b.accountType,
+        isPrimary: true,
+        upiId: b.upiId,
+        balance: newBal,
+        brandColorHex: b.brandColorHex,
+      );
+    }
+  }
+
+  void _addToPrimaryBank(double amount) {
+    final idx = _bankAccounts.indexWhere((b) => b.isPrimary);
+    if (idx != -1) {
+      final b = _bankAccounts[idx];
+      _bankAccounts[idx] = BankAccountModel(
+        id: b.id,
+        bankName: b.bankName,
+        accountNumberMasked: b.accountNumberMasked,
+        ifsc: b.ifsc,
+        accountType: b.accountType,
+        isPrimary: true,
+        upiId: b.upiId,
+        balance: b.balance + amount,
+        brandColorHex: b.brandColorHex,
+      );
+    }
+  }
+
+  // --- Simulate Receiving Money / Payment Received QR ---
+  PaymentTransactionModel receiveMoneySimulated({
+    required double amount,
+    required String senderName,
+    required String senderUpi,
+    String note = 'Payment received via Universal Pay QR',
+  }) {
+    _addToPrimaryBank(amount);
+    final txn = PaymentTransactionModel(
+      id: 'txn_rec_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: 'payer_${DateTime.now().millisecondsSinceEpoch}',
+      senderName: senderName,
+      receiverId: 'current_user',
+      receiverName: 'You',
+      amount: amount,
+      currency: '₹',
+      note: note,
+      timestamp: DateTime.now(),
+      status: 'SUCCESS',
+      upiRefId: 'UPI${DateTime.now().millisecondsSinceEpoch}',
+      bankName: primaryBank.bankName,
+      paymentMethod: 'UPI QR',
+      category: 'UPI',
+      details: 'Received from $senderUpi',
+    );
+
+    _transactions.insert(0, txn);
+    _txnStreamController.add(List.from(_transactions));
+    return txn;
+  }
+
+  // --- Pay to Mobile Number / Contact ---
+  PaymentTransactionModel payToMobile({
+    required String mobileNumber,
+    required String contactName,
+    required double amount,
+    String note = '',
+  }) {
+    _deductFromPrimaryBank(amount);
+    final txn = PaymentTransactionModel(
+      id: 'txn_mob_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: 'current_user',
+      senderName: 'You',
+      receiverId: 'mob_$mobileNumber',
+      receiverName: contactName,
+      amount: amount,
+      currency: '₹',
+      note: note.isNotEmpty ? note : 'Paid to $mobileNumber',
+      timestamp: DateTime.now(),
+      status: 'SUCCESS',
+      upiRefId: 'UPI${DateTime.now().millisecondsSinceEpoch}',
+      bankName: primaryBank.bankName,
+      paymentMethod: 'Mobile Number',
+      category: 'UPI',
+      details: 'Mobile: $mobileNumber',
+    );
+
+    _transactions.insert(0, txn);
+    _txnStreamController.add(List.from(_transactions));
+    return txn;
+  }
+
+  // --- Mobile Recharge ---
+  PaymentTransactionModel rechargeMobile({
+    required String phone,
+    required String operator,
+    required double amount,
+    required String planDetails,
+  }) {
+    _deductFromPrimaryBank(amount);
+    final txn = PaymentTransactionModel(
+      id: 'txn_rch_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: 'current_user',
+      senderName: 'You',
+      receiverId: operator.toLowerCase(),
+      receiverName: '$operator Prepaid Recharge',
+      amount: amount,
+      currency: '₹',
+      note: '$operator • $phone ($planDetails)',
+      timestamp: DateTime.now(),
+      status: 'SUCCESS',
+      upiRefId: 'RCH${DateTime.now().millisecondsSinceEpoch}',
+      bankName: primaryBank.bankName,
+      paymentMethod: 'UPI',
+      category: 'RECHARGE',
+      details: 'Phone: $phone | Plan: $planDetails',
+    );
+
+    _transactions.insert(0, txn);
+    _txnStreamController.add(List.from(_transactions));
+    return txn;
+  }
+
+  // --- Electricity Bill Payment ---
+  PaymentTransactionModel payElectricityBill({
+    required String discom,
+    required String consumerId,
+    required double amount,
+  }) {
+    _deductFromPrimaryBank(amount);
+    final txn = PaymentTransactionModel(
+      id: 'txn_elec_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: 'current_user',
+      senderName: 'You',
+      receiverId: discom.toLowerCase(),
+      receiverName: discom,
+      amount: amount,
+      currency: '₹',
+      note: 'Electricity Bill • Consumer #$consumerId',
+      timestamp: DateTime.now(),
+      status: 'SUCCESS',
+      upiRefId: 'ELEC${DateTime.now().millisecondsSinceEpoch}',
+      bankName: primaryBank.bankName,
+      paymentMethod: 'UPI BBPS',
+      category: 'ELECTRICITY',
+      details: '$discom | Consumer ID: $consumerId',
+    );
+
+    _transactions.insert(0, txn);
+    _txnStreamController.add(List.from(_transactions));
+    return txn;
+  }
+
+  // --- FASTag Recharge ---
+  PaymentTransactionModel rechargeFastag({
+    required String vehicleNo,
+    required String bank,
+    required double amount,
+  }) {
+    _deductFromPrimaryBank(amount);
+    final txn = PaymentTransactionModel(
+      id: 'txn_ft_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: 'current_user',
+      senderName: 'You',
+      receiverId: 'fastag_$bank',
+      receiverName: 'NETC FASTag ($bank)',
+      amount: amount,
+      currency: '₹',
+      note: 'FASTag Recharge for $vehicleNo',
+      timestamp: DateTime.now(),
+      status: 'SUCCESS',
+      upiRefId: 'TAG${DateTime.now().millisecondsSinceEpoch}',
+      bankName: primaryBank.bankName,
+      paymentMethod: 'UPI',
+      category: 'FASTAG',
+      details: 'Vehicle No: $vehicleNo | Issuing Bank: $bank',
+    );
+
+    _transactions.insert(0, txn);
+    _txnStreamController.add(List.from(_transactions));
+    return txn;
+  }
+
+  // --- Metro QR Tickets ---
+  PaymentTransactionModel bookMetroTicket({
+    required String city,
+    required String fromStation,
+    required String toStation,
+    required int passengers,
+    required double fare,
+  }) {
+    _deductFromPrimaryBank(fare);
+    final txn = PaymentTransactionModel(
+      id: 'txn_mto_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: 'current_user',
+      senderName: 'You',
+      receiverId: 'metro_$city',
+      receiverName: '$city Metro Rail QR Ticket',
+      amount: fare,
+      currency: '₹',
+      note: '$fromStation ➔ $toStation ($passengers Ticket${passengers > 1 ? 's' : ''})',
+      timestamp: DateTime.now(),
+      status: 'SUCCESS',
+      upiRefId: 'METRO${DateTime.now().millisecondsSinceEpoch}',
+      bankName: primaryBank.bankName,
+      paymentMethod: 'UPI',
+      category: 'METRO',
+      details: '$city Metro | $fromStation to $toStation | $passengers Passenger(s)',
+    );
+
+    _transactions.insert(0, txn);
+    _txnStreamController.add(List.from(_transactions));
+    return txn;
+  }
+
+  // --- DTH Recharge ---
+  PaymentTransactionModel rechargeDth({
+    required String operator,
+    required String subscriberId,
+    required double amount,
+  }) {
+    _deductFromPrimaryBank(amount);
+    final txn = PaymentTransactionModel(
+      id: 'txn_dth_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: 'current_user',
+      senderName: 'You',
+      receiverId: 'dth_$operator',
+      receiverName: '$operator DTH Recharge',
+      amount: amount,
+      currency: '₹',
+      note: 'DTH ID: $subscriberId',
+      timestamp: DateTime.now(),
+      status: 'SUCCESS',
+      upiRefId: 'DTH${DateTime.now().millisecondsSinceEpoch}',
+      bankName: primaryBank.bankName,
+      paymentMethod: 'UPI',
+      category: 'DTH',
+      details: '$operator DTH | Subscriber ID: $subscriberId',
+    );
+
+    _transactions.insert(0, txn);
+    _txnStreamController.add(List.from(_transactions));
+    return txn;
+  }
+
+  // --- Credit Card Bill ---
+  PaymentTransactionModel payCreditCard({
+    required String last4,
+    required String bank,
+    required double amount,
+  }) {
+    _deductFromPrimaryBank(amount);
+    final txn = PaymentTransactionModel(
+      id: 'txn_cc_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: 'current_user',
+      senderName: 'You',
+      receiverId: 'cc_$bank',
+      receiverName: '$bank Credit Card Payment',
+      amount: amount,
+      currency: '₹',
+      note: 'Card ending in •••• $last4',
+      timestamp: DateTime.now(),
+      status: 'SUCCESS',
+      upiRefId: 'CARD${DateTime.now().millisecondsSinceEpoch}',
+      bankName: primaryBank.bankName,
+      paymentMethod: 'UPI',
+      category: 'CREDIT_CARD',
+      details: '$bank Credit Card ending with $last4',
+    );
+
+    _transactions.insert(0, txn);
+    _txnStreamController.add(List.from(_transactions));
+    return txn;
+  }
+
+  // --- Loan EMI Payment ---
+  PaymentTransactionModel payLoanEmi({
+    required String lender,
+    required String loanNo,
+    required double amount,
+  }) {
+    _deductFromPrimaryBank(amount);
+    final txn = PaymentTransactionModel(
+      id: 'txn_loan_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: 'current_user',
+      senderName: 'You',
+      receiverId: 'loan_$lender',
+      receiverName: '$lender EMI Repayment',
+      amount: amount,
+      currency: '₹',
+      note: 'Loan Account #$loanNo',
+      timestamp: DateTime.now(),
+      status: 'SUCCESS',
+      upiRefId: 'EMI${DateTime.now().millisecondsSinceEpoch}',
+      bankName: primaryBank.bankName,
+      paymentMethod: 'UPI',
+      category: 'LOAN',
+      details: '$lender | Loan Account: $loanNo',
+    );
+
+    _transactions.insert(0, txn);
+    _txnStreamController.add(List.from(_transactions));
+    return txn;
+  }
+
+  // --- Travel / Movie Tickets ---
+  PaymentTransactionModel bookTravelTickets({
+    required String type, // 'Bus', 'Train', 'Flight', 'Movie'
+    required String details,
+    required double amount,
+  }) {
+    _deductFromPrimaryBank(amount);
+    final txn = PaymentTransactionModel(
+      id: 'txn_tkt_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: 'current_user',
+      senderName: 'You',
+      receiverId: 'tkt_${type.toLowerCase()}',
+      receiverName: '$type Booking Confirmation',
+      amount: amount,
+      currency: '₹',
+      note: details,
+      timestamp: DateTime.now(),
+      status: 'SUCCESS',
+      upiRefId: 'TKT${DateTime.now().millisecondsSinceEpoch}',
+      bankName: primaryBank.bankName,
+      paymentMethod: 'UPI',
+      category: 'TICKETS',
+      details: '$type Booking | $details',
+    );
+
+    _transactions.insert(0, txn);
+    _txnStreamController.add(List.from(_transactions));
+    return txn;
+  }
+
   // --- Subscriptions ---
   void upgradePlan(String planId) {
     _activePlanId = planId;

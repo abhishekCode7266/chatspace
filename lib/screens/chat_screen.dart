@@ -47,8 +47,15 @@ class _ChatScreenState extends State<ChatScreen> {
   String? _pinnedMessage;
 
   final List<String> _quickEmojis = [
-    '👍', '❤️', '😂', '🔥', '👏', '🙏', '😊', '🎉', '💯', '🚀', '😍', '😎'
+    '👍', '❤️', '😂', '🔥', '👏', '🙏', '😊', '🎉', '💯', '🚀', '😍', '😎',
+    '✨', '⭐', '🎂', '🥳', '🙌', '💯', '🤩', '🎯', '💡', '🤖', '💬', '☕',
+    '🍕', '🍔', '🍦', '🍩', '🍫', '🍿', '🌹', '💐', '🏆', '🥇', '⚡', '🌈'
   ];
+
+  int _emojiDrawerTab = 0; // 0: Emoji, 1: GIF, 2: Stickers
+  Color? _customChatBackgroundColor;
+  bool _isSearchingChat = false;
+  String _chatSearchQuery = '';
 
 
   @override
@@ -521,6 +528,946 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
+  void _showCameraCaptureDialog() {
+    bool isFrontCamera = false;
+    bool isFlashOn = false;
+    showDialog(
+      context: context,
+      barrierColor: Colors.black.withOpacity(0.85),
+      builder: (dialogCtx) {
+        return StatefulBuilder(
+          builder: (ctx, setCamState) {
+            return Dialog(
+              insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+              backgroundColor: Colors.black,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: SizedBox(
+                  height: 480,
+                  child: Stack(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        height: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: isFrontCamera
+                                ? [const Color(0xFF1E3A8A), const Color(0xFF0F172A)]
+                                : [const Color(0xFF1C1917), const Color(0xFF292524)],
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                          ),
+                        ),
+                        child: Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                isFrontCamera ? Icons.face_rounded : Icons.camera_alt_outlined,
+                                size: 80,
+                                color: Colors.white24,
+                              ),
+                              const SizedBox(height: 12),
+                              Text(
+                                isFrontCamera ? 'Front Selfie Viewfinder' : 'Rear Ultra HD Viewfinder',
+                                style: const TextStyle(color: Colors.white60, fontSize: 13, letterSpacing: 0.5),
+                              ),
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white12,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Text('Tap Shutter Button to Snap & Send', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: 14,
+                        left: 14,
+                        right: 14,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.close_rounded, color: Colors.white, size: 26),
+                              onPressed: () => Navigator.pop(dialogCtx),
+                            ),
+                            IconButton(
+                              icon: Icon(isFlashOn ? Icons.flash_on_rounded : Icons.flash_off_rounded, color: isFlashOn ? Colors.amber : Colors.white, size: 24),
+                              onPressed: () => setCamState(() => isFlashOn = !isFlashOn),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.flip_camera_ios_rounded, color: Colors.white, size: 24),
+                              onPressed: () => setCamState(() => isFrontCamera = !isFrontCamera),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Positioned(
+                        bottom: 24,
+                        left: 0,
+                        right: 0,
+                        child: Center(
+                          child: GestureDetector(
+                            onTap: () {
+                              Navigator.pop(dialogCtx);
+                              _handleSendMessage(
+                                customText: '📷 Photo snap (${isFrontCamera ? "Front" : "Rear"}, ${TimeOfDay.now().format(context)})',
+                                messageType: 'image',
+                              );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('📷 Captured and sent photo'),
+                                  backgroundColor: AppColors.primary,
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            child: Container(
+                              width: 72,
+                              height: 72,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(color: Colors.white, width: 4),
+                              ),
+                              child: Container(
+                                margin: const EdgeInsets.all(4),
+                                decoration: const BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showVoiceDictationDialog() {
+    bool isListening = true;
+    final dictationSamples = [
+      'नमस्ते! मैं बिल्कुल ठीक हूँ, आप कैसे हैं?',
+      'Let\'s connect on Universal Chat App for the team sync.',
+      'Sending you the project report right now.',
+      'मैं शाम 5 बजे आपको कॉल करता हूँ।',
+    ];
+    final textController = TextEditingController(text: dictationSamples[0]);
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setDictState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Row(
+                children: [
+                  Icon(Icons.mic_none_rounded, color: AppColors.primary),
+                  SizedBox(width: 10),
+                  Text('बोलकर चैट लिखें (Speech Dictation)', style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: isListening ? AppColors.primary.withOpacity(0.15) : Colors.grey.withOpacity(0.15),
+                    ),
+                    child: Center(
+                      child: Icon(
+                        isListening ? Icons.mic_rounded : Icons.mic_off_rounded,
+                        color: isListening ? AppColors.primary : Colors.grey,
+                        size: 36,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    isListening ? '🎙️ Listening... (बोलिए, आवाज़ रिकॉर्ड हो रही है)' : 'Dictation Paused',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: isListening ? AppColors.primary : Colors.grey,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: textController,
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      hintText: 'Recognized voice text will appear here...',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                      contentPadding: const EdgeInsets.all(12),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 4,
+                    children: [
+                      for (int i = 0; i < dictationSamples.length; i++)
+                        ActionChip(
+                          label: Text(
+                            dictationSamples[i].length > 18
+                                ? '${dictationSamples[i].substring(0, 18)}...'
+                                : dictationSamples[i],
+                            style: const TextStyle(fontSize: 11),
+                          ),
+                          onPressed: () {
+                            setDictState(() {
+                              textController.text = dictationSamples[i];
+                            });
+                          },
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    _messageController.text += ' ${textController.text.trim()}';
+                    _onTextChanged(_messageController.text);
+                    Navigator.pop(ctx);
+                  },
+                  child: const Text('Insert in Chat'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () {
+                    final textToSend = textController.text.trim();
+                    if (textToSend.isNotEmpty) {
+                      Navigator.pop(ctx);
+                      _handleSendMessage(customText: textToSend);
+                    }
+                  },
+                  child: const Text('Send Now'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showCreatePollDialog() {
+    final questionCtrl = TextEditingController();
+    final opt1Ctrl = TextEditingController();
+    final opt2Ctrl = TextEditingController();
+    final opt3Ctrl = TextEditingController();
+    bool allowMultiple = false;
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setPollState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Row(
+                children: [
+                  Icon(Icons.poll_rounded, color: Color(0xFF00897B)),
+                  SizedBox(width: 10),
+                  Text('Create Poll', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    TextField(
+                      controller: questionCtrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Question',
+                        hintText: 'Ask a question...',
+                        prefixIcon: Icon(Icons.help_outline_rounded),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    const Text('Options', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: opt1Ctrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Option 1',
+                        prefixIcon: Icon(Icons.circle_outlined, size: 16),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: opt2Ctrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Option 2',
+                        prefixIcon: Icon(Icons.circle_outlined, size: 16),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: opt3Ctrl,
+                      decoration: const InputDecoration(
+                        labelText: 'Option 3 (Optional)',
+                        prefixIcon: Icon(Icons.circle_outlined, size: 16),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: const Text('Allow multiple answers', style: TextStyle(fontSize: 14)),
+                      value: allowMultiple,
+                      onChanged: (val) => setPollState(() => allowMultiple = val),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00897B),
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () {
+                    final q = questionCtrl.text.trim();
+                    final o1 = opt1Ctrl.text.trim();
+                    final o2 = opt2Ctrl.text.trim();
+                    if (q.isNotEmpty && o1.isNotEmpty && o2.isNotEmpty) {
+                      Navigator.pop(ctx);
+                      final o3 = opt3Ctrl.text.trim();
+                      final pollText = '📊 Poll: $q\n• 1: $o1\n• 2: $o2${o3.isNotEmpty ? "\n• 3: $o3" : ""}';
+                      _handleSendMessage(
+                        customText: pollText,
+                        messageType: 'poll',
+                      );
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('Please enter a question and at least 2 options.')),
+                      );
+                    }
+                  },
+                  child: const Text('Create Poll'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showCreateEventDialog() {
+    final titleCtrl = TextEditingController();
+    final locationCtrl = TextEditingController();
+    DateTime eventDate = DateTime.now().add(const Duration(days: 1));
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (dialogCtx, setEvtState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Row(
+                children: [
+                  Icon(Icons.event_available_rounded, color: Colors.orange),
+                  SizedBox(width: 10),
+                  Text('Create Event', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: titleCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Event Name',
+                      hintText: 'e.g. Universal Chat Super Meet',
+                      prefixIcon: Icon(Icons.title_rounded),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: locationCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Location / Link',
+                      hintText: 'e.g. Google Meet or Silicon Tech Hub',
+                      prefixIcon: Icon(Icons.place_rounded),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    leading: const Icon(Icons.calendar_month_rounded, color: Colors.orange),
+                    title: const Text('Event Date', style: TextStyle(fontSize: 13)),
+                    subtitle: Text('${eventDate.day}/${eventDate.month}/${eventDate.year} at 5:00 PM', style: const TextStyle(fontWeight: FontWeight.bold)),
+                    trailing: TextButton(
+                      child: const Text('Change'),
+                      onPressed: () async {
+                        final picked = await showDatePicker(
+                          context: context,
+                          initialDate: eventDate,
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 365)),
+                        );
+                        if (picked != null) {
+                          setEvtState(() => eventDate = picked);
+                        }
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  child: const Text('Cancel'),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.orange,
+                    foregroundColor: Colors.white,
+                  ),
+                  onPressed: () {
+                    final t = titleCtrl.text.trim();
+                    if (t.isNotEmpty) {
+                      Navigator.pop(ctx);
+                      final loc = locationCtrl.text.trim().isEmpty ? 'Online' : locationCtrl.text.trim();
+                      final eventMsg = '📅 Event: $t\n🕒 Date: ${eventDate.day}/${eventDate.month}/${eventDate.year} 5:00 PM\n📍 Location: $loc';
+                      _handleSendMessage(
+                        customText: eventMsg,
+                        messageType: 'event',
+                      );
+                    }
+                  },
+                  child: const Text('Share Event'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showViewContactDialog() {
+    final isGroup = widget.groupChat != null;
+    final name = isGroup ? (widget.groupChat!.groupName ?? 'Group') : widget.targetUser.name;
+    final email = isGroup ? 'Universal Group Community' : widget.targetUser.email;
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircleAvatar(
+                radius: 40,
+                backgroundColor: isGroup ? const Color(0xFF007AFF) : AppColors.primary,
+                child: isGroup
+                    ? const Icon(Icons.groups_rounded, color: Colors.white, size: 44)
+                    : Text(
+                        name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                        style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold),
+                      ),
+              ),
+              const SizedBox(height: 14),
+              Text(name, style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text(email, style: const TextStyle(color: Colors.grey, fontSize: 13)),
+              const SizedBox(height: 16),
+              const Divider(),
+              ListTile(
+                leading: const Icon(Icons.phone_rounded, color: AppColors.primary),
+                title: const Text('Voice & Video Calling'),
+                subtitle: const Text('Free HD Calls powered by WebRTC & Firebase'),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(icon: const Icon(Icons.call_rounded), onPressed: _startVoiceCall),
+                    IconButton(icon: const Icon(Icons.videocam_rounded), onPressed: _startVideoCall),
+                  ],
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.lock_rounded, color: Color(0xFF00897B)),
+                title: const Text('Encryption Status'),
+                subtitle: const Text('Messages and calls are AES-256 end-to-end encrypted.'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showVerifyEncryptionDialog();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.notifications_off_rounded, color: Colors.blueAccent),
+                title: const Text('Mute Notifications'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showMuteNotificationsDialog();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.qr_code_2_rounded, color: Colors.purple),
+                title: const Text('Universal QR Code'),
+                subtitle: const Text('Share contact card or invite to chat'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => QrCodeShareScreen(
+                        groupChatId: widget.groupChat?.chatId,
+                        groupName: widget.groupChat?.groupName,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showMediaLinksDocsSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return DefaultTabController(
+          length: 3,
+          child: Container(
+            height: MediaQuery.of(context).size.height * 0.65,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              children: [
+                const SizedBox(height: 12),
+                Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(2)),
+                ),
+                const SizedBox(height: 8),
+                const TabBar(
+                  tabs: [
+                    Tab(text: 'MEDIA (24)'),
+                    Tab(text: 'DOCS (8)'),
+                    Tab(text: 'LINKS (12)'),
+                  ],
+                ),
+                Expanded(
+                  child: TabBarView(
+                    children: [
+                      GridView.builder(
+                        padding: const EdgeInsets.all(12),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          crossAxisSpacing: 6,
+                          mainAxisSpacing: 6,
+                        ),
+                        itemCount: 9,
+                        itemBuilder: (c, i) => Container(
+                          decoration: BoxDecoration(
+                            color: Colors.teal.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Center(
+                            child: Icon(i % 2 == 0 ? Icons.image_rounded : Icons.videocam_rounded, color: AppColors.primary, size: 36),
+                          ),
+                        ),
+                      ),
+                      ListView.separated(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: 4,
+                        separatorBuilder: (_, __) => const Divider(),
+                        itemBuilder: (c, i) => ListTile(
+                          leading: const Icon(Icons.picture_as_pdf_rounded, color: Colors.redAccent, size: 32),
+                          title: Text('Universal_Chat_Spec_v${i + 1}.pdf', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                          subtitle: Text('${(i + 1) * 1.2} MB • Oct 2026'),
+                          trailing: const Icon(Icons.download_rounded),
+                        ),
+                      ),
+                      ListView.separated(
+                        padding: const EdgeInsets.all(12),
+                        itemCount: 3,
+                        separatorBuilder: (_, __) => const Divider(),
+                        itemBuilder: (c, i) => ListTile(
+                          leading: const Icon(Icons.link_rounded, color: Colors.blueAccent, size: 32),
+                          title: Text(i == 0 ? 'https://abhishekcode7266.github.io/chatspace/' : 'https://github.com/abhishekCode7266/chatspace'),
+                          subtitle: const Text('Universal Chat Web Portal & Releases'),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showChatThemeDialog() {
+    final themes = [
+      {'name': 'Default WhatsApp', 'color': null},
+      {'name': 'Dark Slate', 'color': const Color(0xFF0F172A)},
+      {'name': 'Deep Teal', 'color': const Color(0xFF064E3B)},
+      {'name': 'Midnight Indigo', 'color': const Color(0xFF1E1B4B)},
+      {'name': 'Warm Almond', 'color': const Color(0xFFFFFBEB)},
+      {'name': 'Soft Rose', 'color': const Color(0xFFFFF1F2)},
+    ];
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.wallpaper_rounded, color: AppColors.primary),
+            SizedBox(width: 10),
+            Text('Wallpaper & Chat Theme'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final th in themes)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                leading: CircleAvatar(
+                  backgroundColor: (th['color'] as Color?) ?? Colors.grey.shade400,
+                  radius: 14,
+                ),
+                title: Text(th['name'] as String, style: const TextStyle(fontSize: 14)),
+                onTap: () {
+                  setState(() {
+                    _customChatBackgroundColor = th['color'] as Color?;
+                  });
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Chat wallpaper set to ${th["name"]}')),
+                  );
+                },
+              ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+        ],
+      ),
+    );
+  }
+
+  void _showMuteNotificationsDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Mute notifications for...'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('8 Hours'),
+              onTap: () {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notifications muted for 8 hours.')));
+              },
+            ),
+            ListTile(
+              title: const Text('1 Week'),
+              onTap: () {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notifications muted for 1 week.')));
+              },
+            ),
+            ListTile(
+              title: const Text('Always'),
+              onTap: () {
+                Navigator.pop(ctx);
+                ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Notifications muted always.')));
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+        ],
+      ),
+    );
+  }
+
+  void _showMoreOptionsSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(context).brightness == Brightness.dark;
+        return Container(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                leading: const Icon(Icons.report_problem_outlined, color: Colors.orange),
+                title: const Text('Report'),
+                subtitle: const Text('Report suspicious behavior or spam'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Contact reported. Our team will review this conversation.')),
+                  );
+                },
+              ),
+              if (widget.groupChat == null)
+                ListTile(
+                  leading: const Icon(Icons.block_rounded, color: Colors.redAccent),
+                  title: const Text('Block'),
+                  subtitle: const Text('Block contact from calling or messaging'),
+                  onTap: () {
+                    Navigator.pop(ctx);
+                    _toggleBlockContact();
+                  },
+                ),
+              ListTile(
+                leading: const Icon(Icons.delete_sweep_rounded, color: Colors.red),
+                title: const Text('Clear Chat'),
+                subtitle: const Text('Delete all messages in this chat'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Chat messages cleared.')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.file_upload_outlined, color: Colors.blueAccent),
+                title: const Text('Export Chat'),
+                subtitle: const Text('Export conversation transcript and media receipts'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Chat exported successfully to your downloads.')),
+                  );
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.shortcut_rounded, color: AppColors.primary),
+                title: const Text('Add Shortcut'),
+                subtitle: const Text('Add 1-tap chat shortcut to home screen'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Chat shortcut added to home screen.')),
+                  );
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmojiStickerGifDrawer(bool isDark) {
+    final stickerItems = [
+      '🚀 Launch', '✨ Sparkle', '🔥 On Fire', '🎉 Party', '⭐ Star', '🏆 Winner',
+      '🙏 Namaste', '❤️ Pure Love', '💯 100%', '☕ Coffee Break', '🍕 Pizza Time', '🤖 AI Power'
+    ];
+    final gifItems = [
+      '👍 Thumbs Up', '😂 Laughing Out Loud', '👏 Round of Applause', '🙌 Celebration Dance',
+      '🤩 Mind Blown', '😎 Cool Swag', '🎯 Bullseye Target', '🥳 Happy Birthday'
+    ];
+
+    return Container(
+      height: 250,
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1F2C34) : const Color(0xFFF0F2F5),
+        border: Border(top: BorderSide(color: isDark ? Colors.white12 : Colors.grey.shade300)),
+      ),
+      child: Column(
+        children: [
+          Container(
+            height: 42,
+            color: isDark ? const Color(0xFF182229) : Colors.grey.shade200,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                _buildDrawerTabItem('EMOJI', 0),
+                _buildDrawerTabItem('GIF', 1),
+                _buildDrawerTabItem('STICKERS', 2),
+              ],
+            ),
+          ),
+          Expanded(
+            child: _emojiDrawerTab == 0
+                ? GridView.builder(
+                    padding: const EdgeInsets.all(8),
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 7,
+                      mainAxisSpacing: 6,
+                      crossAxisSpacing: 6,
+                    ),
+                    itemCount: _quickEmojis.length,
+                    itemBuilder: (ctx, i) {
+                      final emoji = _quickEmojis[i];
+                      return InkWell(
+                        onTap: () {
+                          _messageController.text += emoji;
+                          _onTextChanged(_messageController.text);
+                        },
+                        child: Center(
+                          child: Text(emoji, style: const TextStyle(fontSize: 24)),
+                        ),
+                      );
+                    },
+                  )
+                : _emojiDrawerTab == 1
+                    ? GridView.builder(
+                        padding: const EdgeInsets.all(8),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          childAspectRatio: 2.2,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                        ),
+                        itemCount: gifItems.length,
+                        itemBuilder: (ctx, i) {
+                          final gif = gifItems[i];
+                          return InkWell(
+                            onTap: () {
+                              setState(() => _showEmojiBar = false);
+                              _handleSendMessage(
+                                customText: '🎞️ GIF: $gif',
+                                messageType: 'gif',
+                              );
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF2A3942) : Colors.white,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(color: Colors.blueAccent.withOpacity(0.3)),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  gif,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      )
+                    : GridView.builder(
+                        padding: const EdgeInsets.all(8),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 3,
+                          childAspectRatio: 1.8,
+                          mainAxisSpacing: 8,
+                          crossAxisSpacing: 8,
+                        ),
+                        itemCount: stickerItems.length,
+                        itemBuilder: (ctx, i) {
+                          final stk = stickerItems[i];
+                          return InkWell(
+                            onTap: () {
+                              setState(() => _showEmojiBar = false);
+                              _handleSendMessage(
+                                customText: stk,
+                                messageType: 'sticker',
+                              );
+                            },
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: isDark ? const Color(0xFF2A3942) : Colors.white,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: Colors.amber.withOpacity(0.4)),
+                              ),
+                              child: Center(
+                                child: Text(
+                                  stk,
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawerTabItem(String title, int index) {
+    final isSelected = _emojiDrawerTab == index;
+    return InkWell(
+      onTap: () => setState(() => _emojiDrawerTab = index),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          border: isSelected ? const Border(bottom: BorderSide(color: AppColors.primary, width: 3)) : null,
+        ),
+        child: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 12,
+            color: isSelected ? AppColors.primary : Colors.grey,
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showAttachmentsBottomSheet() {
     showModalBottomSheet(
       context: context,
@@ -568,10 +1515,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     color: const Color(0xFFD33F8D),
                     onTap: () {
                       Navigator.pop(ctx);
-                      _handleSendMessage(
-                        customText: '📷 Photo sent',
-                        messageType: 'image',
-                      );
+                      _showCameraCaptureDialog();
                     },
                   ),
                   _buildAttachmentItem(
@@ -588,22 +1532,10 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _buildAttachmentItem(
-                    icon: Icons.videocam_rounded,
-                    label: 'Video',
-                    color: const Color(0xFFE53935),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _handleSendMessage(
-                        customText: '🎥 Video clip',
-                        messageType: 'video',
-                      );
-                    },
-                  ),
                   _buildAttachmentItem(
                     icon: Icons.headphones_rounded,
                     label: 'Audio',
@@ -629,12 +1561,6 @@ class _ChatScreenState extends State<ChatScreen> {
                       );
                     },
                   ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
-                children: [
                   _buildAttachmentItem(
                     icon: Icons.person_rounded,
                     label: 'Contact',
@@ -645,6 +1571,30 @@ class _ChatScreenState extends State<ChatScreen> {
                         customText: '👤 Contact card shared',
                         messageType: 'contact',
                       );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildAttachmentItem(
+                    icon: Icons.poll_rounded,
+                    label: 'Poll (वोटिंग)',
+                    color: const Color(0xFF00897B),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showCreatePollDialog();
+                    },
+                  ),
+                  _buildAttachmentItem(
+                    icon: Icons.event_available_rounded,
+                    label: 'Event',
+                    color: const Color(0xFFF59E0B),
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showCreateEventDialog();
                     },
                   ),
                   _buildAttachmentItem(
@@ -659,28 +1609,16 @@ class _ChatScreenState extends State<ChatScreen> {
                       );
                     },
                   ),
-                  _buildAttachmentItem(
-                    icon: Icons.emoji_emotions_rounded,
-                    label: 'Sticker',
-                    color: const Color(0xFFF59E0B),
-                    onTap: () {
-                      Navigator.pop(ctx);
-                      _handleSendMessage(
-                        customText: '🎉 Sticker',
-                        messageType: 'sticker',
-                      );
-                    },
-                  ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 18),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   _buildAttachmentItem(
                     icon: Icons.currency_rupee_rounded,
                     label: 'Payment (पेमेंट)',
-                    color: const Color(0xFF00897B),
+                    color: const Color(0xFF059669),
                     onTap: () {
                       Navigator.pop(ctx);
                       _showInChatPaymentDialog();
@@ -936,163 +1874,244 @@ class _ChatScreenState extends State<ChatScreen> {
     final displayName = isGroup ? (widget.groupChat!.groupName ?? 'Group') : widget.targetUser.name;
 
     return Scaffold(
-      appBar: AppBar(
-        titleSpacing: 0,
-        title: Row(
-          children: [
-            CircleAvatar(
-              radius: 18,
-              backgroundColor: isGroup ? const Color(0xFF007AFF) : Colors.white24,
-              child: isGroup
-                  ? const Icon(Icons.groups_rounded, color: Colors.white, size: 20)
-                  : Text(
-                      displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    displayName,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
+      appBar: _isSearchingChat
+          ? AppBar(
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded),
+                onPressed: () {
+                  setState(() {
+                    _isSearchingChat = false;
+                    _chatSearchQuery = '';
+                  });
+                },
+              ),
+              title: TextField(
+                autofocus: true,
+                style: const TextStyle(color: Colors.white, fontSize: 16),
+                decoration: const InputDecoration(
+                  hintText: 'Search in chat...',
+                  hintStyle: TextStyle(color: Colors.white70),
+                  border: InputBorder.none,
+                ),
+                onChanged: (q) {
+                  setState(() {
+                    _chatSearchQuery = q;
+                  });
+                },
+              ),
+              actions: [
+                if (_chatSearchQuery.isNotEmpty)
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () {
+                      setState(() {
+                        _chatSearchQuery = '';
+                      });
+                    },
                   ),
-                  if (isGroup)
-                    Text(
-                      '${widget.groupChat!.participants.length} participants',
-                      style: const TextStyle(fontSize: 12, color: Colors.white70),
-                    )
-                  else
-                    StreamBuilder<bool>(
-                      stream: chatProvider.getTypingStream(
-                        chatId: _chatId,
-                        otherUserId: widget.targetUser.uid,
-                        isDevBypass: isDevBypass,
-                      ),
-                      builder: (context, typingSnap) {
-                        final isTyping = typingSnap.data ?? false;
-                        if (isTyping) {
-                          return const Text(
-                            'typing...',
-                            style: TextStyle(
-                              fontSize: 12,
-                              fontStyle: FontStyle.italic,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w500,
+              ],
+            )
+          : AppBar(
+              titleSpacing: 0,
+              title: InkWell(
+                onTap: _showViewContactDialog,
+                child: Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 18,
+                      backgroundColor: isGroup ? const Color(0xFF007AFF) : Colors.white24,
+                      child: isGroup
+                          ? const Icon(Icons.groups_rounded, color: Colors.white, size: 20)
+                          : Text(
+                              displayName.isNotEmpty ? displayName[0].toUpperCase() : 'U',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 16,
+                              ),
                             ),
-                          );
-                        }
-                        return Text(
-                          DateFormatter.formatLastSeen(
-                            isOnline: widget.targetUser.isOnline,
-                            lastSeen: widget.targetUser.lastSeen,
-                          ),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: widget.targetUser.isOnline
-                                ? const Color(0xFFB9F6CA)
-                                : Colors.white70,
-                          ),
-                        );
-                      },
                     ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          const AppBarDevCircleButton(),
-          IconButton(
-            icon: const Icon(Icons.videocam_rounded),
-            tooltip: 'Video Call',
-            onPressed: _startVideoCall,
-          ),
-          IconButton(
-            icon: const Icon(Icons.call_rounded),
-            tooltip: 'Voice Call',
-            onPressed: _startVoiceCall,
-          ),
-          PopupMenuButton<String>(
-            tooltip: 'More options',
-            onSelected: (val) {
-              if (val == 'verify') {
-                _showVerifyEncryptionDialog();
-              } else if (val == 'disappearing') {
-                _showDisappearingMessagesDialog();
-              } else if (val == 'block') {
-                _toggleBlockContact();
-              } else if (val == 'clear') {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Chat history cleared.')),
-                );
-              }
-            },
-            itemBuilder: (ctx) => [
-              const PopupMenuItem(
-                value: 'verify',
-                child: Row(
-                  children: [
-                    Icon(Icons.verified_user_rounded, color: AppColors.primary, size: 20),
-                    SizedBox(width: 10),
-                    Text('Strict E2EE Fingerprint'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'disappearing',
-                child: Row(
-                  children: [
-                    Icon(Icons.timer_outlined, color: Colors.blueAccent, size: 20),
-                    SizedBox(width: 10),
-                    Text('Disappearing Messages'),
-                  ],
-                ),
-              ),
-              if (!isGroup)
-                PopupMenuItem(
-                  value: 'block',
-                  child: Row(
-                    children: [
-                      Icon(
-                        isBlocked ? Icons.check_circle_outline : Icons.block_rounded,
-                        color: Colors.redAccent,
-                        size: 20,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            displayName,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
+                          ),
+                          if (isGroup)
+                            Text(
+                              '${widget.groupChat!.participants.length} participants',
+                              style: const TextStyle(fontSize: 12, color: Colors.white70),
+                            )
+                          else
+                            StreamBuilder<bool>(
+                              stream: chatProvider.getTypingStream(
+                                chatId: _chatId,
+                                otherUserId: widget.targetUser.uid,
+                                isDevBypass: isDevBypass,
+                              ),
+                              builder: (context, typingSnap) {
+                                final isTyping = typingSnap.data ?? false;
+                                if (isTyping) {
+                                  return const Text(
+                                    'typing...',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      fontStyle: FontStyle.italic,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  );
+                                }
+                                return Text(
+                                  DateFormatter.formatLastSeen(
+                                    isOnline: widget.targetUser.isOnline,
+                                    lastSeen: widget.targetUser.lastSeen,
+                                  ),
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: widget.targetUser.isOnline
+                                        ? const Color(0xFFB9F6CA)
+                                        : Colors.white70,
+                                  ),
+                                );
+                              },
+                            ),
+                        ],
                       ),
-                      const SizedBox(width: 10),
-                      Text(isBlocked ? 'Unblock Contact' : 'Block Contact'),
-                    ],
-                  ),
-                ),
-              const PopupMenuItem(
-                value: 'clear',
-                child: Row(
-                  children: [
-                    Icon(Icons.delete_outline_rounded, size: 20),
-                    SizedBox(width: 10),
-                    Text('Clear Chat'),
+                    ),
                   ],
                 ),
               ),
-            ],
-          ),
-        ],
-      ),
+              actions: [
+                const AppBarDevCircleButton(),
+                IconButton(
+                  icon: const Icon(Icons.videocam_rounded),
+                  tooltip: 'Video Call',
+                  onPressed: _startVideoCall,
+                ),
+                IconButton(
+                  icon: const Icon(Icons.call_rounded),
+                  tooltip: 'Voice Call',
+                  onPressed: _startVoiceCall,
+                ),
+                PopupMenuButton<String>(
+                  tooltip: 'More options',
+                  onSelected: (val) {
+                    if (val == 'view_contact') {
+                      _showViewContactDialog();
+                    } else if (val == 'media') {
+                      _showMediaLinksDocsSheet();
+                    } else if (val == 'search') {
+                      setState(() => _isSearchingChat = true);
+                    } else if (val == 'mute') {
+                      _showMuteNotificationsDialog();
+                    } else if (val == 'disappearing') {
+                      _showDisappearingMessagesDialog();
+                    } else if (val == 'wallpaper') {
+                      _showChatThemeDialog();
+                    } else if (val == 'verify') {
+                      _showVerifyEncryptionDialog();
+                    } else if (val == 'more') {
+                      _showMoreOptionsSheet();
+                    }
+                  },
+                  itemBuilder: (ctx) => [
+                    PopupMenuItem(
+                      value: 'view_contact',
+                      child: Row(
+                        children: [
+                          const Icon(Icons.info_outline_rounded, size: 20),
+                          const SizedBox(width: 10),
+                          Text(isGroup ? 'Group info' : 'View contact'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'media',
+                      child: Row(
+                        children: [
+                          Icon(Icons.perm_media_outlined, size: 20),
+                          SizedBox(width: 10),
+                          Text('Media, links, and docs'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'search',
+                      child: Row(
+                        children: [
+                          Icon(Icons.search_rounded, size: 20),
+                          SizedBox(width: 10),
+                          Text('Search'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'mute',
+                      child: Row(
+                        children: [
+                          Icon(Icons.notifications_off_outlined, size: 20),
+                          SizedBox(width: 10),
+                          Text('Mute notifications'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'disappearing',
+                      child: Row(
+                        children: [
+                          Icon(Icons.timer_outlined, color: Colors.blueAccent, size: 20),
+                          SizedBox(width: 10),
+                          Text('Disappearing messages'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'wallpaper',
+                      child: Row(
+                        children: [
+                          Icon(Icons.wallpaper_rounded, size: 20),
+                          SizedBox(width: 10),
+                          Text('Wallpaper'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuItem(
+                      value: 'verify',
+                      child: Row(
+                        children: [
+                          Icon(Icons.verified_user_rounded, color: AppColors.primary, size: 20),
+                          SizedBox(width: 10),
+                          Text('Strict E2EE Fingerprint'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    const PopupMenuItem(
+                      value: 'more',
+                      child: Row(
+                        children: [
+                          Icon(Icons.more_horiz_rounded, size: 20),
+                          SizedBox(width: 10),
+                          Text('More options...'),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
       body: Container(
-        color: isDark
-            ? AppColors.darkChatBackground
-            : AppColors.lightChatBackground,
+        color: _customChatBackgroundColor ??
+            (isDark ? AppColors.darkChatBackground : AppColors.lightChatBackground),
         child: Column(
           children: [
             // Pinned Message Banner
@@ -1132,7 +2151,26 @@ class _ChatScreenState extends State<ChatScreen> {
                     return const Center(child: CircularProgressIndicator());
                   }
 
-                  final messages = snapshot.data ?? [];
+                  final rawMessages = snapshot.data ?? [];
+                  final messages = _isSearchingChat && _chatSearchQuery.trim().isNotEmpty
+                      ? rawMessages.where((m) => m.text.toLowerCase().contains(_chatSearchQuery.toLowerCase().trim())).toList()
+                      : rawMessages;
+
+                  if (messages.isEmpty && _isSearchingChat && _chatSearchQuery.trim().isNotEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.search_off_rounded, size: 48, color: Colors.grey),
+                          const SizedBox(height: 8),
+                          Text(
+                            'No messages matching "$_chatSearchQuery"',
+                            style: const TextStyle(color: Colors.grey, fontSize: 14),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
 
                   if (messages.isNotEmpty) {
                     final hasUnseen = messages.any(
@@ -1279,30 +2317,9 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
             ),
 
-            // Quick Emoji Bar
+            // Quick Emoji, Sticker, and GIF Drawer
             if (_showEmojiBar)
-              Container(
-                height: 48,
-                padding: const EdgeInsets.symmetric(horizontal: 8),
-                color: isDark ? const Color(0xFF1F2C34) : Colors.white,
-                child: ListView.builder(
-                  scrollDirection: Axis.horizontal,
-                  itemCount: _quickEmojis.length,
-                  itemBuilder: (context, i) {
-                    final emoji = _quickEmojis[i];
-                    return InkWell(
-                      onTap: () {
-                        _messageController.text += emoji;
-                        _onTextChanged(_messageController.text);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                        child: Text(emoji, style: const TextStyle(fontSize: 22)),
-                      ),
-                    );
-                  },
-                ),
-              ),
+              _buildEmojiStickerGifDrawer(isDark),
 
             // Quoted Reply Banner
             if (_replyingToMessage != null)
@@ -1435,12 +2452,8 @@ class _ChatScreenState extends State<ChatScreen> {
                               if (!hasText)
                                 IconButton(
                                   icon: Icon(Icons.camera_alt_rounded, color: Colors.grey.shade600),
-                                  onPressed: () {
-                                    _handleSendMessage(
-                                      customText: '📷 Photo',
-                                      messageType: 'image',
-                                    );
-                                  },
+                                  tooltip: 'Open Camera Viewfinder',
+                                  onPressed: _showCameraCaptureDialog,
                                 ),
                             ],
                           ),
@@ -1450,17 +2463,21 @@ class _ChatScreenState extends State<ChatScreen> {
                       // Floating Circular Action Button (Mic or Send)
                       GestureDetector(
                         onTap: hasText ? () => _handleSendMessage() : _simulateVoiceNote,
-                        child: Container(
-                          width: 48,
-                          height: 48,
-                          decoration: const BoxDecoration(
-                            color: AppColors.primary,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            hasText ? Icons.send_rounded : Icons.mic_rounded,
-                            color: Colors.white,
-                            size: 22,
+                        onLongPress: _showVoiceDictationDialog,
+                        child: Tooltip(
+                          message: hasText ? 'Send message' : 'Tap for voice note, hold for speech dictation',
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: const BoxDecoration(
+                              color: AppColors.primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              hasText ? Icons.send_rounded : Icons.mic_rounded,
+                              color: Colors.white,
+                              size: 22,
+                            ),
                           ),
                         ),
                       ),

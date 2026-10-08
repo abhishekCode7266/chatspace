@@ -84,44 +84,44 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master')
         with:
-          tag_name: v1.5.0
-          name: Universal Chat App v1.5.0 (Meta AI Floating Circle, WhatsApp Pay UPI, QR Code Hub & Cloud Subscriptions)
+          tag_name: v1.6.0
+          name: Universal Chat App v1.6.0 (Google Pay/PhonePe Ecosystem, Communities Tab, In-Chat Camera & Voice Dictation)
           draft: false
           prerelease: false
           body: |
-            ## 🌐 Universal Chat App v1.5.0 Production Release 🚀📱🤖💳
+            ## 🌐 Universal Chat App v1.6.0 Production Release 🚀📱💸🏛️
             
-            Welcome to **Universal Chat App v1.5.0** — the premier communication and payment powerhouse. Packed with WhatsApp-style Meta AI floating assistance, in-chat bank UPI payments, scannable QR hubs, and premium subscriptions with extra cloud storage!
+            Welcome to **Universal Chat App v1.6.0** — the ultimate super app combining WhatsApp communication and Google Pay / PhonePe fintech ecosystem into one unified experience!
             
             ### 📥 Download & Install (डाउनलोड करें):
-            - **📱 Direct Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.5.0/app-release.apk)
-            - **🏬 Google Play Store Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.5.0/app-release.aab)
+            - **📱 Direct Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.6.0/app-release.apk)
+            - **🏬 Google Play Store Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.6.0/app-release.aab)
             - **🌐 Live Web Demo**: [https://abhishekcode7266.github.io/chatspace/](https://abhishekcode7266.github.io/chatspace/)
             
             ---
             
-            ### ✨ What's New in v1.5.0 (मुख्य नए फीचर्स):
-            1. **🟣 Meta AI Floating Assistant Circle (WhatsApp Style)**:
-               - Circular animated glowing ring floating prominently on the right-hand side right above the chat FAB.
-               - 1-tap instant activation to Universal Meta AI assistant.
-               - Inline chat bar AI action button for quick queries and `/imagine` 3D image generation directly within conversations.
-            2. **💳 WhatsApp Pay & UPI In-Chat Payments (पेमेंट्स व बैंक खाते)**:
-               - Send & request money directly inside any 1-to-1 conversation via the attachment menu.
-               - Beautiful green UPI transaction cards embedded in message bubbles with instant status check and reference IDs.
-               - Dedicated Payments Center with linked bank accounts (SBI, HDFC, Paytm), balance checking, and transaction history.
-               - Secure 4-digit UPI PIN verification (default test drive PIN: `1234`).
-            3. **📲 WhatsApp-Style QR Code System (क्यूआर कोड सिस्टम)**:
-               - **My Code**: High-resolution personal profile QR code to share or display for instant 1-to-1 contact adding.
-               - **Group Invite**: Group QR codes allowing anyone to scan and instantly join groups or communities.
-               - **Live Camera Scanner**: Viewfinder with animated laser line and instant 1-tap card detection for users, groups, and payments.
-            4. **⭐ Freemium AI & Premium Cloud Subscriptions (प्रीमियम सब्सक्रिप्शन)**:
-               - Free tier with 15 free daily Meta AI queries quota tracking.
-               - Exceeding the daily limit displays upgrade prompt to **Universal Pro** or **Business Enterprise**.
-               - **Universal Pro (₹199/mo)**: 100GB extra cloud storage, unlimited Meta AI + `/imagine` image generation, verified gold star badge ⭐, and 100% ad-free experience.
-               - **Business Enterprise (₹699/mo)**: 1TB cloud storage, team customer service bot, business catalog boost, and verified green badge ✅.
-               - In-app cloud storage usage progress bar and simulated 1-click UPI upgrade.
-            5. **⚡ Floating Developer Bypass Circle (छोटा सा गोला)**:
-               - Unlocks all screens, tests, and mock databases without requiring SMS / phone setup.
+            ### ✨ What's New in v1.6.0 (मुख्य नए फीचर्स):
+            1. **💸 Google Pay & PhonePe Payments Ecosystem (पेमेंट्स, रिचार्ज व बिल भुगतान)**:
+               - **Scan Any UPI QR Code**: Scan any merchant or peer QR code with animated scanning laser.
+               - **Pay to Mobile Number**: Transfer money directly to phone numbers with instant UPI confirmation.
+               - **Receive Money QR (पैसे प्राप्त करें)**: Generate personal UPI QR with custom amounts and simulated instant payment credit receipt notification.
+               - **View Account Balance**: Secure PIN verification (default: `1234`) with instant balance display.
+               - **Recharges & Utilities**: Mobile Recharge (Jio/Airtel/Vi/BSNL), Electricity Bills (UPPCL/BSES/Tata Power), FASTag Recharge, and Metro QR Tickets (Delhi/Mumbai/Bangalore Metro) with animated digital ticket pass!
+               - **Cable DTH, Credit Card Bill, Loan EMI Repayment, Travel & Movie Tickets**.
+               - **Transaction History**: Filter by All, Paid, Received, Recharge, Bills, with digital receipt modal and 24/7 Help & Support.
+            2. **🏛️ Communities Section (कम्युनिटीज)**:
+               - Dedicated 4th top tab: **CHATS**, **UPDATES**, **COMMUNITIES**, **CALLS**.
+               - Create new communities with description and topic tags.
+               - Official Announcement channels with loudspeaker/megaphone icon and nested sub-groups with 1-tap chat launch.
+            3. **📸 WhatsApp-Style In-Chat Camera Viewfinder**:
+               - Dedicated camera modal with front/rear flip, flash toggle, and shutter button to snap & send photos immediately.
+            4. **🎙️ Voice Dictation / Speech-to-Text (बोलकर चैट लिखें)**:
+               - Speech recognition modal with live animated waveforms, quick phrases, and 1-tap insert or send.
+            5. **🎨 Emoji, GIF & Sticker 3-Tab Drawer**:
+               - Integrated 3-tab drawer for Emojis, animated reaction GIFs, and stickers.
+            6. **📎 10-Item Attachment Menu & Three-Dot Options**:
+               - Document, Camera, Gallery, Audio, Location, Contact, Poll (वोटिंग), Payment (पेमेंट), Event, and Meta AI.
+               - WhatsApp Three-Dot Menu: View Contact/Group info, Media Links & Docs, In-chat search, Mute notifications, Disappearing messages, Wallpaper/theme changer, and More.
           files: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab

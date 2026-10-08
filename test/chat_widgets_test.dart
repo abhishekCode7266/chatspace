@@ -495,6 +495,80 @@ void main() {
       paymentService.cancelSubscription();
       expect(paymentService.isPremiumUser, isFalse);
     });
+
+    test('PaymentService PhonePe / Google Pay Utility Ecosystem & Receive Money QR', () {
+      final paymentService = PaymentService.instance;
+      final initialBalance = paymentService.primaryBank.balance;
+
+      // 1. Test Receive Money QR simulation (incoming payment)
+      final incomingTxn = paymentService.receiveMoneySimulated(
+        amount: 1500.0,
+        senderName: 'Priya Sharma',
+        senderUpi: 'priya@okhdfcbank',
+        note: 'Project milestone payment',
+      );
+      expect(incomingTxn.amount, equals(1500.0));
+      expect(incomingTxn.senderName, equals('Priya Sharma'));
+      expect(incomingTxn.category, equals('UPI'));
+      expect(incomingTxn.status, equals('SUCCESS'));
+      expect(paymentService.primaryBank.balance, equals(initialBalance + 1500.0));
+
+      // 2. Test Pay to Mobile Number
+      final mobileTxn = paymentService.payToMobile(
+        mobileNumber: '9876543210',
+        contactName: 'Rahul Verma',
+        amount: 350.0,
+        note: 'Lunch split',
+      );
+      expect(mobileTxn.amount, equals(350.0));
+      expect(mobileTxn.receiverName, equals('Rahul Verma'));
+      expect(mobileTxn.category, equals('UPI'));
+
+      // 3. Test Mobile Recharge (Jio / Airtel)
+      final rechargeTxn = paymentService.rechargeMobile(
+        phone: '9812345678',
+        operator: 'Jio',
+        amount: 299.0,
+        planDetails: '2GB/day + Unlimited 5G (28 Days)',
+      );
+      expect(rechargeTxn.amount, equals(299.0));
+      expect(rechargeTxn.category, equals('RECHARGE'));
+      expect(rechargeTxn.receiverName, contains('Jio'));
+      expect(rechargeTxn.details, contains('9812345678'));
+
+      // 4. Test Electricity Bill Payment
+      final electTxn = paymentService.payElectricityBill(
+        discom: 'UPPCL (Urban)',
+        consumerId: '1029384756',
+        amount: 1450.0,
+      );
+      expect(electTxn.amount, equals(1450.0));
+      expect(electTxn.category, equals('ELECTRICITY'));
+      expect(electTxn.details, contains('1029384756'));
+
+      // 5. Test FASTag Recharge
+      final fastagTxn = paymentService.rechargeFastag(
+        vehicleNo: 'DL01AB1234',
+        bank: 'SBI FASTag',
+        amount: 500.0,
+      );
+      expect(fastagTxn.amount, equals(500.0));
+      expect(fastagTxn.category, equals('FASTAG'));
+      expect(fastagTxn.details, contains('DL01AB1234'));
+
+      // 6. Test Metro QR Ticket Booking
+      final metroTxn = paymentService.bookMetroTicket(
+        city: 'Delhi',
+        fromStation: 'Rajiv Chowk',
+        toStation: 'Noida City Centre',
+        passengers: 2,
+        fare: 80.0,
+      );
+      expect(metroTxn.amount, equals(80.0));
+      expect(metroTxn.category, equals('METRO'));
+      expect(metroTxn.details, contains('Rajiv Chowk'));
+      expect(metroTxn.details, contains('Noida City Centre'));
+    });
   });
 }
 

@@ -57,7 +57,7 @@ class _ChatListScreenState extends State<ChatListScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
     _tabController.addListener(() {
       setState(() {});
     });
@@ -598,6 +598,7 @@ class _ChatListScreenState extends State<ChatListScreen>
           tabs: const [
             Tab(text: 'CHATS'),
             Tab(text: 'UPDATES'),
+            Tab(text: 'COMMUNITIES'),
             Tab(text: 'CALLS'),
           ],
         ),
@@ -636,6 +637,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                   children: [
                     _buildChatsTab(currentUser, isDevBypass, isDark),
                     _buildUpdatesTab(currentUser, isDevBypass, isDark),
+                    _buildCommunitiesTab(currentUser, isDevBypass, isDark),
                     _buildCallsTab(currentUser, isDevBypass, isDark),
                   ],
                 ),
@@ -707,6 +709,15 @@ class _ChatListScreenState extends State<ChatListScreen>
             child: const Icon(Icons.camera_alt_rounded),
           ),
         ],
+      );
+    } else if (currentIndex == 2) {
+      // Communities Tab FAB
+      return FloatingActionButton.extended(
+        heroTag: 'fab_community',
+        backgroundColor: AppColors.primary,
+        onPressed: _showCreateCommunityDialog,
+        icon: const Icon(Icons.group_add_rounded, color: Colors.white),
+        label: const Text('New Community', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
       );
     } else {
       // Calls Tab FAB
@@ -1456,6 +1467,308 @@ class _ChatListScreenState extends State<ChatListScreen>
           ),
         ),
       ),
+    );
+  }
+
+  void _showCreateCommunityDialog() {
+    final nameController = TextEditingController();
+    final descController = TextEditingController();
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return Container(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
+            top: 24,
+            left: 20,
+            right: 20,
+          ),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withOpacity(0.15),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.groups_rounded, color: AppColors.primary),
+                  ),
+                  const SizedBox(width: 12),
+                  const Text(
+                    'New Community (नई कम्युनिटी)',
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Bring together related groups and send announcements to all members easily.',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: nameController,
+                decoration: InputDecoration(
+                  labelText: 'Community Name',
+                  hintText: 'e.g. Neighborhood Network / Tech Club',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: descController,
+                maxLines: 2,
+                decoration: InputDecoration(
+                  labelText: 'Description',
+                  hintText: 'What is this community for?',
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: () {
+                    final name = nameController.text.trim();
+                    if (name.isNotEmpty) {
+                      Navigator.pop(ctx);
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('🎉 Community "$name" created successfully!'),
+                          backgroundColor: AppColors.primary,
+                        ),
+                      );
+                    }
+                  },
+                  child: const Text('Create Community', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // 3. COMMUNITIES TAB (WhatsApp Style)
+  Widget _buildCommunitiesTab(UserModel currentUser, bool isDevBypass, bool isDark) {
+    return ListView(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      children: [
+        // Top Action: New Community
+        ListTile(
+          onTap: _showCreateCommunityDialog,
+          leading: Stack(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF2A3942) : Colors.grey.shade200,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(Icons.groups_rounded, color: Colors.grey, size: 28),
+              ),
+              Positioned(
+                bottom: 0,
+                right: 0,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  decoration: const BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.add, color: Colors.white, size: 14),
+                ),
+              ),
+            ],
+          ),
+          title: const Text('New Community (नई कम्युनिटी)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+          subtitle: const Text('Organize groups & broadcast announcements', style: TextStyle(fontSize: 12, color: Colors.grey)),
+        ),
+
+        const Divider(height: 16, thickness: 8),
+
+        // Community 1: Universal Global Tech & AI Community
+        _buildCommunityCard(
+          title: '🌐 Universal Global Tech & AI Community',
+          members: '4,620 members',
+          announcementText: '📢 Universal Announcements • v1.5.0 Release Live!',
+          subGroups: [
+            {'name': '🤖 Universal AI & Prompt Engineers', 'members': '1,420 members'},
+            {'name': '💡 Mobile App Innovators & Builders', 'members': '890 members'},
+            {'name': '🔒 CyberSecurity & E2EE Watchers', 'members': '2,310 members'},
+          ],
+          isDark: isDark,
+        ),
+
+        const Divider(height: 16, thickness: 8),
+
+        // Community 2: Flutter & Dart Developers Network
+        _buildCommunityCard(
+          title: '🚀 Flutter & Dart Developers Network',
+          members: '3,280 members',
+          announcementText: '📢 Announcements • Material 3 UI Kit Released',
+          subGroups: [
+            {'name': '🎨 UI/UX & Widget Design', 'members': '1,150 members'},
+            {'name': '⚡ State Management & Architecture', 'members': '940 members'},
+          ],
+          isDark: isDark,
+        ),
+
+        const Divider(height: 16, thickness: 8),
+
+        // Community 3: Neighborhood & City Collaboration Hub
+        _buildCommunityCard(
+          title: '🏙️ City Collaboration & Neighborhood Hub',
+          members: '1,850 members',
+          announcementText: '📢 Local Bulletins & Event Alerts',
+          subGroups: [
+            {'name': '🛒 Community Marketplace & Deals', 'members': '720 members'},
+            {'name': '🚗 City Carpool & Rideshare', 'members': '640 members'},
+          ],
+          isDark: isDark,
+        ),
+
+        const SizedBox(height: 80),
+      ],
+    );
+  }
+
+  Widget _buildCommunityCard({
+    required String title,
+    required String members,
+    required String announcementText,
+    required List<Map<String, String>> subGroups,
+    required bool isDark,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Community Header Tile
+        ListTile(
+          leading: Container(
+            width: 48,
+            height: 48,
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.primary, AppColors.aiPurple],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Center(child: Text('🌐', style: TextStyle(fontSize: 24))),
+          ),
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+          subtitle: Text(members, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+          trailing: IconButton(
+            icon: const Icon(Icons.chevron_right_rounded),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CommunityScreen()),
+              );
+            },
+          ),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CommunityScreen()),
+            );
+          },
+        ),
+
+        // Loudspeaker Announcement Channel Tile
+        ListTile(
+          dense: true,
+          contentPadding: const EdgeInsets.only(left: 32, right: 16),
+          leading: Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(Icons.campaign_rounded, color: AppColors.primary, size: 20),
+          ),
+          title: Text(announcementText, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13.5)),
+          subtitle: const Text('Tap to view official announcements', style: TextStyle(fontSize: 11, color: Colors.grey)),
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const CommunityScreen()),
+            );
+          },
+        ),
+
+        // Sub-Groups List
+        ...subGroups.map((g) {
+          return ListTile(
+            dense: true,
+            contentPadding: const EdgeInsets.only(left: 32, right: 16),
+            leading: CircleAvatar(
+              radius: 16,
+              backgroundColor: isDark ? const Color(0xFF2A3942) : Colors.grey.shade200,
+              child: const Icon(Icons.groups_rounded, size: 18, color: Colors.grey),
+            ),
+            title: Text(g['name']!, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+            subtitle: Text(g['members']!, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => ChatScreen(
+                    targetUser: UserModel(
+                      uid: 'group_${g['name'].hashCode}',
+                      name: g['name']!,
+                      email: '',
+                      createdAt: DateTime.now(),
+                    ),
+                    groupChat: ChatModel(
+                      chatId: 'grp_${g['name'].hashCode}',
+                      participants: ['current_user', 'user_1', 'user_2'],
+                      isGroup: true,
+                      groupName: g['name']!,
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        }),
+
+        Padding(
+          padding: const EdgeInsets.only(left: 32, top: 4, bottom: 8),
+          child: TextButton.icon(
+            icon: const Icon(Icons.add_rounded, size: 16),
+            label: const Text('Add Group to Community', style: TextStyle(fontSize: 12)),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const GroupCreateScreen()),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 }
