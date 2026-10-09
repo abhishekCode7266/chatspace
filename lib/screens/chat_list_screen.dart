@@ -477,36 +477,11 @@ class _ChatListScreenState extends State<ChatListScreen>
                   border: InputBorder.none,
                 ),
               )
-            : Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Flexible(
-                    child: Text(
-                      AppConstants.appName,
-                      overflow: TextOverflow.ellipsis,
-                      maxLines: 1,
-                      style: const TextStyle(fontWeight: FontWeight.bold),
-                    ),
-                  ),
-                  if (isDevBypass) ...[
-                    const SizedBox(width: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: Colors.amber.shade700,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: const Text(
-                        'DEV',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
+            : Text(
+                AppConstants.appName,
+                overflow: TextOverflow.ellipsis,
+                maxLines: 1,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
         actions: _buildResponsiveActions(context, screenWidth, isDevBypass, authProvider),
         bottom: TabBar(
@@ -524,48 +499,13 @@ class _ChatListScreenState extends State<ChatListScreen>
           ],
         ),
       ),
-      body: Stack(
+      body: TabBarView(
+        controller: _tabController,
         children: [
-          Column(
-            children: [
-              // Developer Mode Banner if active
-              if (isDevBypass)
-                Container(
-                  width: double.infinity,
-                  color: Colors.amber.shade100,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
-                  child: Row(
-                    children: [
-                      Icon(Icons.admin_panel_settings_rounded, size: 18, color: Colors.amber.shade900),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          'Universal Developer Mode Active (बाईपास चालू है): Instant simulation for Groups, Channels & Calls enabled.',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.amber.shade900,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              // Tab views
-              Expanded(
-                child: TabBarView(
-                  controller: _tabController,
-                  children: [
-                    _buildChatsTab(currentUser, isDevBypass, isDark),
-                    _buildUpdatesTab(currentUser, isDevBypass, isDark),
-                    _buildCommunitiesTab(currentUser, isDevBypass, isDark),
-                    _buildCallsTab(currentUser, isDevBypass, isDark),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const FloatingDevCircle(),
+          _buildChatsTab(currentUser, isDevBypass, isDark),
+          _buildUpdatesTab(currentUser, isDevBypass, isDark),
+          _buildCommunitiesTab(currentUser, isDevBypass, isDark),
+          _buildCallsTab(currentUser, isDevBypass, isDark),
         ],
       ),
       floatingActionButton: _buildFab(),
@@ -641,8 +581,7 @@ class _ChatListScreenState extends State<ChatListScreen>
           Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentsScreen()));
         },
       ),
-      if (!isCompact && screenWidth >= 600)
-        const AppBarDevCircleButton(),
+      const AppBarDevCircleButton(),
       if (!isCompact)
         IconButton(
           icon: const Icon(Icons.qr_code_scanner_rounded),

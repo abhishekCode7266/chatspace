@@ -170,7 +170,7 @@ class _FloatingDevCircleState extends State<FloatingDevCircle> with SingleTicker
   }
 }
 
-/// App Bar Action variant for static placement in headers
+/// App Bar Action variant: small circle with settings symbol at the top
 class AppBarDevCircleButton extends StatelessWidget {
   const AppBarDevCircleButton({super.key});
 
@@ -179,10 +179,9 @@ class AppBarDevCircleButton extends StatelessWidget {
     final authProvider = context.watch<AuthProvider>();
     final isBypassActive = authProvider.isDevBypass;
 
-    return Padding(
-      padding: const EdgeInsets.only(right: 8.0),
+    return Center(
       child: Tooltip(
-        message: 'Developer Bypass & Inspection Suite',
+        message: 'Developer Bypass & Settings',
         child: InkWell(
           onTap: () {
             showModalBottomSheet(
@@ -192,32 +191,34 @@ class AppBarDevCircleButton extends StatelessWidget {
               builder: (ctx) => const DevBypassSheet(),
             );
           },
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           child: Container(
-            width: 38,
-            height: 38,
+            width: 32,
+            height: 32,
+            margin: const EdgeInsets.symmetric(horizontal: 4),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              gradient: RadialGradient(
-                colors: isBypassActive
-                    ? [const Color(0xFF00E5FF), const Color(0xFF004D40)]
-                    : [const Color(0xFFFFB300), const Color(0xFFBF360C)],
-              ),
+              color: isBypassActive
+                  ? Colors.amber.shade700
+                  : Colors.white.withOpacity(0.2),
               border: Border.all(
-                color: isBypassActive ? Colors.cyanAccent : Colors.amberAccent,
-                width: 1.8,
+                color: isBypassActive ? Colors.amberAccent : Colors.white70,
+                width: 1.5,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: (isBypassActive ? Colors.cyan : Colors.amber).withOpacity(0.5),
-                  blurRadius: 6,
-                ),
-              ],
+              boxShadow: isBypassActive
+                  ? [
+                      BoxShadow(
+                        color: Colors.amber.withOpacity(0.4),
+                        blurRadius: 4,
+                      ),
+                    ]
+                  : null,
             ),
-            child: Center(
-              child: Text(
-                isBypassActive ? '⚡' : '🛠️',
-                style: const TextStyle(fontSize: 16),
+            child: const Center(
+              child: Icon(
+                Icons.settings_rounded,
+                color: Colors.white,
+                size: 18,
               ),
             ),
           ),
