@@ -32,6 +32,7 @@ import 'subscription_screen.dart';
 import 'qr_code_share_screen.dart';
 import '../services/payment_service.dart';
 import '../widgets/meta_ai_circle.dart';
+import 'dev_bypass_sheet.dart';
 
 
 class ChatListScreen extends StatefulWidget {
@@ -1326,7 +1327,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                         context: context,
                         isScrollControlled: true,
                         backgroundColor: Colors.transparent,
-                        builder: (ctx) => DevBypassSheet(),
+                        builder: (ctx) => const DevBypassSheet(),
                       );
                     },
                     borderRadius: BorderRadius.circular(20),
