@@ -1,8 +1,12 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:chatspace/services/translation_service.dart';
 import 'package:chatspace/services/audio_playback_service.dart';
 import 'package:chatspace/services/camera_capture_service.dart';
+import 'package:chatspace/services/speech_recognition_service.dart';
+import 'package:chatspace/services/mock_data_service.dart';
 import 'package:chatspace/widgets/chat_wallpaper_background.dart';
+import 'package:chatspace/widgets/standard_qr_code.dart';
 
 void main() {
   group('TranslationService Tests', () {
@@ -118,6 +122,69 @@ void main() {
 
       final unknown = ChatWallpapers.getById('unknown_id');
       expect(unknown.id, equals('default'));
+    });
+  });
+
+  group('StandardQrCode Tests', () {
+    testWidgets('StandardQrCode renders with custom dimensions', (WidgetTester tester) async {
+      await tester.pumpWidget(
+        const MaterialApp(
+          home: Scaffold(
+            body: Center(
+              child: StandardQrCode(
+                data: 'upi://pay?pa=chatspace@upi&pn=UniversalChat&am=100',
+                size: 180,
+                showFrame: true,
+              ),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.byType(StandardQrCode), findsOneWidget);
+      expect(find.byType(CustomPaint), findsWidgets);
+    });
+  });
+
+  group('SpeechRecognitionService Tests', () {
+    test('SpeechRecognitionService VM stub reports not supported', () {
+      final speech = SpeechRecognitionService.instance;
+      expect(speech.isSupported, isFalse);
+      expect(speech.isListening, isFalse);
+    });
+
+    test('SpeechRecognitionService start and stop run safely on VM', () {
+      final speech = SpeechRecognitionService.instance;
+      expect(() => speech.startListening(onResult: (_) {}), returnsNormally);
+      expect(() => speech.stopListening(), returnsNormally);
+    });
+  });
+
+  group('MockDataService Contact & QR Tests', () {
+    test('addContactByPhone adds contact with valid phone number', () {
+      final mock = MockDataService();
+      final newContact = mock.addContactByPhone(
+        name: 'Priya Sharma',
+        phone: '+91 98765 12345',
+      );
+
+      expect(newContact.name, equals('Priya Sharma'));
+      expect(newContact.phone, equals('+91 98765 12345'));
+      expect(mock.mockUsers.any((u) => u.phone == '+91 98765 12345'), isTrue);
+    });
+
+    test('connectUserByQr connects and returns user model', () {
+      final mock = MockDataService();
+      final connected = mock.connectUserByQr(
+        uid: 'user_qr_test_99',
+        name: 'Vikram Malhotra',
+        phone: '+91 98220 54321',
+      );
+
+      expect(connected.uid, equals('user_qr_test_99'));
+      expect(connected.name, equals('Vikram Malhotra'));
+      expect(connected.phone, equals('+91 98220 54321'));
+      expect(mock.mockUsers.any((u) => u.uid == 'user_qr_test_99'), isTrue);
     });
   });
 }

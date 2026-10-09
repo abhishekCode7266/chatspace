@@ -24,16 +24,20 @@ import 'ai_assistant_screen.dart';
 import 'payments_screen.dart';
 import 'qr_code_share_screen.dart';
 import '../services/payment_service.dart';
+import '../services/speech_recognition_service.dart';
+import '../services/audio_playback_service.dart';
 import '../widgets/meta_ai_circle.dart';
 
 class ChatScreen extends StatefulWidget {
   final UserModel targetUser;
   final ChatModel? groupChat;
+  final bool isEmbeddedDesktop;
 
   const ChatScreen({
     super.key,
     required this.targetUser,
     this.groupChat,
+    this.isEmbeddedDesktop = false,
   });
 
   @override
@@ -49,6 +53,7 @@ class _ChatScreenState extends State<ChatScreen> {
   bool _showEmojiBar = false;
   bool _isVoiceRecording = false;
   int _recordingSeconds = 0;
+  String _speechDictatedText = '';
   Timer? _recordingTimer;
   MessageModel? _replyingToMessage;
   String? _pinnedMessage;
@@ -122,7 +127,6 @@ class _ChatScreenState extends State<ChatScreen> {
   ];
 
   int _emojiDrawerTab = 0; // 0: Emoji, 1: GIF, 2: Stickers, 3: Themes
-  Color? _customChatBackgroundColor;
   String _selectedWallpaperId = 'default';
   bool _isSearchingChat = false;
   String _chatSearchQuery = '';
@@ -432,12 +436,13 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   // ==========================================
-  // WHATSAPP-STYLE IN-BAR AUDIO RECORDING
+  // WHATSAPP-STYLE IN-BAR AUDIO RECORDING & SPEECH-TO-TEXT
   // ==========================================
   void _startVoiceRecording() {
     setState(() {
       _isVoiceRecording = true;
       _recordingSeconds = 0;
+      _speechDictatedText = '';
     });
     _recordingTimer?.cancel();
     _recordingTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
@@ -447,13 +452,31 @@ class _ChatScreenState extends State<ChatScreen> {
         });
       }
     });
+
+    // Start live Speech-to-Text Recognition in background
+    SpeechRecognitionService.instance.startListening(
+      language: 'hi-IN',
+      onResult: (text, isFinal) {
+        if (mounted) {
+          setState(() {
+            _speechDictatedText = text;
+          });
+        }
+      },
+      onError: (err) {
+        debugPrint('Voice recording speech recognition error: $err');
+      },
+      onEnd: () {},
+    );
   }
 
   void _cancelVoiceRecording() {
     _recordingTimer?.cancel();
+    SpeechRecognitionService.instance.stopListening();
     setState(() {
       _isVoiceRecording = false;
       _recordingSeconds = 0;
+      _speechDictatedText = '';
     });
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -465,16 +488,352 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _sendVoiceRecording() {
     _recordingTimer?.cancel();
+    SpeechRecognitionService.instance.stopListening();
     final durationSec = _recordingSeconds > 0 ? _recordingSeconds : 1;
-    final formattedDuration = '0:${durationSec.toString().padLeft(2, '0')}';
+    final capturedSpeech = _speechDictatedText;
+
     setState(() {
       _isVoiceRecording = false;
       _recordingSeconds = 0;
     });
-    _handleSendMessage(
-      customText: '🎤 Voice message ($formattedDuration)',
-      messageType: 'audio',
-      audioDuration: formattedDuration,
+
+    // Open Review Before Sending bottom sheet!
+    _showVoiceNoteReviewSheet(
+      durationSec: durationSec,
+      initialTranscribedText: capturedSpeech,
+    );
+  }
+
+  /// Voice Note & Speech Review Before Sending Bottom Sheet
+  void _showVoiceNoteReviewSheet({
+    required int durationSec,
+    required String initialTranscribedText,
+  }) {
+    final textCtrl = TextEditingController(
+      text: initialTranscribedText.isNotEmpty
+          ? initialTranscribedText
+          : 'नमस्ते! मैं आपको यह वॉयस मैसेज भेज रहा हूँ।',
+    );
+    final formattedDuration = '0:${durationSec.toString().padLeft(2, '0')}';
+    bool isPreviewPlaying = false;
+    double playProgress = 0.0;
+    String playElapsed = '0:00';
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (sheetCtx, setSheetState) {
+          final isDark = Theme.of(sheetCtx).brightness == Brightness.dark;
+
+          return Container(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(sheetCtx).viewInsets.bottom + 20,
+              top: 20,
+              left: 20,
+              right: 20,
+            ),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.2),
+                  blurRadius: 16,
+                  offset: const Offset(0, -4),
+                ),
+              ],
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.record_voice_over_rounded, color: AppColors.primary),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Voice Note Review (सुनें व जांचें)',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Text(
+                        formattedDuration,
+                        style: TextStyle(color: Colors.red.shade800, fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+
+                // Audio waveform & Play Preview Bar
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF26353D) : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        style: IconButton.styleFrom(backgroundColor: AppColors.primary),
+                        icon: Icon(
+                          isPreviewPlaying ? Icons.pause_rounded : Icons.play_arrow_rounded,
+                          color: Colors.white,
+                        ),
+                        onPressed: () {
+                          if (isPreviewPlaying) {
+                            AudioPlaybackService.instance.stopAudio();
+                            setSheetState(() => isPreviewPlaying = false);
+                          } else {
+                            setSheetState(() => isPreviewPlaying = true);
+                            AudioPlaybackService.instance.playAudioMessage(
+                              messageId: 'preview_voice_${DateTime.now().millisecondsSinceEpoch}',
+                              text: textCtrl.text,
+                              durationStr: formattedDuration,
+                              onProgress: (prog, elapsed) {
+                                if (sheetCtx.mounted) {
+                                  setSheetState(() {
+                                    playProgress = prog;
+                                    playElapsed = elapsed;
+                                  });
+                                }
+                              },
+                              onComplete: () {
+                                if (sheetCtx.mounted) {
+                                  setSheetState(() {
+                                    isPreviewPlaying = false;
+                                    playProgress = 0.0;
+                                    playElapsed = '0:00';
+                                  });
+                                }
+                              },
+                            );
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            LinearProgressIndicator(
+                              value: playProgress,
+                              backgroundColor: Colors.grey.shade400,
+                              valueColor: const AlwaysStoppedAnimation(AppColors.primary),
+                            ),
+                            const SizedBox(height: 6),
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(playElapsed, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                                Text(formattedDuration, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Speech-to-Text Transcribed Text Area (Review & Edit)
+                const Text(
+                  'Transcribed Speech (बोलकर लिखा गया — एडिट कर सकते हैं):',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey),
+                ),
+                const SizedBox(height: 6),
+                TextField(
+                  controller: textCtrl,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    hintText: 'Type or edit recognized speech text...',
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    contentPadding: const EdgeInsets.all(12),
+                  ),
+                ),
+                const SizedBox(height: 16),
+
+                // Actions: Discard, Re-record, Send as Text, Send as Voice Note
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline_rounded, color: Colors.red),
+                      tooltip: 'Discard',
+                      onPressed: () {
+                        AudioPlaybackService.instance.stopAudio();
+                        Navigator.pop(ctx);
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.replay_rounded, color: Colors.orange),
+                      tooltip: 'Re-record',
+                      onPressed: () {
+                        AudioPlaybackService.instance.stopAudio();
+                        Navigator.pop(ctx);
+                        _startVoiceRecording();
+                      },
+                    ),
+                    const Spacer(),
+                    OutlinedButton(
+                      style: OutlinedButton.styleFrom(
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        AudioPlaybackService.instance.stopAudio();
+                        Navigator.pop(ctx);
+                        final txt = textCtrl.text.trim();
+                        if (txt.isNotEmpty) {
+                          _handleSendMessage(customText: txt);
+                        }
+                      },
+                      child: const Text('Send as Text (टेक्स्ट)'),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.send_rounded, size: 16),
+                      label: const Text('Send Voice Note'),
+                      onPressed: () {
+                        AudioPlaybackService.instance.stopAudio();
+                        Navigator.pop(ctx);
+                        final txt = textCtrl.text.trim();
+                        _handleSendMessage(
+                          customText: txt.isNotEmpty ? txt : '🎤 Voice message ($formattedDuration)',
+                          messageType: 'audio',
+                          audioDuration: formattedDuration,
+                        );
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  /// Interactive Document Picker Dialog
+  void _showDocumentPickerDialog() {
+    final fileNameCtrl = TextEditingController(text: 'Universal_Project_Spec.pdf');
+    String selectedSize = '2.4 MB';
+
+    final presetDocs = [
+      {'name': 'Company_Agreement_2026.pdf', 'size': '3.2 MB', 'type': 'PDF'},
+      {'name': 'Payment_Invoice_Receipt_4091.pdf', 'size': '1.1 MB', 'type': 'PDF'},
+      {'name': 'Technical_Architecture_Spec.docx', 'size': '4.5 MB', 'type': 'DOCX'},
+      {'name': 'Q3_Financial_Summary.xlsx', 'size': '2.8 MB', 'type': 'XLSX'},
+      {'name': 'Universal_Source_Code.zip', 'size': '12.4 MB', 'type': 'ZIP'},
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDocState) {
+          final isDark = Theme.of(ctx).brightness == Brightness.dark;
+
+          return Container(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              top: 20,
+              left: 20,
+              right: 20,
+            ),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Row(
+                  children: [
+                    Icon(Icons.insert_drive_file_rounded, color: Color(0xFF7F66FF)),
+                    SizedBox(width: 10),
+                    Text(
+                      'Share Document (दस्तावेज़ चुनें)',
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: fileNameCtrl,
+                  decoration: const InputDecoration(
+                    labelText: 'Document Name',
+                    hintText: 'e.g. Agreement.pdf',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                const Text('Choose Preset Document:', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.grey)),
+                const SizedBox(height: 6),
+                ...presetDocs.map((doc) => ListTile(
+                  dense: true,
+                  leading: Icon(
+                    doc['type'] == 'PDF' ? Icons.picture_as_pdf_rounded : Icons.description_rounded,
+                    color: doc['type'] == 'PDF' ? Colors.red : Colors.blue,
+                  ),
+                  title: Text(doc['name']!, style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+                  subtitle: Text('${doc['size']} • ${doc['type']}'),
+                  trailing: const Icon(Icons.arrow_forward_ios_rounded, size: 14),
+                  onTap: () {
+                    setDocState(() {
+                      fileNameCtrl.text = doc['name']!;
+                      selectedSize = doc['size']!;
+                    });
+                  },
+                )),
+                const SizedBox(height: 14),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF7F66FF),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.send_rounded),
+                    label: const Text('Send Document (शेयर करें)', style: TextStyle(fontWeight: FontWeight.bold)),
+                    onPressed: () {
+                      final name = fileNameCtrl.text.trim();
+                      if (name.isNotEmpty) {
+                        Navigator.pop(ctx);
+                        _handleSendMessage(
+                          customText: name,
+                          messageType: 'document',
+                          fileName: name,
+                          fileSize: selectedSize,
+                        );
+                      }
+                    },
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -758,36 +1117,6 @@ class _ChatScreenState extends State<ChatScreen> {
         },
       ),
     );
-  }
-
-  void _simulateVoiceNote() {
-    setState(() {
-      _isVoiceRecording = true;
-    });
-
-    Timer(const Duration(milliseconds: 1200), () async {
-      if (!mounted) return;
-      setState(() {
-        _isVoiceRecording = false;
-      });
-
-      final authProvider = context.read<AuthProvider>();
-      final chatProvider = context.read<ChatProvider>();
-      final currentUserId = authProvider.currentUser?.uid ?? '';
-      final receiverId = widget.groupChat != null ? widget.groupChat!.chatId : widget.targetUser.uid;
-
-      await chatProvider.sendMessage(
-        chatId: _chatId,
-        senderId: currentUserId,
-        receiverId: receiverId,
-        text: '🎤 Voice message (0:05)',
-        messageType: 'audio',
-        audioDuration: '0:05',
-        senderName: authProvider.currentUser?.name,
-        isDevBypass: authProvider.isDevBypass,
-      );
-      _scrollToBottom();
-    });
   }
 
   void _scrollToBottom() {
@@ -2076,12 +2405,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     color: const Color(0xFF7F66FF),
                     onTap: () {
                       Navigator.pop(ctx);
-                      _handleSendMessage(
-                        customText: 'Universal_Project_Spec.pdf',
-                        messageType: 'document',
-                        fileName: 'Universal_Project_Spec.pdf',
-                        fileSize: '2.4 MB',
-                      );
+                      _showDocumentPickerDialog();
                     },
                   ),
                   _buildAttachmentItem(
@@ -2517,7 +2841,14 @@ class _ChatScreenState extends State<ChatScreen> {
               ],
             )
           : AppBar(
-              titleSpacing: 0,
+              automaticallyImplyLeading: !widget.isEmbeddedDesktop,
+              leading: widget.isEmbeddedDesktop
+                  ? null
+                  : IconButton(
+                      icon: const Icon(Icons.arrow_back_rounded),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+              titleSpacing: widget.isEmbeddedDesktop ? 16 : 0,
               title: InkWell(
                 onTap: _showViewContactDialog,
                 child: Row(
@@ -2544,8 +2875,9 @@ class _ChatScreenState extends State<ChatScreen> {
                           Text(
                             displayName,
                             overflow: TextOverflow.ellipsis,
+                            maxLines: 1,
                             style: const TextStyle(
-                              fontSize: 16,
+                              fontSize: 15,
                               fontWeight: FontWeight.bold,
                               color: Colors.white,
                             ),
@@ -2553,7 +2885,7 @@ class _ChatScreenState extends State<ChatScreen> {
                           if (isGroup)
                             Text(
                               '${widget.groupChat!.participants.length} participants',
-                              style: const TextStyle(fontSize: 12, color: Colors.white70),
+                              style: const TextStyle(fontSize: 11, color: Colors.white70),
                             )
                           else
                             StreamBuilder<bool>(
@@ -2568,7 +2900,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                   return const Text(
                                     'typing...',
                                     style: TextStyle(
-                                      fontSize: 12,
+                                      fontSize: 11,
                                       fontStyle: FontStyle.italic,
                                       color: Colors.white,
                                       fontWeight: FontWeight.w500,
@@ -2581,7 +2913,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                     lastSeen: widget.targetUser.lastSeen,
                                   ),
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 11,
                                     color: widget.targetUser.isOnline
                                         ? const Color(0xFFB9F6CA)
                                         : Colors.white70,
@@ -2596,13 +2928,17 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
               actions: [
-                const AppBarDevCircleButton(),
+                if (!widget.isEmbeddedDesktop) const AppBarDevCircleButton(),
                 IconButton(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
                   icon: const Icon(Icons.videocam_rounded),
                   tooltip: 'Video Call',
                   onPressed: _startVideoCall,
                 ),
                 IconButton(
+                  visualDensity: VisualDensity.compact,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
                   icon: const Icon(Icons.call_rounded),
                   tooltip: 'Voice Call',
                   onPressed: _startVoiceCall,

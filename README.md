@@ -16,27 +16,32 @@
 ## 📱 Quick Links & Downloads
 
 - 🌐 **Live Web App Preview**: [https://abhishekcode7266.github.io/chatspace/](https://abhishekcode7266.github.io/chatspace/)
-- 📦 **Download Android APK (Direct Install)**: [GitHub Releases - app-release.apk (v1.8.1)](https://github.com/abhishekCode7266/chatspace/releases/download/v1.8.1/app-release.apk)
-- 🏬 **Google Play Store App Bundle**: [GitHub Releases - app-release.aab (v1.8.1)](https://github.com/abhishekCode7266/chatspace/releases/download/v1.8.1/app-release.aab)
+- 📦 **Download Android APK (Direct Install)**: [GitHub Releases - app-release.apk (v1.9.0)](https://github.com/abhishekCode7266/chatspace/releases/download/v1.9.0/app-release.apk)
+- 🏬 **Google Play Store App Bundle**: [GitHub Releases - app-release.aab (v1.9.0)](https://github.com/abhishekCode7266/chatspace/releases/download/v1.9.0/app-release.aab)
 - 🎨 **Google Play Store 512x512 High-Res Icon**: `playstore_assets/universal_chat_icon_512.jpg`
 
 ---
 
-## 🌟 Core Highlights & Feature Matrix (v1.8.1)
+## 🌟 Core Highlights & Feature Matrix (v1.9.0)
 
-### 1. 📸 Live Camera & Selfie Face Capture (कैमरा डायरेक्ट फोटो खींचे)
-- **Direct Live Webcam & Camera Viewfinder**: WebRTC camera stream accessing user's real hardware camera / webcam with live viewfinder display.
-- **Selfie Flip & Front/Rear Switching**: Effortlessly flip between front selfie view and rear HD environment view.
-- **Canvas Shutter Snapshot**: Captures live video frame onto an HTML canvas with camera shutter acoustic sound effect, exporting as Base64 JPEG data URL sent straight to the chat.
+### 1. 💻 Responsive Layout & WhatsApp Web Split Two-Pane View (Zero Header Overlap)
+- **WhatsApp Web-style Two-Pane Split Layout**: On displays $\ge 900\text{px}$ (tablets, laptops, desktops), displays a persistent 400px left navigation list and a dedicated conversation right pane or welcome hub.
+- **Zero Header Overlap Bug**: Completely resolved header button crunch on compact mobile screens (320px–412px) using flexible constrained headers and responsive action toolbars.
 
-### 2. 🎙️ Real Audible Voice Note Playback (माइक व असली आवाज़ प्लेबैक)
-- **Authentic Speaker Output**: Voice notes produce genuine audible sound through device speakers using Web Audio API and Speech Synthesis.
-- **Animated Audio Waveforms & Stopwatch**: Jumping waveform heights and synchronized `0:01 / 0:14` elapsed counter with auto-reset upon completion.
+### 2. 📷 Live Camera QR Decoder & ISO/IEC 18004 Standard 2D QR Matrix
+- **Real Camera QR Scanning**: Streams real camera viewfinder feed with front/rear flip, torch control, and laser scanning guide to decode UPI links, contacts, and group invites.
+- **Authentic 2D QR Matrix Generator**: Clean 25x25 (V2) standard QR matrix with 7x7 corner finder patterns, 1-module separators, alternating timing patterns, and logo embedding.
 
-### 3. 🎨 WhatsApp Wallpapers & Chat Themes (थीम इमेज व वॉलपेपर)
-- **8 Curated Themes**: WhatsApp Classic, Dark Doodle, Emerald Forest, Midnight Sky, Sunset Amber, Cyberpunk Neon, Rose Romance, and Clean Slate.
-- **Custom WhatsApp Doodle Painter**: Draws iconic repeating doodle art (chat bubbles, coffee cups, hearts, stars, cameras, clocks).
-- **Dedicated Themes Drawer Tab**: 4th tab in the drawer next to Emojis, GIFs, and Stickers for 1-tap wallpaper changes.
+### 3. 🎙️ Web Speech-to-Text & Review Before Sending
+- **Live Speech Dictation**: Web Speech API speech-to-text dictation.
+- **Review Modal**: Listen back to voice notes, review/edit recognized transcripts, and choose between sending as an audio message or editable text.
+
+### 4. 📄 Interactive Document & File Sharing
+- **Multi-Format Document Sharing**: Send PDF, DOCX, XLSX, and ZIP attachments with custom names, sizes, and file badges.
+
+### 5. 👥 Contact Management & Direct Addition
+- **Add by Mobile Number (+91)**: Instant contact creation with phone validation.
+- **QR Contact Link**: Instant 1-tap QR scanning to initiate direct chats.
 
 ### 4. ⌨️ Keypad Autofocus & Quick Phrases (कीपैड व तुरंत जवाब)
 - **कीपैड (Keyboard)**: Closes drawers and immediately requests keyboard focus on the message bar.

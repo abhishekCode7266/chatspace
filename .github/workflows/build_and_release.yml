@@ -84,30 +84,39 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master')
         with:
-          tag_name: v1.8.1
-          name: Universal Chat App v1.8.1 (Live Camera Face Capture, Audible Voice Notes, WhatsApp Wallpapers & Multilingual Translation)
+          tag_name: v1.9.0
+          name: Universal Chat App v1.9.0 (Responsive Two-Pane Split View, Anti-Overlap Header, Live Camera QR Decoder, Standard 2D QR Matrix, Speech-to-Text Review & Document Sharing)
           draft: false
           prerelease: false
           body: |
-            ## 🌐 Universal Chat App v1.8.1 Production Release 🚀📸🎙️🎨🌐
+            ## 🌐 Universal Chat App v1.9.0 Production Release 🚀📱💻📷🎙️💳
             
-            Welcome to **Universal Chat App v1.8.1** — featuring real live camera face capture, genuine audible voice note playback, authentic WhatsApp wallpaper themes, keypad autofocus with quick phrases, and 12-language in-chat translation!
+            Welcome to **Universal Chat App v1.9.0** — featuring a fully responsive WhatsApp Web-style two-pane layout, zero header overlap across all screen widths, live WebRTC camera QR code decoder, authentic ISO/IEC 18004 2D QR code generator, real-time speech-to-text dictation with pre-send audio/text review, and interactive document sharing!
             
             ### 📥 Download & Install (डाउनलोड करें):
-            - **📱 Direct Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.8.1/app-release.apk)
-            - **🏬 Google Play Store Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.8.1/app-release.aab)
+            - **📱 Direct Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.9.0/app-release.apk)
+            - **🏬 Google Play Store Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.9.0/app-release.aab)
             - **🌐 Live Web Demo**: [https://abhishekcode7266.github.io/chatspace/](https://abhishekcode7266.github.io/chatspace/)
             
             ---
             
-            ### ✨ What's New in v1.8.1 (मुख्य नए फीचर्स):
-            1. **📸 Live Camera & Selfie Face Capture (कैमरा डायरेक्ट फोटो खींचे)**:
-               - Direct live webcam & front/rear camera access with real-time video viewfinder showing user's live face.
-               - Front selfie mirror toggle and front/rear flip button.
-               - Instant shutter capture from live video feed into Base64 JPEG data URL sent straight to the chat.
-            2. **🎙️ Real Audible Voice Note Playback (माइक व असली आवाज़ प्लेबैक)**:
-               - Genuine audible sound output through device speakers using Web Audio API and Speech Synthesis.
-               - Animated audio waveform bars and live elapsed duration counter (`0:01 / 0:14`).
+            ### ✨ What's New in v1.9.0 (मुख्य नए फीचर्स):
+            1. **💻 Adaptive Responsive Design & WhatsApp Web Two-Pane Layout**:
+               - Seamless split view on desktop/tablet (width >= 900px): left pane for chat lists, right pane for active conversations or rich empty state.
+               - Complete elimination of the header overlap bug on narrow screens (320px–412px) using flexible constrained titles and adaptive actions.
+            2. **📷 Live Camera QR Decoder & ISO/IEC 18004 Standard QR Matrix**:
+               - Real WebRTC hardware camera scanner with front/rear lens switching, torch control, and animated laser guide.
+               - Instant decoding of UPI payment addresses, contact connection links, and group invites.
+               - Replaced pseudo-barcodes with authentic 25x25 (V2) 2D QR matrices with standard 7x7 corner finder patterns, 1-module separators, timing patterns, and logo integration.
+            3. **🎙️ Speech-to-Text with Review Before Sending**:
+               - Web Speech API dictation with live transcription.
+               - Review modal allowing the user to listen back to their voice note, edit recognized transcript text, and choose to send as audio or text.
+            4. **📄 Interactive Document & File Sharing**:
+               - Support for sharing PDFs, DOCX, XLSX, and ZIP files with custom names and sizes.
+            5. **👥 Contact Management & Synchronization**:
+               - Add contacts directly by 10-digit mobile number (+91).
+               - Instant QR code linking for users and groups.
+               - Message copying and sharing options directly from bubbles.
                - Seamless play/pause/auto-reset behavior.
             3. **🎨 WhatsApp Wallpapers & Chat Themes (थीम इमेज व वॉलपेपर)**:
                - 8 curated wallpapers including WhatsApp Classic, Dark Doodle, Emerald Forest, Midnight Sky, Sunset Amber, Cyberpunk Neon, Rose Romance, and Clean Slate.

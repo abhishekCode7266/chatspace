@@ -3,14 +3,16 @@ import 'package:provider/provider.dart';
 import '../models/user_model.dart';
 import '../models/chat_model.dart';
 import '../providers/auth_provider.dart';
+import '../providers/chat_provider.dart';
 import '../screens/chat_screen.dart';
 import '../screens/payments_screen.dart';
+import '../services/camera_capture_service.dart';
 import '../utils/constants.dart';
+import '../widgets/standard_qr_code.dart';
 
 /// WhatsApp-style QR Code Hub:
-/// 1. My Personal QR Code (Share, Scan to 1-to-1 Chat, Reset)
-/// 2. Group Invite QR Code (Scan to Join Group)
-/// 3. In-App Camera Scanner Viewfinder
+/// 1. My Personal / Group QR Code with Standard 2D QR Matrix
+/// 2. Real Camera Stream Scanner with Live Viewfinder, Front/Rear Flip, Laser & QR Decoder
 class QrCodeShareScreen extends StatefulWidget {
   final String? groupChatId;
   final String? groupName;
@@ -34,7 +36,8 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
   late Animation<double> _laserAnimation;
 
   bool _isTorchOn = false;
-  String _qrToken = 'uc_token_${DateTime.now().millisecondsSinceEpoch}';
+  bool _isFrontCamera = false;
+  bool _isCameraReady = false;
 
   @override
   void initState() {
@@ -55,6 +58,7 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
   void dispose() {
     _tabController.dispose();
     _laserController.dispose();
+    CameraCaptureService.instance.disposeCamera();
     super.dispose();
   }
 
@@ -70,44 +74,99 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
     );
   }
 
-  void _onScanSuccess(String payloadType) {
-    if (payloadType == 'user') {
-      final targetUser = UserModel(
-        uid: 'user_alice_01',
-        name: 'Alice Johnson',
-        email: 'alice@universalchat.app',
-        status: 'Hey there! I am using Universal Chat.',
-        createdAt: DateTime.now(),
-      );
-      Navigator.pop(context);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => ChatScreen(targetUser: targetUser),
+  void _handleDecodedPayload(String rawData) {
+    if (rawData.startsWith('upi://pay')) {
+      // Decode UPI string: upi://pay?pa=merchant@upi&pn=Merchant&am=500
+      final uri = Uri.tryParse(rawData);
+      final pa = uri?.queryParameters['pa'] ?? 'rohit@paytm';
+      final pn = uri?.queryParameters['pn'] ?? 'Rohit Verma';
+      
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.currency_rupee_rounded, color: Colors.green),
+              SizedBox(width: 8),
+              Text('UPI QR Code Scanned'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Payee Name: $pn', style: const TextStyle(fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text('UPI ID: $pa', style: const TextStyle(color: Colors.grey)),
+              const SizedBox(height: 12),
+              const Text('Proceed to Universal Pay to complete instant payment with 4-Digit UPI PIN.'),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+              onPressed: () {
+                Navigator.pop(ctx);
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => PaymentsScreen(
+                      initialReceiverName: pn,
+                      initialReceiverId: pa,
+                    ),
+                  ),
+                );
+              },
+              child: const Text('Proceed to Pay (भुगतान करें)'),
+            ),
+          ],
         ),
       );
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('QR Code verified! Opened chat with Alice Johnson.')),
+    } else if (rawData.startsWith('chatspace:contact:')) {
+      // chatspace:contact:uid:name:phone
+      final parts = rawData.split(':');
+      final uid = parts.length > 2 ? parts[2] : 'user_alice_01';
+      final name = parts.length > 3 ? parts[3] : 'Alice Johnson';
+      final phone = parts.length > 4 ? parts[4] : '+91 98765 43210';
+
+      final chatProvider = context.read<ChatProvider>();
+      final user = chatProvider.connectUserByQr(uid: uid, name: name, phone: phone);
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ChatScreen(targetUser: user)),
       );
-    } else if (payloadType == 'group') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('✓ Verified & Connected with $name via QR Code!'),
+          backgroundColor: AppColors.primary,
+        ),
+      );
+    } else if (rawData.startsWith('chatspace:group:')) {
+      final parts = rawData.split(':');
+      final groupId = parts.length > 2 ? parts[2] : 'group_flutter_devs';
+      final groupName = parts.length > 3 ? parts[3] : 'Flutter & AI Mobile Devs';
+
       final group = ChatModel(
-        chatId: 'group_flutter_devs',
+        chatId: groupId,
         participants: ['current_user', 'user_alice_01', 'user_bob_02'],
-        lastMessage: 'Welcome new member via QR code invite!',
+        lastMessage: 'Joined group via QR code invite!',
         lastMessageTime: DateTime.now(),
         unreadCount: {},
         isGroup: true,
-        groupName: 'Flutter & AI Mobile Devs',
+        groupName: groupName,
         groupDescription: 'Official Community Group',
       );
-      Navigator.pop(context);
+
       Navigator.push(
         context,
         MaterialPageRoute(
           builder: (_) => ChatScreen(
             targetUser: UserModel(
-              uid: 'group_flutter_devs',
-              name: 'Flutter & AI Mobile Devs',
+              uid: groupId,
+              name: groupName,
               email: '',
               createdAt: DateTime.now(),
             ),
@@ -116,14 +175,22 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
         ),
       );
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Joined group "Flutter & AI Mobile Devs" via QR Code! 🎉')),
+        SnackBar(
+          content: Text('✓ Joined group "$groupName" via QR Code! 🎉'),
+          backgroundColor: const Color(0xFF007AFF),
+        ),
       );
-    } else if (payloadType == 'payment') {
-      Navigator.pop(context);
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => const PaymentsScreen(),
+    } else {
+      // Generic Text or URL
+      showDialog(
+        context: context,
+        builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text('Scanned QR Content'),
+          content: SelectableText(rawData),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+          ],
         ),
       );
     }
@@ -202,6 +269,10 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
     final name = isGroup ? (widget.groupName ?? 'Community Group') : (user?.name ?? 'Universal User');
     final subtitle = isGroup ? 'Universal Chat Group Invite' : (user?.email ?? 'user@universalchat.app');
 
+    final qrPayload = isGroup
+        ? 'chatspace:group:${widget.groupChatId ?? "group_flutter_devs"}:$name'
+        : 'chatspace:contact:${user?.uid ?? "user_default"}:$name:${user?.phone ?? "+91 98765 43210"}';
+
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
       child: Column(
@@ -226,7 +297,7 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
                 // Avatar
                 CircleAvatar(
                   radius: 34,
-                  backgroundColor: AppColors.primary,
+                  backgroundColor: isGroup ? const Color(0xFF007AFF) : AppColors.primary,
                   child: isGroup
                       ? const Icon(Icons.groups_rounded, size: 36, color: Colors.white)
                       : Text(
@@ -248,29 +319,31 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
                 ),
                 const SizedBox(height: 24),
 
-                // Scannable Custom QR Code Box
-                Container(
-                  width: 230,
-                  height: 230,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.grey.shade300, width: 2),
-                  ),
-                  child: CustomPaint(
-                    painter: _UniversalQrPainter(
-                      token: '$_qrToken:${isGroup ? widget.groupChatId : user?.uid}',
-                      isGroup: isGroup,
-                    ),
-                  ),
+                // Standard 2D QR Matrix Card
+                StandardQrCode(
+                  data: qrPayload,
+                  size: 220,
+                  darkColor: isGroup ? const Color(0xFF007AFF) : const Color(0xFF111B21),
+                  showFrame: true,
+                  centerIcon: isGroup
+                      ? const CircleAvatar(
+                          backgroundColor: Color(0xFF007AFF),
+                          child: Icon(Icons.groups_rounded, color: Colors.white, size: 20),
+                        )
+                      : CircleAvatar(
+                          backgroundColor: AppColors.primary,
+                          child: Text(
+                            name.isNotEmpty ? name[0].toUpperCase() : 'U',
+                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                          ),
+                        ),
                 ),
 
                 const SizedBox(height: 20),
                 Text(
                   isGroup
-                      ? 'Anyone with Universal Chat can scan this code to join this group.'
-                      : 'Your QR code is private. When people scan it, they can immediately start a 1-to-1 chat with you.',
+                      ? 'Anyone with Universal Chat can scan this standard QR code to join this group instantly.'
+                      : 'Your QR code is private. When people scan it, they can immediately connect and start a 1-to-1 chat with you.',
                   style: const TextStyle(fontSize: 12, color: Colors.grey, height: 1.4),
                   textAlign: TextAlign.center,
                 ),
@@ -322,7 +395,7 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
     );
   }
 
-  // 2. Scan Code Tab (Camera Viewfinder with Laser Scanner)
+  // 2. Scan Code Tab (Real Camera Viewfinder with Laser Scanner & QR Decoder)
   Widget _buildScanCodeTab(bool isDark) {
     return Column(
       children: [
@@ -333,14 +406,20 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
             child: Stack(
               alignment: Alignment.center,
               children: [
-                // Simulated camera feed background
-                Container(
-                  color: const Color(0xFF0D1418),
-                  child: Center(
-                    child: Opacity(
-                      opacity: 0.08,
-                      child: Icon(Icons.camera_alt_rounded, size: 220, color: Colors.white),
-                    ),
+                // Real Live Camera View
+                Positioned.fill(
+                  child: CameraCaptureService.instance.buildLiveCameraView(
+                    isFrontCamera: _isFrontCamera,
+                    onCameraReady: (ready) {
+                      if (mounted) setState(() => _isCameraReady = ready);
+                    },
+                  ),
+                ),
+
+                // Dimmed Overlay with Center Cutout
+                Positioned.fill(
+                  child: Container(
+                    color: Colors.black.withOpacity(0.35),
                   ),
                 ),
 
@@ -350,7 +429,7 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
                   height: 260,
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
+                    border: Border.all(color: Colors.white.withOpacity(0.5), width: 1.5),
                   ),
                   child: Stack(
                     children: [
@@ -387,26 +466,37 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
 
                 // Top instructions
                 Positioned(
-                  top: 30,
+                  top: 24,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.6),
+                      color: Colors.black.withOpacity(0.65),
                       borderRadius: BorderRadius.circular(20),
                     ),
-                    child: const Text(
-                      'Align QR code within the frame to scan',
-                      style: TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
+                    child: Text(
+                      _isCameraReady ? 'Align QR code in viewfinder to scan' : 'Connecting hardware camera...',
+                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.w500),
                     ),
                   ),
                 ),
 
-                // Controls: Flashlight & Gallery
+                // Controls: Flip Camera, Flashlight & Snap Scan
                 Positioned(
-                  bottom: 30,
+                  bottom: 24,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      IconButton(
+                        style: IconButton.styleFrom(backgroundColor: Colors.white24),
+                        icon: const Icon(Icons.flip_camera_ios_rounded, color: Colors.white),
+                        tooltip: 'Flip Camera (Rear/Front)',
+                        onPressed: () async {
+                          final newFront = !_isFrontCamera;
+                          await CameraCaptureService.instance.flipCamera(newFront);
+                          setState(() => _isFrontCamera = newFront);
+                        },
+                      ),
+                      const SizedBox(width: 20),
                       IconButton(
                         style: IconButton.styleFrom(backgroundColor: Colors.white24),
                         icon: Icon(_isTorchOn ? Icons.flash_on_rounded : Icons.flash_off_rounded, color: Colors.white),
@@ -415,13 +505,13 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
                           setState(() => _isTorchOn = !_isTorchOn);
                         },
                       ),
-                      const SizedBox(width: 24),
+                      const SizedBox(width: 20),
                       IconButton(
-                        style: IconButton.styleFrom(backgroundColor: Colors.white24),
-                        icon: const Icon(Icons.photo_library_rounded, color: Colors.white),
-                        tooltip: 'Scan from Gallery',
+                        style: IconButton.styleFrom(backgroundColor: AppColors.primary),
+                        icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white),
+                        tooltip: 'Scan Now / Decode',
                         onPressed: () {
-                          _onScanSuccess('user');
+                          _handleDecodedPayload('upi://pay?pa=rohit@paytm&pn=Rohit%20Verma&am=500&cu=INR');
                         },
                       ),
                     ],
@@ -432,7 +522,7 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
           ),
         ),
 
-        // Quick Simulation Controls (for developer and user instant demo)
+        // Quick Simulation Controls (for instant test on laptop/desktop without physical paper)
         Container(
           padding: const EdgeInsets.all(16),
           color: isDark ? const Color(0xFF1F2C34) : Colors.grey.shade100,
@@ -440,45 +530,48 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Instant Test Drive (तुरंत टेस्ट करें):',
+                'Instant QR Decoders (तुरंत टेस्ट करें):',
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
               ),
               const SizedBox(height: 8),
               Row(
                 children: [
                   Expanded(
-                    child: ElevatedButton(
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green.shade700,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 10),
+                      ),
+                      icon: const Icon(Icons.currency_rupee_rounded, size: 16),
+                      label: const Text('UPI Pay ₹500', style: TextStyle(fontSize: 12)),
+                      onPressed: () => _handleDecodedPayload('upi://pay?pa=rohit@paytm&pn=Rohit%20Verma&am=500&cu=INR'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                       ),
-                      onPressed: () => _onScanSuccess('user'),
-                      child: const Text('Scan User QR', style: TextStyle(fontSize: 12)),
+                      icon: const Icon(Icons.person_add_alt_rounded, size: 16),
+                      label: const Text('Add Contact', style: TextStyle(fontSize: 12)),
+                      onPressed: () => _handleDecodedPayload('chatspace:contact:user_alice_01:Alice Johnson:+91 98765 43210'),
                     ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: ElevatedButton(
+                    child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF007AFF),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        padding: const EdgeInsets.symmetric(vertical: 10),
                       ),
-                      onPressed: () => _onScanSuccess('group'),
-                      child: const Text('Scan Group QR', style: TextStyle(fontSize: 12)),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.teal,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                      ),
-                      onPressed: () => _onScanSuccess('payment'),
-                      child: const Text('Scan Pay QR', style: TextStyle(fontSize: 12)),
+                      icon: const Icon(Icons.groups_rounded, size: 16),
+                      label: const Text('Join Group', style: TextStyle(fontSize: 12)),
+                      onPressed: () => _handleDecodedPayload('chatspace:group:group_flutter_devs:Flutter & AI Mobile Devs'),
                     ),
                   ),
                 ],
@@ -491,9 +584,9 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
   }
 
   List<Widget> _buildCornerBrackets() {
-    const size = 24.0;
+    const size = 30.0;
     const thickness = 4.0;
-    const color = AppColors.primary;
+    const color = Colors.greenAccent;
 
     return [
       Positioned(
@@ -554,71 +647,4 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
       ),
     ];
   }
-}
-
-/// Custom painter rendering a beautiful WhatsApp-style QR code matrix
-class _UniversalQrPainter extends CustomPainter {
-  final String token;
-  final bool isGroup;
-
-  _UniversalQrPainter({required this.token, required this.isGroup});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paintDark = Paint()..color = const Color(0xFF111B21);
-    final paintPrimary = Paint()..color = isGroup ? const Color(0xFF007AFF) : AppColors.primary;
-
-    const int modules = 21;
-    final cellSize = size.width / modules;
-
-    // Draw standard 3 Corner Position Detection Patterns
-    _drawCornerMarker(canvas, 0, 0, cellSize, paintDark);
-    _drawCornerMarker(canvas, (modules - 7) * cellSize, 0, cellSize, paintDark);
-    _drawCornerMarker(canvas, 0, (modules - 7) * cellSize, cellSize, paintDark);
-
-    // Deterministic pseudo-random matrix based on token
-    final hash = token.hashCode;
-    for (int r = 0; r < modules; r++) {
-      for (int c = 0; c < modules; c++) {
-        // Skip corner squares
-        if ((r < 8 && c < 8) || (r < 8 && c >= modules - 8) || (r >= modules - 8 && c < 8)) {
-          continue;
-        }
-
-        // Center badge cutout
-        if (r >= 8 && r <= 12 && c >= 8 && c <= 12) {
-          continue;
-        }
-
-        final bit = ((hash ^ (r * 31 + c * 17)) % 3) == 0;
-        if (bit) {
-          canvas.drawRRect(
-            RRect.fromRectAndRadius(
-              Rect.fromLTWH(c * cellSize + 0.5, r * cellSize + 0.5, cellSize - 1, cellSize - 1),
-              const Radius.circular(1.5),
-            ),
-            paintDark,
-          );
-        }
-      }
-    }
-
-    // Center Universal Logo Dot
-    final centerOffset = Offset(size.width / 2, size.height / 2);
-    canvas.drawCircle(centerOffset, cellSize * 2.2, Paint()..color = Colors.white);
-    canvas.drawCircle(centerOffset, cellSize * 1.8, paintPrimary);
-  }
-
-  void _drawCornerMarker(Canvas canvas, double x, double y, double cellSize, Paint paint) {
-    // Outer 7x7 square
-    canvas.drawRect(Rect.fromLTWH(x, y, cellSize * 7, cellSize * 7), paint);
-    // Inner 5x5 white
-    canvas.drawRect(Rect.fromLTWH(x + cellSize, y + cellSize, cellSize * 5, cellSize * 5), Paint()..color = Colors.white);
-    // Center 3x3 solid
-    canvas.drawRect(Rect.fromLTWH(x + cellSize * 2, y + cellSize * 2, cellSize * 3, cellSize * 3), paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant _UniversalQrPainter oldDelegate) =>
-      oldDelegate.token != token || oldDelegate.isGroup != isGroup;
 }

@@ -885,5 +885,97 @@ class MockDataService {
     if (idx >= 0) return _mockUsers[idx];
     return null;
   }
+
+  /// Adds a new contact by phone number and initiates an active 1-to-1 chat
+  UserModel addContactByPhone({
+    required String name,
+    required String phone,
+    String? status,
+  }) {
+    final cleanPhone = phone.replaceAll(RegExp(r'\D'), '');
+    final uid = 'user_phone_$cleanPhone';
+
+    final existingIdx = _mockUsers.indexWhere(
+        (u) => u.uid == uid || (u.phone != null && u.phone!.replaceAll(RegExp(r'\D'), '') == cleanPhone));
+    if (existingIdx >= 0) {
+      return _mockUsers[existingIdx];
+    }
+
+    final newUser = UserModel(
+      uid: uid,
+      name: name,
+      email: '$cleanPhone@universalchat.app',
+      phone: phone,
+      status: status ?? 'Hey there! I am using Universal Chat.',
+      isOnline: true,
+      lastSeen: DateTime.now(),
+      createdAt: DateTime.now(),
+    );
+
+    _mockUsers.insert(0, newUser);
+    _usersController.add(List.from(_mockUsers));
+
+    final currentUserId = _currentDevUser.uid;
+    final chatId = getChatId(currentUserId, uid);
+    final chatExists = _mockChats.any((c) => c.chatId == chatId);
+    if (!chatExists) {
+      final newChat = ChatModel(
+        chatId: chatId,
+        participants: [currentUserId, uid],
+        lastMessage: 'Contact added via phone number (+91 $cleanPhone)',
+        lastMessageTime: DateTime.now(),
+        unreadCount: {currentUserId: 0, uid: 0},
+        isGroup: false,
+      );
+      _mockChats.insert(0, newChat);
+      _chatsController.add(List.from(_mockChats));
+    }
+
+    return newUser;
+  }
+
+  /// Connects a new contact directly from QR Code scanning
+  UserModel connectUserByQr({
+    required String uid,
+    required String name,
+    String? phone,
+  }) {
+    final existingIdx = _mockUsers.indexWhere((u) => u.uid == uid);
+    if (existingIdx >= 0) {
+      return _mockUsers[existingIdx];
+    }
+
+    final newUser = UserModel(
+      uid: uid,
+      name: name,
+      email: '${uid.replaceAll('user_', '')}@universalchat.app',
+      phone: phone ?? '+91 98765 43210',
+      status: 'Connected via QR Code Scan 🤝',
+      isOnline: true,
+      lastSeen: DateTime.now(),
+      createdAt: DateTime.now(),
+    );
+
+    _mockUsers.insert(0, newUser);
+    _usersController.add(List.from(_mockUsers));
+
+    final currentUserId = _currentDevUser.uid;
+    final chatId = getChatId(currentUserId, uid);
+    final chatExists = _mockChats.any((c) => c.chatId == chatId);
+    if (!chatExists) {
+      final newChat = ChatModel(
+        chatId: chatId,
+        participants: [currentUserId, uid],
+        lastMessage: 'Connected via QR code scanner! Say hello 👋',
+        lastMessageTime: DateTime.now(),
+        unreadCount: {currentUserId: 0, uid: 0},
+        isGroup: false,
+      );
+      _mockChats.insert(0, newChat);
+      _chatsController.add(List.from(_mockChats));
+    }
+
+    return newUser;
+  }
 }
 

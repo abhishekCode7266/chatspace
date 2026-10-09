@@ -4,6 +4,7 @@ import '../models/payment_model.dart';
 import '../services/payment_service.dart';
 import '../utils/constants.dart';
 import '../screens/qr_code_share_screen.dart';
+import '../widgets/standard_qr_code.dart';
 
 /// Comprehensive Google Pay / PhonePe / Paytm style Payments Ecosystem
 /// Features:
@@ -1224,27 +1225,16 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                         ],
                       ),
                       const SizedBox(height: 12),
-                      // Matrix QR Pattern Simulation
-                      Container(
-                        width: 200,
-                        height: 200,
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Stack(
-                          alignment: Alignment.center,
-                          children: [
-                            CustomPaint(
-                              size: const Size(190, 190),
-                              painter: _MockQrCodePainter(),
-                            ),
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                              child: const Icon(Icons.account_balance_wallet_rounded, color: AppColors.primary, size: 28),
-                            ),
-                          ],
+                      // Standard 2D QR Code Matrix
+                      StandardQrCode(
+                        data: 'upi://pay?pa=${primaryBank.upiId}&pn=Universal%20User&am=${customAmount ?? 0}&cu=INR',
+                        size: 200,
+                        darkColor: const Color(0xFF111B21),
+                        showFrame: true,
+                        centerIcon: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                          child: const Icon(Icons.currency_rupee_rounded, color: AppColors.primary, size: 22),
                         ),
                       ),
                       const SizedBox(height: 12),
@@ -1960,18 +1950,13 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
               child: const Text('🚇 ACTIVE METRO QR PASS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
             ),
             const SizedBox(height: 14),
-            // Simulated Metro Scanner QR Code
-            Container(
-              width: 170,
-              height: 170,
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.deepPurple, width: 2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: CustomPaint(
-                size: const Size(160, 160),
-                painter: _MockQrCodePainter(),
-              ),
+            // Standard 2D QR Metro Ticket
+            StandardQrCode(
+              data: 'chatspace:metro:${txn.upiRefId}:$from:$to:$passengers',
+              size: 170,
+              darkColor: Colors.deepPurple,
+              centerIcon: const Icon(Icons.subway_rounded, color: Colors.deepPurple, size: 20),
+              showFrame: true,
             ),
             const SizedBox(height: 10),
             Text('$from ➔ $to', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
@@ -2902,39 +2887,4 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
   }
 }
 
-/// Simulated matrix QR painter
-class _MockQrCodePainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.black
-      ..style = PaintingStyle.fill;
 
-    // Corner Finder Patterns
-    _drawFinderPattern(canvas, 10, 10, paint);
-    _drawFinderPattern(canvas, size.width - 50, 10, paint);
-    _drawFinderPattern(canvas, 10, size.height - 50, paint);
-
-    // Random-looking matrix blocks
-    const step = 8.0;
-    for (double x = 10; x < size.width - 10; x += step) {
-      for (double y = 10; y < size.height - 10; y += step) {
-        if ((x < 55 && y < 55) || (x > size.width - 55 && y < 55) || (x < 55 && y > size.height - 55)) {
-          continue;
-        }
-        if ((x.toInt() * y.toInt()) % 13 == 0 || (x.toInt() + y.toInt()) % 7 == 0) {
-          canvas.drawRect(Rect.fromLTWH(x, y, step - 1, step - 1), paint);
-        }
-      }
-    }
-  }
-
-  void _drawFinderPattern(Canvas canvas, double x, double y, Paint paint) {
-    canvas.drawRect(Rect.fromLTWH(x, y, 40, 40), paint);
-    canvas.drawRect(Rect.fromLTWH(x + 6, y + 6, 28, 28), Paint()..color = Colors.white);
-    canvas.drawRect(Rect.fromLTWH(x + 12, y + 12, 16, 16), paint);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}

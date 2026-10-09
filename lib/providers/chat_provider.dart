@@ -335,4 +335,26 @@ class ChatProvider with ChangeNotifier {
     }
     return await _userService.getUserProfile(uid);
   }
+
+  /// Adds a new contact by mobile number and initiates chat
+  UserModel addContactByPhone({
+    required String name,
+    required String phone,
+    String? status,
+  }) {
+    final user = _mockDataService.addContactByPhone(name: name, phone: phone, status: status);
+    notifyListeners();
+    return user;
+  }
+
+  /// Connects a new contact directly from QR Code scanning
+  UserModel connectUserByQr({
+    required String uid,
+    required String name,
+    String? phone,
+  }) {
+    final user = _mockDataService.connectUserByQr(uid: uid, name: name, phone: phone);
+    notifyListeners();
+    return user;
+  }
 }

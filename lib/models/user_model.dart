@@ -4,6 +4,7 @@ class UserModel {
   final String uid;
   final String name;
   final String email;
+  final String? phone;
   final String status;
   final bool isOnline;
   final DateTime? lastSeen;
@@ -14,6 +15,7 @@ class UserModel {
     required this.uid,
     required this.name,
     required this.email,
+    this.phone,
     this.status = 'Hey there! I am using Universal Chat App.',
     this.isOnline = false,
     this.lastSeen,
@@ -26,6 +28,7 @@ class UserModel {
       'uid': uid,
       'name': name,
       'email': email,
+      'phone': phone,
       'status': status,
       'isOnline': isOnline,
       'lastSeen': lastSeen != null ? Timestamp.fromDate(lastSeen!) : null,
@@ -46,6 +49,7 @@ class UserModel {
       uid: documentId ?? map['uid'] as String? ?? '',
       name: map['name'] as String? ?? 'User',
       email: map['email'] as String? ?? '',
+      phone: map['phone'] as String?,
       status: map['status'] as String? ?? 'Hey there! I am using Universal Chat App.',
       isOnline: map['isOnline'] as bool? ?? false,
       lastSeen: map['lastSeen'] != null ? parseDate(map['lastSeen']) : null,
@@ -63,6 +67,7 @@ class UserModel {
     String? uid,
     String? name,
     String? email,
+    String? phone,
     String? status,
     bool? isOnline,
     DateTime? lastSeen,
@@ -73,6 +78,7 @@ class UserModel {
       uid: uid ?? this.uid,
       name: name ?? this.name,
       email: email ?? this.email,
+      phone: phone ?? this.phone,
       status: status ?? this.status,
       isOnline: isOnline ?? this.isOnline,
       lastSeen: lastSeen ?? this.lastSeen,

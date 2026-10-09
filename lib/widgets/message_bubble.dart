@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../models/message_model.dart';
 import '../screens/media_preview_screen.dart';
 import '../services/audio_playback_service.dart';
@@ -98,6 +99,35 @@ class _MessageBubbleState extends State<MessageBubble> {
               onTap: () {
                 Navigator.pop(ctx);
                 widget.onForward?.call(message);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.copy_rounded, color: Colors.blueGrey),
+              title: const Text('Copy Text (कॉपी करें)'),
+              onTap: () {
+                Navigator.pop(ctx);
+                Clipboard.setData(ClipboardData(text: message.text));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('✓ Message text copied to clipboard!'),
+                    duration: Duration(seconds: 1),
+                  ),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.share_rounded, color: Colors.purple),
+              title: const Text('Share Message (शेयर करें)'),
+              subtitle: const Text('Share to contacts or external apps'),
+              onTap: () {
+                Navigator.pop(ctx);
+                Clipboard.setData(ClipboardData(text: message.text));
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('📤 Message text & link ready to share!'),
+                    backgroundColor: AppColors.primary,
+                  ),
+                );
               },
             ),
             ListTile(

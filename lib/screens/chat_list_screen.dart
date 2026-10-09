@@ -48,6 +48,30 @@ class _ChatListScreenState extends State<ChatListScreen>
   String _searchQuery = '';
   bool _isSearching = false;
 
+  // Desktop Two-Pane Selection
+  UserModel? _desktopSelectedUser;
+  ChatModel? _desktopSelectedGroup;
+
+  void _openChat(UserModel targetUser, ChatModel? groupChat) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    if (screenWidth >= 900) {
+      setState(() {
+        _desktopSelectedUser = targetUser;
+        _desktopSelectedGroup = groupChat;
+      });
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ChatScreen(
+            targetUser: targetUser,
+            groupChat: groupChat,
+          ),
+        ),
+      );
+    }
+  }
+
   // Chats Tab Filter Chip: 'all', 'unread', 'favorites', 'groups'
   String _activeChatFilter = 'all';
 
@@ -425,6 +449,8 @@ class _ChatListScreenState extends State<ChatListScreen>
     final currentUser = authProvider.currentUser;
     final isDevBypass = authProvider.isDevBypass;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isDesktop = screenWidth >= 900;
 
     if (currentUser == null) {
       return const Scaffold(
@@ -432,8 +458,9 @@ class _ChatListScreenState extends State<ChatListScreen>
       );
     }
 
-    return Scaffold(
+    final Widget leftPane = Scaffold(
       appBar: AppBar(
+        titleSpacing: NavigationToolbar.kMiddleSpacing,
         title: _isSearching
             ? TextField(
                 controller: _searchController,
@@ -451,18 +478,26 @@ class _ChatListScreenState extends State<ChatListScreen>
                 ),
               )
             : Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(AppConstants.appName),
+                  Flexible(
+                    child: Text(
+                      AppConstants.appName,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
                   if (isDevBypass) ...[
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
                         color: Colors.amber.shade700,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: const Text(
-                        'DEV BYPASS',
+                        'DEV',
                         style: TextStyle(
                           fontSize: 10,
                           fontWeight: FontWeight.bold,
@@ -473,261 +508,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                   ],
                 ],
               ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.camera_alt_outlined),
-            tooltip: 'Camera (कैमरा)',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const UsersListScreen()),
-              );
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('Select a chat to share live camera photos!')),
-              );
-            },
-          ),
-          IconButton(
-            icon: Container(
-              padding: const EdgeInsets.all(2.5),
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.white, width: 1.5),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.currency_rupee_rounded, size: 15),
-            ),
-            tooltip: 'Universal Pay (पेमेंट्स)',
-            onPressed: () {
-              Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentsScreen()));
-            },
-          ),
-          const AppBarDevCircleButton(),
-          IconButton(
-            icon: const Icon(Icons.qr_code_scanner_rounded),
-            tooltip: 'QR Code & Scanner',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const QrCodeShareScreen(initialTabIndex: 0)),
-              );
-            },
-          ),
-          IconButton(
-            icon: Icon(_isSearching ? Icons.close_rounded : Icons.search_rounded),
-            tooltip: _isSearching ? 'Close Search' : 'Search',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const SearchScreen()),
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.group_add_rounded),
-            tooltip: 'New Group',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const GroupCreateScreen()),
-              );
-            },
-          ),
-          PopupMenuButton<String>(
-            tooltip: 'More options',
-            onSelected: (val) {
-              if (val == 'payments') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentsScreen()));
-              } else if (val == 'subscription') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionScreen()));
-              } else if (val == 'qr_code') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const QrCodeShareScreen()));
-              } else if (val == 'new_group') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const GroupCreateScreen()));
-              } else if (val == 'contacts') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const UsersListScreen()));
-              } else if (val == 'ai_suite') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const AiAssistantScreen()));
-              } else if (val == 'business') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const BusinessProfileScreen()));
-              } else if (val == 'admin') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
-              } else if (val == 'linked_devices') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const LinkedDevicesScreen()));
-              } else if (val == 'community') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const CommunityScreen()));
-              } else if (val == 'starred') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const StarredMessagesScreen()));
-              } else if (val == 'backup') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupSyncScreen()));
-              } else if (val == 'privacy') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacySecurityScreen()));
-              } else if (val == 'settings') {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
-              } else if (val == 'bypass') {
-                authProvider.toggleDevBypass();
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(
-                      authProvider.isDevBypass
-                          ? 'Developer Mode Bypass Enabled (बाईपास सक्रिय)'
-                          : 'Developer Mode Bypass Disabled',
-                    ),
-                    backgroundColor: AppColors.primary,
-                  ),
-                );
-              }
-            },
-            itemBuilder: (ctx) => [
-              const PopupMenuItem(
-                value: 'payments',
-                child: Row(
-                  children: [
-                    Icon(Icons.currency_rupee_rounded, color: Colors.teal, size: 20),
-                    SizedBox(width: 12),
-                    Text('Payments (पेमेंट्स)'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'subscription',
-                child: Row(
-                  children: [
-                    Icon(Icons.star_rounded, color: Colors.amber, size: 20),
-                    SizedBox(width: 12),
-                    Text('Universal Pro & Storage'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'qr_code',
-                child: Row(
-                  children: [
-                    Icon(Icons.qr_code_2_rounded, color: Color(0xFF5E35B1), size: 20),
-                    SizedBox(width: 12),
-                    Text('QR Code (क्यूआर)'),
-                  ],
-                ),
-              ),
-              const PopupMenuDivider(),
-              const PopupMenuItem(
-                value: 'ai_suite',
-                child: Row(
-                  children: [
-                    Icon(Icons.auto_awesome_rounded, color: AppColors.aiPurple, size: 20),
-                    SizedBox(width: 12),
-                    Text('Universal AI Suite'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'business',
-                child: Row(
-                  children: [
-                    Icon(Icons.storefront_rounded, color: AppColors.businessBlue, size: 20),
-                    SizedBox(width: 12),
-                    Text('Business Hub & Catalog'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'admin',
-                child: Row(
-                  children: [
-                    Icon(Icons.admin_panel_settings_rounded, color: AppColors.adminGold, size: 20),
-                    SizedBox(width: 12),
-                    Text('Admin Dashboard'),
-                  ],
-                ),
-              ),
-              const PopupMenuDivider(),
-              const PopupMenuItem(
-                value: 'new_group',
-                child: Row(
-                  children: [
-                    Icon(Icons.groups_rounded, size: 20),
-                    SizedBox(width: 12),
-                    Text('New Group'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'community',
-                child: Row(
-                  children: [
-                    Icon(Icons.public_rounded, size: 20),
-                    SizedBox(width: 12),
-                    Text('Community Announcements'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'linked_devices',
-                child: Row(
-                  children: [
-                    Icon(Icons.devices_rounded, size: 20),
-                    SizedBox(width: 12),
-                    Text('Linked Devices'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'starred',
-                child: Row(
-                  children: [
-                    Icon(Icons.star_rounded, color: Colors.amber, size: 20),
-                    SizedBox(width: 12),
-                    Text('Starred Messages'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'backup',
-                child: Row(
-                  children: [
-                    Icon(Icons.cloud_sync_rounded, size: 20),
-                    SizedBox(width: 12),
-                    Text('Chat Backup & Sync'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'privacy',
-                child: Row(
-                  children: [
-                    Icon(Icons.security_rounded, size: 20),
-                    SizedBox(width: 12),
-                    Text('Privacy & Security'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'settings',
-                child: Row(
-                  children: [
-                    Icon(Icons.settings_rounded, size: 20),
-                    SizedBox(width: 12),
-                    Text('Settings'),
-                  ],
-                ),
-              ),
-              const PopupMenuDivider(),
-              PopupMenuItem(
-                value: 'bypass',
-                child: Row(
-                  children: [
-                    Icon(
-                      isDevBypass ? Icons.toggle_on_rounded : Icons.toggle_off_rounded,
-                      color: isDevBypass ? Colors.amber.shade700 : null,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 12),
-                    Text(isDevBypass ? 'Disable Dev Bypass' : 'Enable Dev Bypass'),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
+        actions: _buildResponsiveActions(context, screenWidth, isDevBypass, authProvider),
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
@@ -788,6 +569,474 @@ class _ChatListScreenState extends State<ChatListScreen>
         ],
       ),
       floatingActionButton: _buildFab(),
+    );
+
+    if (!isDesktop) {
+      return leftPane;
+    }
+
+    // Desktop Two-Pane Split View (WhatsApp Web style)
+    return Scaffold(
+      body: Row(
+        children: [
+          SizedBox(
+            width: screenWidth > 1300 ? 440 : 380,
+            child: leftPane,
+          ),
+          VerticalDivider(
+            width: 1,
+            thickness: 1,
+            color: isDark ? Colors.white12 : Colors.grey.shade300,
+          ),
+          Expanded(
+            child: _desktopSelectedUser != null
+                ? ChatScreen(
+                    key: ValueKey(_desktopSelectedUser!.uid),
+                    targetUser: _desktopSelectedUser!,
+                    groupChat: _desktopSelectedGroup,
+                    isEmbeddedDesktop: true,
+                  )
+                : _buildDesktopPlaceholder(isDark),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// Responsive toolbar actions that eliminate header overlap on mobile screens
+  List<Widget> _buildResponsiveActions(
+    BuildContext context,
+    double screenWidth,
+    bool isDevBypass,
+    AuthProvider authProvider,
+  ) {
+    final bool isCompact = screenWidth < 520;
+
+    return [
+      if (!isCompact)
+        IconButton(
+          icon: const Icon(Icons.camera_alt_outlined),
+          tooltip: 'Camera (कैमरा)',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const UsersListScreen()),
+            );
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Select a chat to share live camera photos!')),
+            );
+          },
+        ),
+      IconButton(
+        icon: Container(
+          padding: const EdgeInsets.all(2.5),
+          decoration: BoxDecoration(
+            border: Border.all(color: Colors.white, width: 1.5),
+            shape: BoxShape.circle,
+          ),
+          child: const Icon(Icons.currency_rupee_rounded, size: 15),
+        ),
+        tooltip: 'Universal Pay (पेमेंट्स)',
+        onPressed: () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentsScreen()));
+        },
+      ),
+      if (!isCompact && screenWidth >= 600)
+        const AppBarDevCircleButton(),
+      if (!isCompact)
+        IconButton(
+          icon: const Icon(Icons.qr_code_scanner_rounded),
+          tooltip: 'QR Code & Scanner',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const QrCodeShareScreen(initialTabIndex: 0)),
+            );
+          },
+        ),
+      IconButton(
+        icon: Icon(_isSearching ? Icons.close_rounded : Icons.search_rounded),
+        tooltip: _isSearching ? 'Close Search' : 'Search',
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const SearchScreen()),
+          );
+        },
+      ),
+      if (!isCompact)
+        IconButton(
+          icon: const Icon(Icons.group_add_rounded),
+          tooltip: 'New Group',
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const GroupCreateScreen()),
+            );
+          },
+        ),
+      PopupMenuButton<String>(
+        tooltip: 'More options',
+        onSelected: (val) {
+          if (val == 'camera') {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const UsersListScreen()));
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Select a chat to share live camera photos!')),
+            );
+          } else if (val == 'payments') {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentsScreen()));
+          } else if (val == 'subscription') {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const SubscriptionScreen()));
+          } else if (val == 'qr_code') {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const QrCodeShareScreen()));
+          } else if (val == 'new_group') {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const GroupCreateScreen()));
+          } else if (val == 'contacts') {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const UsersListScreen()));
+          } else if (val == 'ai_suite') {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const AiAssistantScreen()));
+          } else if (val == 'business') {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const BusinessProfileScreen()));
+          } else if (val == 'admin') {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const AdminDashboardScreen()));
+          } else if (val == 'linked_devices') {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const LinkedDevicesScreen()));
+          } else if (val == 'community') {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const CommunityScreen()));
+          } else if (val == 'starred') {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const StarredMessagesScreen()));
+          } else if (val == 'backup') {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const BackupSyncScreen()));
+          } else if (val == 'privacy') {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const PrivacySecurityScreen()));
+          } else if (val == 'settings') {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => const ProfileScreen()));
+          } else if (val == 'bypass') {
+            authProvider.toggleDevBypass();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(
+                  authProvider.isDevBypass
+                      ? 'Developer Mode Bypass Enabled (बाईपास सक्रिय)'
+                      : 'Developer Mode Bypass Disabled',
+                ),
+                backgroundColor: AppColors.primary,
+              ),
+            );
+          }
+        },
+        itemBuilder: (ctx) => [
+          if (isCompact) ...[
+            const PopupMenuItem(
+              value: 'camera',
+              child: Row(
+                children: [
+                  Icon(Icons.camera_alt_outlined, color: Colors.teal, size: 20),
+                  SizedBox(width: 12),
+                  Text('Camera (कैमरा)'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'qr_code',
+              child: Row(
+                children: [
+                  Icon(Icons.qr_code_scanner_rounded, color: Color(0xFF5E35B1), size: 20),
+                  SizedBox(width: 12),
+                  Text('Scan / Show QR Code'),
+                ],
+              ),
+            ),
+            const PopupMenuItem(
+              value: 'new_group',
+              child: Row(
+                children: [
+                  Icon(Icons.groups_rounded, color: Colors.blue, size: 20),
+                  SizedBox(width: 12),
+                  Text('New Group'),
+                ],
+              ),
+            ),
+            const PopupMenuDivider(),
+          ],
+          const PopupMenuItem(
+            value: 'payments',
+            child: Row(
+              children: [
+                Icon(Icons.currency_rupee_rounded, color: Colors.teal, size: 20),
+                SizedBox(width: 12),
+                Text('Payments (पेमेंट्स)'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'subscription',
+            child: Row(
+              children: [
+                Icon(Icons.star_rounded, color: Colors.amber, size: 20),
+                SizedBox(width: 12),
+                Text('Universal Pro & Storage'),
+              ],
+            ),
+          ),
+          if (!isCompact)
+            const PopupMenuItem(
+              value: 'qr_code',
+              child: Row(
+                children: [
+                  Icon(Icons.qr_code_2_rounded, color: Color(0xFF5E35B1), size: 20),
+                  SizedBox(width: 12),
+                  Text('QR Code (क्यूआर)'),
+                ],
+              ),
+            ),
+          const PopupMenuDivider(),
+          const PopupMenuItem(
+            value: 'ai_suite',
+            child: Row(
+              children: [
+                Icon(Icons.auto_awesome_rounded, color: AppColors.aiPurple, size: 20),
+                SizedBox(width: 12),
+                Text('Universal AI Suite'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'business',
+            child: Row(
+              children: [
+                Icon(Icons.storefront_rounded, color: AppColors.businessBlue, size: 20),
+                SizedBox(width: 12),
+                Text('Business Hub & Catalog'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'admin',
+            child: Row(
+              children: [
+                Icon(Icons.admin_panel_settings_rounded, color: AppColors.adminGold, size: 20),
+                SizedBox(width: 12),
+                Text('Admin Dashboard'),
+              ],
+            ),
+          ),
+          const PopupMenuDivider(),
+          if (!isCompact)
+            const PopupMenuItem(
+              value: 'new_group',
+              child: Row(
+                children: [
+                  Icon(Icons.groups_rounded, size: 20),
+                  SizedBox(width: 12),
+                  Text('New Group'),
+                ],
+              ),
+            ),
+          const PopupMenuItem(
+            value: 'community',
+            child: Row(
+              children: [
+                Icon(Icons.public_rounded, size: 20),
+                SizedBox(width: 12),
+                Text('Community Announcements'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'linked_devices',
+            child: Row(
+              children: [
+                Icon(Icons.devices_rounded, size: 20),
+                SizedBox(width: 12),
+                Text('Linked Devices'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'starred',
+            child: Row(
+              children: [
+                Icon(Icons.star_rounded, color: Colors.amber, size: 20),
+                SizedBox(width: 12),
+                Text('Starred Messages'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'backup',
+            child: Row(
+              children: [
+                Icon(Icons.cloud_sync_rounded, size: 20),
+                SizedBox(width: 12),
+                Text('Chat Backup & Sync'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'privacy',
+            child: Row(
+              children: [
+                Icon(Icons.security_rounded, size: 20),
+                SizedBox(width: 12),
+                Text('Privacy & Security'),
+              ],
+            ),
+          ),
+          const PopupMenuItem(
+            value: 'settings',
+            child: Row(
+              children: [
+                Icon(Icons.settings_rounded, size: 20),
+                SizedBox(width: 12),
+                Text('Settings'),
+              ],
+            ),
+          ),
+          const PopupMenuDivider(),
+          PopupMenuItem(
+            value: 'bypass',
+            child: Row(
+              children: [
+                Icon(
+                  isDevBypass ? Icons.toggle_on_rounded : Icons.toggle_off_rounded,
+                  color: isDevBypass ? Colors.amber.shade700 : null,
+                  size: 20,
+                ),
+                const SizedBox(width: 12),
+                Text(isDevBypass ? 'Disable Dev Bypass' : 'Enable Dev Bypass'),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ];
+  }
+
+  /// WhatsApp Web-style Desktop Empty State Placeholder
+  Widget _buildDesktopPlaceholder(bool isDark) {
+    return Container(
+      color: isDark ? const Color(0xFF111B21) : const Color(0xFFF0F2F5),
+      child: Center(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: 120,
+                height: 120,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primary.withOpacity(0.12),
+                ),
+                child: const Icon(
+                  Icons.laptop_chromebook_rounded,
+                  size: 64,
+                  color: AppColors.primary,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Text(
+                AppConstants.appName,
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: isDark ? Colors.white : const Color(0xFF41525D),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Send and receive messages with live WebRTC camera, speech-to-text dictation, and UPI QR payments.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? Colors.white60 : const Color(0xFF667781),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Wrap(
+                spacing: 12,
+                runSpacing: 12,
+                alignment: WrapAlignment.center,
+                children: [
+                  ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.chat_bubble_outline_rounded, size: 18),
+                    label: const Text('Start New Chat'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const UsersListScreen()),
+                      );
+                    },
+                  ),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.primary,
+                      side: const BorderSide(color: AppColors.primary),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
+                    label: const Text('Scan QR Code'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const QrCodeShareScreen(initialTabIndex: 1),
+                        ),
+                      );
+                    },
+                  ),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.teal,
+                      side: const BorderSide(color: Colors.teal),
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    icon: const Icon(Icons.currency_rupee_rounded, size: 18),
+                    label: const Text('Universal Pay (UPI)'),
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const PaymentsScreen()),
+                      );
+                    },
+                  ),
+                ],
+              ),
+              const SizedBox(height: 32),
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.lock_rounded,
+                    size: 14,
+                    color: isDark ? Colors.white38 : Colors.grey.shade500,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    'End-to-end encrypted • Universal Chat Web v${AppConstants.appVersion}',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: isDark ? Colors.white38 : Colors.grey.shade500,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -1036,20 +1285,15 @@ class _ChatListScreenState extends State<ChatListScreen>
                     chat: chat,
                     onTap: () async {
                       if (chat.isGroup) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => ChatScreen(
-                              targetUser: UserModel(
-                                uid: chat.chatId,
-                                name: chat.groupName ?? 'Group',
-                                email: '',
-                                status: chat.groupDescription ?? '',
-                                createdAt: DateTime.now(),
-                              ),
-                              groupChat: chat,
-                            ),
+                        _openChat(
+                          UserModel(
+                            uid: chat.chatId,
+                            name: chat.groupName ?? 'Group',
+                            email: '',
+                            status: chat.groupDescription ?? '',
+                            createdAt: DateTime.now(),
                           ),
+                          chat,
                         );
                       } else {
                         final otherUserId = chat.getOtherUserId(currentUser.uid);
@@ -1058,14 +1302,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                           isDevBypass,
                         );
                         if (otherUser != null && context.mounted) {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => ChatScreen(
-                                targetUser: otherUser,
-                              ),
-                            ),
-                          );
+                          _openChat(otherUser, null);
                         }
                       }
                     },

@@ -5,7 +5,7 @@ class AppConstants {
   static const String appName = 'Universal Chat App';
   static const String appShortName = 'Universal Chat';
   static const String appTagline = 'Next-Gen Intelligent Messaging, AI Companion, HD Group Calling & Business Hub';
-  static const String appVersion = '1.8.1';
+  static const String appVersion = '1.9.0';
 
   // Firestore Collections
   static const String usersCollection = 'users';
