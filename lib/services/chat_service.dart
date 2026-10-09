@@ -142,7 +142,10 @@ class ChatService {
   /// Clear all messages in a chat conversation (चैट साफ़ करें)
   Future<void> clearChat(String chatId) async {
     try {
-      final msgs = await _messagesRef(chatId).get();
+      final msgs = await _chatsRef
+          .doc(chatId)
+          .collection(AppConstants.messagesCollection)
+          .get();
       final batch = _firestore.batch();
       for (final doc in msgs.docs) {
         batch.delete(doc.reference);
