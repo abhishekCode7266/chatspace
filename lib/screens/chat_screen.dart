@@ -9,10 +9,13 @@ import '../models/call_model.dart';
 import '../models/chat_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
+import '../services/camera_capture_service.dart';
 import '../services/encryption_service.dart';
 import '../services/security_service.dart';
+import '../services/translation_service.dart';
 import '../utils/constants.dart';
 import '../utils/date_formatter.dart';
+import '../widgets/chat_wallpaper_background.dart';
 import '../widgets/message_bubble.dart';
 import '../widgets/floating_dev_circle.dart';
 import 'call_screen.dart';
@@ -118,11 +121,14 @@ class _ChatScreenState extends State<ChatScreen> {
     '🥉 Bronze Champ', '🏅 Honor Badge'
   ];
 
-  int _emojiDrawerTab = 0; // 0: Emoji, 1: GIF, 2: Stickers
+  int _emojiDrawerTab = 0; // 0: Emoji, 1: GIF, 2: Stickers, 3: Themes
   Color? _customChatBackgroundColor;
+  String _selectedWallpaperId = 'default';
   bool _isSearchingChat = false;
   String _chatSearchQuery = '';
-
+  final FocusNode _messageFocusNode = FocusNode();
+  bool _isAutoTranslateOutgoing = false;
+  String _outgoingTargetLang = 'hi';
 
   @override
   void initState() {
@@ -150,7 +156,9 @@ class _ChatScreenState extends State<ChatScreen> {
   void dispose() {
     _typingTimer?.cancel();
     _messageController.dispose();
+    _messageFocusNode.dispose();
     _scrollController.dispose();
+    CameraCaptureService.instance.disposeCamera();
     super.dispose();
   }
 
@@ -198,8 +206,18 @@ class _ChatScreenState extends State<ChatScreen> {
     String? paymentTxnId,
     String? paymentReceiverName,
   }) async {
-    final text = (customText ?? _messageController.text).trim();
+    var text = (customText ?? _messageController.text).trim();
     if (text.isEmpty && messageType == 'text' && paymentAmount == null && mediaUrl == null) return;
+
+    if (_isAutoTranslateOutgoing && messageType == 'text' && text.isNotEmpty) {
+      final translated = await TranslationService.instance.translateText(
+        text,
+        targetLanguageCode: _outgoingTargetLang,
+      );
+      if (translated.isNotEmpty) {
+        text = translated;
+      }
+    }
 
     final authProvider = context.read<AuthProvider>();
     final chatProvider = context.read<ChatProvider>();
@@ -261,6 +279,67 @@ class _ChatScreenState extends State<ChatScreen> {
     _scrollToBottom();
   }
 
+  void _showOutgoingLanguagePicker() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.all(16.0),
+                child: Row(
+                  children: [
+                    Icon(Icons.translate_rounded, color: AppColors.primary),
+                    SizedBox(width: 8),
+                    Text(
+                      'Live Outgoing Translation (अनुवाद भाषा चुनें)',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              SizedBox(
+                height: 300,
+                child: ListView.builder(
+                  itemCount: TranslationService.supportedLanguages.length,
+                  itemBuilder: (c, i) {
+                    final lang = TranslationService.supportedLanguages[i];
+                    return ListTile(
+                      leading: Text(lang.flag, style: const TextStyle(fontSize: 22)),
+                      title: Text('${lang.name} (${lang.nativeName})'),
+                      trailing: _outgoingTargetLang == lang.code
+                          ? const Icon(Icons.check_circle_rounded, color: AppColors.primary)
+                          : null,
+                      onTap: () {
+                        setState(() {
+                          _outgoingTargetLang = lang.code;
+                          _isAutoTranslateOutgoing = true;
+                        });
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('✓ Auto-translate outgoing messages to ${lang.name} enabled'),
+                            duration: const Duration(seconds: 2),
+                          ),
+                        );
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   // ==========================================
   // REAL CAMERA & GALLERY CAPTURE
   // ==========================================
@@ -320,29 +399,29 @@ class _ChatScreenState extends State<ChatScreen> {
               const SizedBox(height: 16),
               ListTile(
                 leading: const CircleAvatar(backgroundColor: Color(0xFFD33F8D), child: Icon(Icons.camera_alt_rounded, color: Colors.white)),
-                title: const Text('Open Device Camera (फोटो खींचें)'),
-                subtitle: const Text('Capture live from mobile camera or laptop webcam'),
+                title: const Text('Live Camera Viewfinder (लाइव कैमरा से फोटो खींचें)'),
+                subtitle: const Text('Real face capture with selfie flip & shutter'),
                 onTap: () {
                   Navigator.pop(ctx);
-                  _captureRealPhoto(source: ImageSource.camera);
+                  _showCameraCaptureDialog();
                 },
               ),
               ListTile(
                 leading: const CircleAvatar(backgroundColor: Color(0xFFAC44CF), child: Icon(Icons.photo_library_rounded, color: Colors.white)),
-                title: const Text('Choose from Gallery / Files'),
-                subtitle: const Text('Pick photos from device memory'),
+                title: const Text('Choose from Gallery / Files (गैलरी से चुनें)'),
+                subtitle: const Text('Pick photos or images from device memory'),
                 onTap: () {
                   Navigator.pop(ctx);
                   _captureRealPhoto(source: ImageSource.gallery);
                 },
               ),
               ListTile(
-                leading: const CircleAvatar(backgroundColor: Color(0xFF007AFF), child: Icon(Icons.view_in_ar_rounded, color: Colors.white)),
-                title: const Text('Camera Viewfinder Simulator'),
-                subtitle: const Text('Live viewfinder with Flash & Front/Rear switch'),
+                leading: const CircleAvatar(backgroundColor: Color(0xFF007AFF), child: Icon(Icons.photo_camera_front_rounded, color: Colors.white)),
+                title: const Text('System Camera Picker (सिस्टम कैमरा)'),
+                subtitle: const Text('Native OS camera file capture'),
                 onTap: () {
                   Navigator.pop(ctx);
-                  _showCameraCaptureDialog();
+                  _captureRealPhoto(source: ImageSource.camera);
                 },
               ),
             ],
@@ -824,11 +903,13 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _showCameraCaptureDialog() {
-    bool isFrontCamera = false;
+    bool isFrontCamera = true;
     bool isFlashOn = false;
+    bool isCapturing = false;
+
     showDialog(
       context: context,
-      barrierColor: Colors.black.withOpacity(0.85),
+      barrierColor: Colors.black.withOpacity(0.9),
       builder: (dialogCtx) {
         return StatefulBuilder(
           builder: (ctx, setCamState) {
@@ -839,106 +920,177 @@ class _ChatScreenState extends State<ChatScreen> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(24),
                 child: SizedBox(
-                  height: 480,
+                  height: 520,
                   child: Stack(
                     children: [
-                      Container(
-                        width: double.infinity,
-                        height: double.infinity,
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: isFrontCamera
-                                ? [const Color(0xFF1E3A8A), const Color(0xFF0F172A)]
-                                : [const Color(0xFF1C1917), const Color(0xFF292524)],
-                            begin: Alignment.topCenter,
-                            end: Alignment.bottomCenter,
+                      // Live WebRTC Webcam / Camera Video Stream Viewfinder
+                      Positioned.fill(
+                        child: CameraCaptureService.instance.buildLiveCameraView(
+                          isFrontCamera: isFrontCamera,
+                          onCameraReady: (ready) {},
+                        ),
+                      ),
+
+                      // Flash overlay when flash is turned on
+                      if (isFlashOn)
+                        Positioned.fill(
+                          child: IgnorePointer(
+                            child: Container(
+                              color: Colors.amber.withOpacity(0.12),
+                            ),
                           ),
                         ),
-                        child: Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
+
+                      // Top control bar
+                      Positioned(
+                        top: 14,
+                        left: 14,
+                        right: 14,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: Colors.black54,
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
-                              Icon(
-                                isFrontCamera ? Icons.face_rounded : Icons.camera_alt_outlined,
-                                size: 80,
-                                color: Colors.white24,
+                              IconButton(
+                                icon: const Icon(Icons.close_rounded, color: Colors.white, size: 26),
+                                tooltip: 'Close Camera',
+                                onPressed: () {
+                                  CameraCaptureService.instance.disposeCamera();
+                                  Navigator.pop(dialogCtx);
+                                },
                               ),
-                              const SizedBox(height: 12),
-                              Text(
-                                isFrontCamera ? 'Front Selfie Viewfinder' : 'Rear Ultra HD Viewfinder',
-                                style: const TextStyle(color: Colors.white60, fontSize: 13, letterSpacing: 0.5),
-                              ),
-                              const SizedBox(height: 6),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                                decoration: BoxDecoration(
-                                  color: Colors.white12,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: const Text('Tap Shutter Button to Snap & Send', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                              Row(
+                                children: [
+                                  IconButton(
+                                    icon: Icon(
+                                      isFlashOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+                                      color: isFlashOn ? Colors.amber : Colors.white,
+                                      size: 24,
+                                    ),
+                                    tooltip: isFlashOn ? 'Flash On' : 'Flash Off',
+                                    onPressed: () => setCamState(() => isFlashOn = !isFlashOn),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  IconButton(
+                                    icon: const Icon(Icons.flip_camera_ios_rounded, color: Colors.white, size: 24),
+                                    tooltip: 'Flip Camera (Front/Rear)',
+                                    onPressed: () {
+                                      setCamState(() => isFrontCamera = !isFrontCamera);
+                                      CameraCaptureService.instance.flipCamera(isFrontCamera);
+                                    },
+                                  ),
+                                ],
                               ),
                             ],
                           ),
                         ),
                       ),
+
+                      // Viewfinder camera indicator badge
                       Positioned(
-                        top: 14,
-                        left: 14,
-                        right: 14,
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.close_rounded, color: Colors.white, size: 26),
-                              onPressed: () => Navigator.pop(dialogCtx),
-                            ),
-                            IconButton(
-                              icon: Icon(isFlashOn ? Icons.flash_on_rounded : Icons.flash_off_rounded, color: isFlashOn ? Colors.amber : Colors.white, size: 24),
-                              onPressed: () => setCamState(() => isFlashOn = !isFlashOn),
-                            ),
-                            IconButton(
-                              icon: const Icon(Icons.flip_camera_ios_rounded, color: Colors.white, size: 24),
-                              onPressed: () => setCamState(() => isFrontCamera = !isFrontCamera),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Positioned(
-                        bottom: 24,
+                        top: 74,
                         left: 0,
                         right: 0,
                         child: Center(
-                          child: GestureDetector(
-                            onTap: () {
-                              Navigator.pop(dialogCtx);
-                              _handleSendMessage(
-                                customText: '📷 Photo snap (${isFrontCamera ? "Front" : "Rear"}, ${TimeOfDay.now().format(context)})',
-                                messageType: 'image',
-                              );
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text('📷 Captured and sent photo'),
-                                  backgroundColor: AppColors.primary,
-                                  duration: Duration(seconds: 2),
-                                ),
-                              );
-                            },
-                            child: Container(
-                              width: 72,
-                              height: 72,
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 4),
-                              ),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.black45,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Text(
+                              isFrontCamera ? '🤳 Front Camera (Live Face)' : '📷 Rear Camera (Ultra HD)',
+                              style: const TextStyle(color: Colors.white70, fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Bottom bar with Shutter and Gallery fallback
+                      Positioned(
+                        bottom: 20,
+                        left: 20,
+                        right: 20,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            // Gallery button
+                            IconButton(
+                              icon: const Icon(Icons.photo_library_rounded, color: Colors.white, size: 30),
+                              tooltip: 'Choose from Gallery',
+                              onPressed: () {
+                                CameraCaptureService.instance.disposeCamera();
+                                Navigator.pop(dialogCtx);
+                                _captureRealPhoto(source: ImageSource.gallery);
+                              },
+                            ),
+
+                            // Real Shutter Button
+                            GestureDetector(
+                              onTap: isCapturing
+                                  ? null
+                                  : () async {
+                                      setCamState(() => isCapturing = true);
+                                      final dataUrl = await CameraCaptureService.instance.snapPhoto();
+                                      if (dataUrl != null) {
+                                        CameraCaptureService.instance.disposeCamera();
+                                        Navigator.pop(dialogCtx);
+                                        await _handleSendMessage(
+                                          customText: isFrontCamera ? '📷 Selfie photo' : '📷 Camera photo',
+                                          messageType: 'image',
+                                          mediaUrl: dataUrl,
+                                          fileName: 'Camera_Capture_${DateTime.now().millisecondsSinceEpoch}.jpg',
+                                          fileSize: '420 KB',
+                                        );
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text('✓ Real camera photo captured & sent!'),
+                                              backgroundColor: AppColors.primary,
+                                              duration: Duration(seconds: 2),
+                                            ),
+                                          );
+                                        }
+                                      } else {
+                                        CameraCaptureService.instance.disposeCamera();
+                                        Navigator.pop(dialogCtx);
+                                        _captureRealPhoto(source: ImageSource.camera);
+                                      }
+                                    },
                               child: Container(
-                                margin: const EdgeInsets.all(4),
-                                decoration: const BoxDecoration(
+                                width: 76,
+                                height: 76,
+                                decoration: BoxDecoration(
                                   shape: BoxShape.circle,
-                                  color: Colors.white,
+                                  border: Border.all(color: Colors.white, width: 4),
+                                ),
+                                child: Container(
+                                  margin: const EdgeInsets.all(4),
+                                  decoration: const BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white,
+                                  ),
+                                  child: isCapturing
+                                      ? const Center(child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.primary))
+                                      : const Icon(Icons.camera_rounded, color: Colors.black87, size: 32),
                                 ),
                               ),
                             ),
-                          ),
+
+                            // Flip Camera shortcut button
+                            IconButton(
+                              icon: const Icon(Icons.cameraswitch_rounded, color: Colors.white, size: 30),
+                              tooltip: 'Switch Camera',
+                              onPressed: () {
+                                setCamState(() => isFrontCamera = !isFrontCamera);
+                                CameraCaptureService.instance.flipCamera(isFrontCamera);
+                              },
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -949,7 +1101,9 @@ class _ChatScreenState extends State<ChatScreen> {
           },
         );
       },
-    );
+    ).then((_) {
+      CameraCaptureService.instance.disposeCamera();
+    });
   }
 
   void _showVoiceDictationDialog() {
@@ -1447,15 +1601,6 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   void _showChatThemeDialog() {
-    final themes = [
-      {'name': 'Default WhatsApp', 'color': null},
-      {'name': 'Dark Slate', 'color': const Color(0xFF0F172A)},
-      {'name': 'Deep Teal', 'color': const Color(0xFF064E3B)},
-      {'name': 'Midnight Indigo', 'color': const Color(0xFF1E1B4B)},
-      {'name': 'Warm Almond', 'color': const Color(0xFFFFFBEB)},
-      {'name': 'Soft Rose', 'color': const Color(0xFFFFF1F2)},
-    ];
-
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -1463,31 +1608,43 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             Icon(Icons.wallpaper_rounded, color: AppColors.primary),
             SizedBox(width: 10),
-            Text('Wallpaper & Chat Theme'),
+            Text('Wallpaper & Themes (वॉलपेपर)'),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final th in themes)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                leading: CircleAvatar(
-                  backgroundColor: (th['color'] as Color?) ?? Colors.grey.shade400,
-                  radius: 14,
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: ChatWallpapers.allWallpapers.length,
+            itemBuilder: (c, i) {
+              final w = ChatWallpapers.allWallpapers[i];
+              final isSelected = _selectedWallpaperId == w.id;
+              return ListTile(
+                leading: Container(
+                  width: 32,
+                  height: 32,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(colors: w.gradientColors),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.grey.shade400),
+                  ),
+                  child: isSelected ? const Icon(Icons.check, size: 16, color: Colors.white) : null,
                 ),
-                title: Text(th['name'] as String, style: const TextStyle(fontSize: 14)),
+                title: Text(w.name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                subtitle: Text(w.hindiName, style: const TextStyle(fontSize: 12, color: Colors.grey)),
+                trailing: isSelected ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
                 onTap: () {
                   setState(() {
-                    _customChatBackgroundColor = th['color'] as Color?;
+                    _selectedWallpaperId = w.id;
                   });
                   Navigator.pop(ctx);
                   ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Chat wallpaper set to ${th["name"]}')),
+                    SnackBar(content: Text('✓ Chat theme set to ${w.name}')),
                   );
                 },
-              ),
-          ],
+              );
+            },
+          ),
         ),
         actions: [
           TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
@@ -1628,9 +1785,10 @@ class _ChatScreenState extends State<ChatScreen> {
             color: isDark ? const Color(0xFF182229) : Colors.grey.shade200,
             child: Row(
               children: [
-                _buildDrawerTabItem('EMOJIS (180+)', 0),
-                _buildDrawerTabItem('GIFS (50+)', 1),
-                _buildDrawerTabItem('STICKERS (50+)', 2),
+                _buildDrawerTabItem('EMOJIS', 0),
+                _buildDrawerTabItem('GIFS', 1),
+                _buildDrawerTabItem('STICKERS', 2),
+                _buildDrawerTabItem('थीम (Themes)', 3),
                 const Spacer(),
                 TextButton.icon(
                   style: TextButton.styleFrom(
@@ -1642,6 +1800,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   label: const Text('कीपैड (Keyboard)', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColors.primary)),
                   onPressed: () {
                     setState(() => _showEmojiBar = false);
+                    _messageFocusNode.requestFocus();
                   },
                 ),
               ],
@@ -1747,42 +1906,116 @@ class _ChatScreenState extends State<ChatScreen> {
                           );
                         },
                       )
-                    : GridView.builder(
-                        padding: const EdgeInsets.all(8),
-                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 3,
-                          childAspectRatio: 1.8,
-                          mainAxisSpacing: 8,
-                          crossAxisSpacing: 8,
-                        ),
-                        itemCount: _stickerPack.length,
-                        itemBuilder: (ctx, i) {
-                          final stk = _stickerPack[i];
-                          return InkWell(
-                            onTap: () {
-                              setState(() => _showEmojiBar = false);
-                              _handleSendMessage(
-                                customText: stk,
-                                messageType: 'sticker',
+                    : _emojiDrawerTab == 2
+                        ? GridView.builder(
+                            padding: const EdgeInsets.all(8),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 3,
+                              childAspectRatio: 1.8,
+                              mainAxisSpacing: 8,
+                              crossAxisSpacing: 8,
+                            ),
+                            itemCount: _stickerPack.length,
+                            itemBuilder: (ctx, i) {
+                              final stk = _stickerPack[i];
+                              return InkWell(
+                                onTap: () {
+                                  setState(() => _showEmojiBar = false);
+                                  _handleSendMessage(
+                                    customText: stk,
+                                    messageType: 'sticker',
+                                  );
+                                },
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: isDark ? const Color(0xFF2A3942) : Colors.white,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(color: Colors.amber.withOpacity(0.4)),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      stk,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                    ),
+                                  ),
+                                ),
                               );
                             },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: isDark ? const Color(0xFF2A3942) : Colors.white,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: Colors.amber.withOpacity(0.4)),
-                              ),
-                              child: Center(
-                                child: Text(
-                                  stk,
-                                  textAlign: TextAlign.center,
-                                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                                ),
-                              ),
+                          )
+                        : GridView.builder(
+                            padding: const EdgeInsets.all(10),
+                            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                              crossAxisCount: 2,
+                              childAspectRatio: 2.3,
+                              mainAxisSpacing: 8,
+                              crossAxisSpacing: 8,
                             ),
-                          );
-                        },
-                      ),
+                            itemCount: ChatWallpapers.allWallpapers.length,
+                            itemBuilder: (ctx, i) {
+                              final wp = ChatWallpapers.allWallpapers[i];
+                              final isSel = _selectedWallpaperId == wp.id;
+                              return InkWell(
+                                onTap: () {
+                                  setState(() {
+                                    _selectedWallpaperId = wp.id;
+                                  });
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text('✓ Chat theme set to ${wp.name} (${wp.hindiName})'),
+                                      duration: const Duration(seconds: 1),
+                                    ),
+                                  );
+                                },
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(colors: wp.gradientColors),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isSel ? AppColors.primary : Colors.white24,
+                                      width: isSel ? 2.5 : 1.0,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Container(
+                                        width: 14,
+                                        height: 14,
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: isSel ? AppColors.primary : Colors.transparent,
+                                          border: Border.all(color: Colors.white, width: 1.5),
+                                        ),
+                                        child: isSel ? const Icon(Icons.check, size: 10, color: Colors.white) : null,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Expanded(
+                                        child: Column(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              wp.name,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.white),
+                                            ),
+                                            Text(
+                                              wp.hindiName,
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                              style: const TextStyle(fontSize: 10, color: Colors.white70),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
           ),
         ],
       ),
@@ -2481,9 +2714,9 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ],
             ),
-      body: Container(
-        color: _customChatBackgroundColor ??
-            (isDark ? AppColors.darkChatBackground : AppColors.lightChatBackground),
+      body: ChatWallpaperBackground(
+        wallpaperId: _selectedWallpaperId,
+        isDark: isDark,
         child: Column(
           children: [
             // Pinned Message Banner
@@ -2744,6 +2977,52 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               )
             else
+              // Quick Phrases & Live Translation helper row
+              Container(
+                height: 32,
+                margin: const EdgeInsets.only(left: 8, right: 8, bottom: 2),
+                child: ListView(
+                  scrollDirection: Axis.horizontal,
+                  children: [
+                    FilterChip(
+                      selected: _isAutoTranslateOutgoing,
+                      label: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.translate_rounded, size: 13, color: AppColors.primary),
+                          const SizedBox(width: 4),
+                          Text(
+                            _isAutoTranslateOutgoing
+                                ? 'अनुवाद: ${TranslationService.supportedLanguages.firstWhere((l) => l.code == _outgoingTargetLang).name}'
+                                : '🌐 Live Translate',
+                            style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold),
+                          ),
+                        ],
+                      ),
+                      onSelected: (val) {
+                        if (val) {
+                          _showOutgoingLanguagePicker();
+                        } else {
+                          setState(() => _isAutoTranslateOutgoing = false);
+                        }
+                      },
+                    ),
+                    const SizedBox(width: 6),
+                    for (final phrase in ['नमस्ते!', 'हाँ, बिल्कुल', 'धन्यवाद!', 'How are you?', 'OK, done!'])
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: ActionChip(
+                          label: Text(phrase, style: const TextStyle(fontSize: 11)),
+                          onPressed: () {
+                            _messageController.text += (_messageController.text.isEmpty ? '' : ' ') + phrase;
+                            _onTextChanged(_messageController.text);
+                          },
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
               // Chat Bar
               Padding(
                 padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
@@ -2841,6 +3120,7 @@ class _ChatScreenState extends State<ChatScreen> {
                                 Expanded(
                                   child: TextField(
                                     controller: _messageController,
+                                    focusNode: _messageFocusNode,
                                     onChanged: _onTextChanged,
                                     textCapitalization: TextCapitalization.sentences,
                                     minLines: 1,
@@ -2881,8 +3161,8 @@ class _ChatScreenState extends State<ChatScreen> {
                                 if (!hasText)
                                   IconButton(
                                     icon: Icon(Icons.camera_alt_rounded, color: Colors.grey.shade600),
-                                    tooltip: 'Open Camera / Gallery',
-                                    onPressed: _showCameraPickerOptions,
+                                    tooltip: 'Live Camera (लाइव कैमरा)',
+                                    onPressed: _showCameraCaptureDialog,
                                   ),
                               ],
                             ),

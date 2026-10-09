@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import '../models/message_model.dart';
 import '../screens/media_preview_screen.dart';
+import '../services/audio_playback_service.dart';
+import '../services/translation_service.dart';
 import '../utils/constants.dart';
 import '../utils/date_formatter.dart';
 
@@ -41,6 +43,10 @@ class MessageBubble extends StatefulWidget {
 
 class _MessageBubbleState extends State<MessageBubble> {
   bool _isPlayingAudio = false;
+  double _audioProgress = 0.0;
+  String? _elapsedDuration;
+  String? _translatedText;
+  String? _translatedLangName;
 
   void _showContextMenu(BuildContext context) {
     final message = widget.message;
@@ -125,6 +131,16 @@ class _MessageBubbleState extends State<MessageBubble> {
                   widget.onEdit?.call(message);
                 },
               ),
+            if (!message.isDeletedForEveryone && message.messageType == 'text')
+              ListTile(
+                leading: const Icon(Icons.translate_rounded, color: Colors.indigoAccent),
+                title: const Text('Translate (भाषा अनुवाद)'),
+                subtitle: const Text('Translate to Hindi, English, Spanish, etc.'),
+                onTap: () {
+                  Navigator.pop(ctx);
+                  _showLanguageTranslatePicker(context);
+                },
+              ),
             ListTile(
               leading: const Icon(Icons.delete_outline_rounded, color: Colors.redAccent),
               title: const Text('Delete Message'),
@@ -136,6 +152,71 @@ class _MessageBubbleState extends State<MessageBubble> {
           ],
         ),
       ),
+    );
+  }
+
+  void _showLanguageTranslatePicker(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Row(
+                  children: const [
+                    Icon(Icons.translate_rounded, color: AppColors.primary),
+                    SizedBox(width: 8),
+                    Text(
+                      'अनुवाद भाषा चुनें (Choose Language)',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(height: 1),
+              SizedBox(
+                height: 320,
+                child: ListView.builder(
+                  itemCount: TranslationService.supportedLanguages.length,
+                  itemBuilder: (c, i) {
+                    final lang = TranslationService.supportedLanguages[i];
+                    return ListTile(
+                      leading: Text(lang.flag, style: const TextStyle(fontSize: 22)),
+                      title: Text('${lang.name} (${lang.nativeName})'),
+                      trailing: const Icon(Icons.chevron_right_rounded),
+                      onTap: () async {
+                        Navigator.pop(ctx);
+                        final translated = await TranslationService.instance.translateText(
+                          widget.message.text,
+                          targetLanguageCode: lang.code,
+                        );
+                        if (mounted) {
+                          setState(() {
+                            _translatedText = translated;
+                            _translatedLangName = lang.name;
+                          });
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text('🌐 Translated to ${lang.name} (${lang.nativeName})'),
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                        }
+                      },
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -388,30 +469,76 @@ class _MessageBubbleState extends State<MessageBubble> {
   }
 
   Widget _buildTextContent(Color textColor, Color timeColor) {
-    return Wrap(
-      alignment: WrapAlignment.end,
-      crossAxisAlignment: WrapCrossAlignment.end,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.only(right: 6, bottom: 2),
-          child: Text(
-            widget.message.text,
-            style: TextStyle(
-              color: textColor,
-              fontSize: 15.5,
-              height: 1.3,
+        Wrap(
+          alignment: WrapAlignment.end,
+          crossAxisAlignment: WrapCrossAlignment.end,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(right: 6, bottom: 2),
+              child: Text(
+                widget.message.text,
+                style: TextStyle(
+                  color: textColor,
+                  fontSize: 15.5,
+                  height: 1.3,
+                ),
+              ),
             ),
-          ),
+            if (widget.message.isEdited)
+              const Padding(
+                padding: EdgeInsets.only(right: 4, bottom: 2),
+                child: Text(
+                  '(edited)',
+                  style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: Colors.grey),
+                ),
+              ),
+            _buildTimeStatusRow(timeColor),
+          ],
         ),
-        if (widget.message.isEdited)
-          const Padding(
-            padding: EdgeInsets.only(right: 4, bottom: 2),
-            child: Text(
-              '(edited)',
-              style: TextStyle(fontSize: 10, fontStyle: FontStyle.italic, color: Colors.grey),
+        if (_translatedText != null) ...[
+          const SizedBox(height: 6),
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Colors.blueAccent.withOpacity(0.12),
+              borderRadius: BorderRadius.circular(8),
+              border: const Border(left: BorderSide(color: Colors.blueAccent, width: 3)),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.translate_rounded, size: 13, color: Colors.blueAccent),
+                    const SizedBox(width: 4),
+                    Text(
+                      '🌐 ${_translatedLangName ?? "अनुवाद"}:',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+                    ),
+                    const Spacer(),
+                    InkWell(
+                      onTap: () => setState(() => _translatedText = null),
+                      child: const Icon(Icons.close_rounded, size: 14, color: Colors.grey),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  _translatedText!,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: textColor,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
-        _buildTimeStatusRow(timeColor),
+        ],
       ],
     );
   }
@@ -868,7 +995,40 @@ class _MessageBubbleState extends State<MessageBubble> {
           mainAxisSize: MainAxisSize.min,
           children: [
             InkWell(
-              onTap: () => setState(() => _isPlayingAudio = !_isPlayingAudio),
+              onTap: () {
+                if (_isPlayingAudio) {
+                  AudioPlaybackService.instance.stopAudio();
+                  setState(() {
+                    _isPlayingAudio = false;
+                    _audioProgress = 0.0;
+                    _elapsedDuration = null;
+                  });
+                } else {
+                  setState(() => _isPlayingAudio = true);
+                  AudioPlaybackService.instance.playAudioMessage(
+                    messageId: widget.message.messageId,
+                    text: widget.message.text,
+                    durationStr: duration,
+                    onProgress: (prog, elapsed) {
+                      if (mounted) {
+                        setState(() {
+                          _audioProgress = prog;
+                          _elapsedDuration = elapsed;
+                        });
+                      }
+                    },
+                    onComplete: () {
+                      if (mounted) {
+                        setState(() {
+                          _isPlayingAudio = false;
+                          _audioProgress = 0.0;
+                          _elapsedDuration = null;
+                        });
+                      }
+                    },
+                  );
+                }
+              },
               borderRadius: BorderRadius.circular(24),
               child: Container(
                 width: 36,
@@ -890,33 +1050,58 @@ class _MessageBubbleState extends State<MessageBubble> {
                 height: 28,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [14, 22, 18, 26, 12, 28, 20, 16, 24, 18, 22, 14, 20, 12].map((height) {
-                    return Container(
+                  children: List.generate(14, (i) {
+                    final baseHeights = [14, 22, 18, 26, 12, 28, 20, 16, 24, 18, 22, 14, 20, 12];
+                    final h = baseHeights[i % baseHeights.length];
+                    final isPassed = (i / 14) <= _audioProgress;
+                    return AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
                       width: 3,
-                      height: height.toDouble(),
+                      height: (_isPlayingAudio && isPassed) ? (h * 1.15).clamp(8.0, 28.0) : h.toDouble(),
                       decoration: BoxDecoration(
-                        color: _isPlayingAudio ? AppColors.primaryLight : (isDark ? Colors.white38 : Colors.grey.shade400),
+                        color: isPassed
+                            ? AppColors.primary
+                            : (_isPlayingAudio ? AppColors.primaryLight : (isDark ? Colors.white38 : Colors.grey.shade400)),
                         borderRadius: BorderRadius.circular(2),
                       ),
                     );
-                  }).toList(),
+                  }),
                 ),
               ),
             ),
             const SizedBox(width: 8),
-            const Icon(Icons.mic_rounded, color: AppColors.primaryLight, size: 18),
+            Icon(
+              _isPlayingAudio ? Icons.volume_up_rounded : Icons.mic_rounded,
+              color: _isPlayingAudio ? AppColors.primaryLight : Colors.grey,
+              size: 18,
+            ),
           ],
         ),
         const SizedBox(height: 4),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(duration, style: TextStyle(fontSize: 11, color: timeColor)),
+            Text(
+              _elapsedDuration != null ? '$_elapsedDuration / $duration' : duration,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: _isPlayingAudio ? FontWeight.bold : FontWeight.normal,
+                color: _isPlayingAudio ? AppColors.primary : timeColor,
+              ),
+            ),
             _buildTimeStatusRow(timeColor),
           ],
         ),
       ],
     );
+  }
+
+  @override
+  void dispose() {
+    if (_isPlayingAudio) {
+      AudioPlaybackService.instance.stopAudio();
+    }
+    super.dispose();
   }
 
   Widget _buildTimeStatusRow(Color timeColor) {

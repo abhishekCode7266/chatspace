@@ -84,30 +84,41 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master')
         with:
-          tag_name: v1.7.0
-          name: Universal Chat App v1.7.0 (Global Banking Ecosystem, Real Camera, Live Mic Recording, 186 Emojis & AI Animation Studio)
+          tag_name: v1.8.0
+          name: Universal Chat App v1.8.0 (Live Camera Face Capture, Audible Voice Notes, WhatsApp Wallpapers & Multilingual Translation)
           draft: false
           prerelease: false
           body: |
-            ## 🌐 Universal Chat App v1.7.0 Production Release 🚀📱💸🎬
+            ## 🌐 Universal Chat App v1.8.0 Production Release 🚀📸🎙️🎨🌐
             
-            Welcome to **Universal Chat App v1.7.0** — featuring full Banking & Fintech integration, real device camera capture, WhatsApp live microphone recording, 186 categorized emojis, Channels, and AI Animation Studio!
+            Welcome to **Universal Chat App v1.8.0** — featuring real live camera face capture, genuine audible voice note playback, authentic WhatsApp wallpaper themes, keypad autofocus with quick phrases, and 12-language in-chat translation!
             
             ### 📥 Download & Install (डाउनलोड करें):
-            - **📱 Direct Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.7.0/app-release.apk)
-            - **🏬 Google Play Store Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.7.0/app-release.aab)
+            - **📱 Direct Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.8.0/app-release.apk)
+            - **🏬 Google Play Store Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.8.0/app-release.aab)
             - **🌐 Live Web Demo**: [https://abhishekcode7266.github.io/chatspace/](https://abhishekcode7266.github.io/chatspace/)
             
             ---
             
-            ### ✨ What's New in v1.7.0 (मुख्य नए फीचर्स):
-            1. **🏦 All Indian & Global Banks Ecosystem (सभी भारतीय और अंतरराष्ट्रीय बैंक)**:
-               - Searchable bank selector with 65+ banks across India & International categories (SBI, HDFC, ICICI, PNB, BoB, Axis, Chase, HSBC, Citi, Barclays, DBS, Bank of America, etc.).
-               - Add Bank Form with IFSC/SWIFT code verification and instant account linking.
-               - Full Bank Card Management Menu: Check Balance (PIN: `1234`), Change UPI PIN, Reset UPI PIN (OTP: `123456`), Set Primary Default, Switch Provider (NPCI UPI 2.0 / PhonePe Stack / Google Pay Engine), Link UPI Number, and Invite & Earn ₹201.
-            2. **📸 Real Device Camera Photo Capture**:
-               - Integrated device camera & gallery capture via `image_picker`, directly encoding photos into memory and rendering in chat bubbles and full-screen media preview.
-            3. **🎙️ WhatsApp-Style Live Mic Recording**:
+            ### ✨ What's New in v1.8.0 (मुख्य नए फीचर्स):
+            1. **📸 Live Camera & Selfie Face Capture (कैमरा डायरेक्ट फोटो खींचे)**:
+               - Direct live webcam & front/rear camera access with real-time video viewfinder showing user's live face.
+               - Front selfie mirror toggle and front/rear flip button.
+               - Instant shutter capture from live video feed into Base64 JPEG data URL sent straight to the chat.
+            2. **🎙️ Real Audible Voice Note Playback (माइक व असली आवाज़ प्लेबैक)**:
+               - Genuine audible sound output through device speakers using Web Audio API and Speech Synthesis.
+               - Animated audio waveform bars and live elapsed duration counter (`0:01 / 0:14`).
+               - Seamless play/pause/auto-reset behavior.
+            3. **🎨 WhatsApp Wallpapers & Chat Themes (थीम इमेज व वॉलपेपर)**:
+               - 8 curated wallpapers including WhatsApp Classic, Dark Doodle, Emerald Forest, Midnight Sky, Sunset Amber, Cyberpunk Neon, Rose Romance, and Clean Slate.
+               - Custom WhatsApp Doodle painter rendering authentic subtle background doodles.
+               - Dedicated "थीम (Themes)" 4th tab in the drawer next to Emojis, GIFs, and Stickers.
+            4. **⌨️ Keypad Autofocus & Quick Phrases (कीपैड व तुरंत जवाब)**:
+               - "कीपैड (Keyboard)" button cleanly dismisses drawer and requests focus on the message input.
+               - 1-tap quick reply chips (नमस्ते!, हाँ, बिल्कुल, धन्यवाद!, How are you?, OK, done!).
+            5. **🌐 In-Chat Multilingual Translation (12 भाषाओं में अनुवाद)**:
+               - Instant in-bubble message translation between Hindi, English, Spanish, French, German, Arabic, Bengali, Marathi, Tamil, Telugu, Gujarati, and Urdu.
+               - Live auto-translate outgoing messages toggle.
                - Tap microphone button to activate live recording mode with pulsing red recording indicator 🔴, timer (`00:01`, `00:02`), animated sound waves, trash can 🗑️ cancel button, and send button.
             4. **😀 186 Emojis across 5 Categories + 50 GIFs + 50 Stickers + Keyboard Switcher**:
                - Smileys (48), Gestures (36), Hearts (26), Food (36), Nature/Travel (40).
