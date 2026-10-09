@@ -84,23 +84,23 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/heads/main') || startsWith(github.ref, 'refs/heads/master')
         with:
-          tag_name: v1.8.0
-          name: Universal Chat App v1.8.0 (Live Camera Face Capture, Audible Voice Notes, WhatsApp Wallpapers & Multilingual Translation)
+          tag_name: v1.8.1
+          name: Universal Chat App v1.8.1 (Live Camera Face Capture, Audible Voice Notes, WhatsApp Wallpapers & Multilingual Translation)
           draft: false
           prerelease: false
           body: |
-            ## 🌐 Universal Chat App v1.8.0 Production Release 🚀📸🎙️🎨🌐
+            ## 🌐 Universal Chat App v1.8.1 Production Release 🚀📸🎙️🎨🌐
             
-            Welcome to **Universal Chat App v1.8.0** — featuring real live camera face capture, genuine audible voice note playback, authentic WhatsApp wallpaper themes, keypad autofocus with quick phrases, and 12-language in-chat translation!
+            Welcome to **Universal Chat App v1.8.1** — featuring real live camera face capture, genuine audible voice note playback, authentic WhatsApp wallpaper themes, keypad autofocus with quick phrases, and 12-language in-chat translation!
             
             ### 📥 Download & Install (डाउनलोड करें):
-            - **📱 Direct Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.8.0/app-release.apk)
-            - **🏬 Google Play Store Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.8.0/app-release.aab)
+            - **📱 Direct Android APK**: [`app-release.apk`](https://github.com/${{ github.repository }}/releases/download/v1.8.1/app-release.apk)
+            - **🏬 Google Play Store Bundle**: [`app-release.aab`](https://github.com/${{ github.repository }}/releases/download/v1.8.1/app-release.aab)
             - **🌐 Live Web Demo**: [https://abhishekcode7266.github.io/chatspace/](https://abhishekcode7266.github.io/chatspace/)
             
             ---
             
-            ### ✨ What's New in v1.8.0 (मुख्य नए फीचर्स):
+            ### ✨ What's New in v1.8.1 (मुख्य नए फीचर्स):
             1. **📸 Live Camera & Selfie Face Capture (कैमरा डायरेक्ट फोटो खींचे)**:
                - Direct live webcam & front/rear camera access with real-time video viewfinder showing user's live face.
                - Front selfie mirror toggle and front/rear flip button.

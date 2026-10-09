@@ -1,6 +1,7 @@
-// ignore_for_file: avoid_web_libraries_in_flutter
+// ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
 import 'dart:async';
 import 'dart:html' as html;
+import 'dart:web_audio' as web_audio;
 import 'package:flutter/foundation.dart';
 
 /// Real Web Audio & Speech-Synthesis Playback Service for Voice Notes
@@ -11,9 +12,9 @@ class AudioPlaybackService {
   bool _isPlaying = false;
   String? _currentPlayingId;
   Timer? _progressTimer;
-  html.AudioContext? _audioContext;
-  html.OscillatorNode? _activeOscillator;
-  html.GainNode? _activeGain;
+  web_audio.AudioContext? _audioContext;
+  web_audio.OscillatorNode? _activeOscillator;
+  web_audio.GainNode? _activeGain;
 
   bool get isPlaying => _isPlaying;
   String? get currentPlayingId => _currentPlayingId;
@@ -43,7 +44,7 @@ class AudioPlaybackService {
 
     try {
       // 1. Initialize & resume Web AudioContext for genuine sound output
-      _audioContext ??= html.AudioContext();
+      _audioContext ??= web_audio.AudioContext();
       if (_audioContext!.state == 'suspended') {
         await _audioContext!.resume();
       }
@@ -99,10 +100,12 @@ class AudioPlaybackService {
       gain.gain?.exponentialRampToValueAtTime(0.25, now + 0.1);
       gain.gain?.exponentialRampToValueAtTime(0.001, now + seconds);
 
-      osc.connect(gain);
-      gain.connect(_audioContext!.destination);
+      osc.connectNode(gain);
+      if (_audioContext!.destination != null) {
+        gain.connectNode(_audioContext!.destination!);
+      }
 
-      osc.start(now);
+      osc.start2(now);
       osc.stop(now + seconds);
 
       _activeOscillator = osc;
@@ -148,7 +151,7 @@ class AudioPlaybackService {
     _progressTimer = null;
 
     try {
-      _activeOscillator?.stop();
+      _activeOscillator?.stop(0);
       _activeOscillator?.disconnect();
     } catch (_) {}
     _activeOscillator = null;

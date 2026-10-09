@@ -1,6 +1,7 @@
-// ignore_for_file: avoid_web_libraries_in_flutter
+// ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
 import 'dart:async';
 import 'dart:html' as html;
+import 'dart:web_audio' as web_audio;
 import 'dart:ui_web' as ui_web;
 import 'package:flutter/material.dart';
 
@@ -47,7 +48,8 @@ class CameraCaptureService {
       _videoElement ??= html.VideoElement()
         ..autoplay = true
         ..muted = true
-        ..playsInline = true
+        ..setAttribute('playsinline', 'true')
+        ..setAttribute('webkit-playsinline', 'true')
         ..style.width = '100%'
         ..style.height = '100%'
         ..style.objectFit = 'cover'
@@ -77,7 +79,8 @@ class CameraCaptureService {
       _videoElement = html.VideoElement()
         ..autoplay = true
         ..muted = true
-        ..playsInline = true
+        ..setAttribute('playsinline', 'true')
+        ..setAttribute('webkit-playsinline', 'true')
         ..style.width = '100%'
         ..style.height = '100%'
         ..style.objectFit = 'cover'
@@ -134,7 +137,7 @@ class CameraCaptureService {
 
   void _playShutterSound() {
     try {
-      final audioCtx = html.AudioContext();
+      final audioCtx = web_audio.AudioContext();
       final osc = audioCtx.createOscillator();
       final gain = audioCtx.createGain();
 
@@ -146,10 +149,12 @@ class CameraCaptureService {
       gain.gain?.setValueAtTime(0.3, now);
       gain.gain?.exponentialRampToValueAtTime(0.01, now + 0.08);
 
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
+      osc.connectNode(gain);
+      if (audioCtx.destination != null) {
+        gain.connectNode(audioCtx.destination!);
+      }
 
-      osc.start(now);
+      osc.start2(now);
       osc.stop(now + 0.08);
     } catch (_) {}
   }

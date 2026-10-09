@@ -16,13 +16,13 @@
 ## 📱 Quick Links & Downloads
 
 - 🌐 **Live Web App Preview**: [https://abhishekcode7266.github.io/chatspace/](https://abhishekcode7266.github.io/chatspace/)
-- 📦 **Download Android APK (Direct Install)**: [GitHub Releases - app-release.apk (v1.8.0)](https://github.com/abhishekCode7266/chatspace/releases/download/v1.8.0/app-release.apk)
-- 🏬 **Google Play Store App Bundle**: [GitHub Releases - app-release.aab (v1.8.0)](https://github.com/abhishekCode7266/chatspace/releases/download/v1.8.0/app-release.aab)
+- 📦 **Download Android APK (Direct Install)**: [GitHub Releases - app-release.apk (v1.8.1)](https://github.com/abhishekCode7266/chatspace/releases/download/v1.8.1/app-release.apk)
+- 🏬 **Google Play Store App Bundle**: [GitHub Releases - app-release.aab (v1.8.1)](https://github.com/abhishekCode7266/chatspace/releases/download/v1.8.1/app-release.aab)
 - 🎨 **Google Play Store 512x512 High-Res Icon**: `playstore_assets/universal_chat_icon_512.jpg`
 
 ---
 
-## 🌟 Core Highlights & Feature Matrix (v1.8.0)
+## 🌟 Core Highlights & Feature Matrix (v1.8.1)
 
 ### 1. 📸 Live Camera & Selfie Face Capture (कैमरा डायरेक्ट फोटो खींचे)
 - **Direct Live Webcam & Camera Viewfinder**: WebRTC camera stream accessing user's real hardware camera / webcam with live viewfinder display.
