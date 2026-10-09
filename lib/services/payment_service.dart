@@ -23,6 +23,43 @@ class PaymentService {
   // Bank accounts
   final List<BankAccountModel> _bankAccounts = [];
 
+  // Credit Cards
+  final List<CreditCardModel> _creditCards = [
+    const CreditCardModel(
+      id: 'cc_hdfc_01',
+      bankName: 'HDFC Bank Millennia',
+      cardNumberMasked: '•••• •••• •••• 4092',
+      cardHolderName: 'Rajnesh Kumar',
+      cardNetwork: 'Visa',
+      totalDue: 18450.00,
+      minDue: 1850.00,
+      dueDate: '25 Oct 2026',
+      brandColorHex: 0xFF004B87,
+    ),
+    const CreditCardModel(
+      id: 'cc_icici_02',
+      bankName: 'ICICI Amazon Pay RuPay',
+      cardNumberMasked: '•••• •••• •••• 8153',
+      cardHolderName: 'Rajnesh Kumar',
+      cardNetwork: 'RuPay',
+      totalDue: 6320.50,
+      minDue: 650.00,
+      dueDate: '02 Nov 2026',
+      brandColorHex: 0xFF9C1D26,
+    ),
+    const CreditCardModel(
+      id: 'cc_sbi_03',
+      bankName: 'SBI SimplyCLICK',
+      cardNumberMasked: '•••• •••• •••• 1928',
+      cardHolderName: 'Rajnesh Kumar',
+      cardNetwork: 'Mastercard',
+      totalDue: 9780.00,
+      minDue: 980.00,
+      dueDate: '15 Nov 2026',
+      brandColorHex: 0xFF003366,
+    ),
+  ];
+
   // Transactions
   final List<PaymentTransactionModel> _transactions = [];
   final StreamController<List<PaymentTransactionModel>> _txnStreamController =
@@ -183,6 +220,9 @@ class PaymentService {
 
   // --- Getters ---
   List<BankAccountModel> get bankAccounts => List.unmodifiable(_bankAccounts);
+  List<CreditCardModel> get creditCards => List.unmodifiable(_creditCards);
+  void addCreditCard(CreditCardModel card) => _creditCards.add(card);
+  void removeCreditCard(String cardId) => _creditCards.removeWhere((c) => c.id == cardId);
   List<PaymentTransactionModel> get transactions => List.unmodifiable(_transactions);
   Stream<List<PaymentTransactionModel>> get transactionStream => _txnStreamController.stream;
 
@@ -599,6 +639,42 @@ class PaymentService {
     return txn;
   }
 
+  // --- Bank Transfer (To Bank A/C via IMPS / NEFT) ---
+  PaymentTransactionModel transferToBank({
+    required String accountNumber,
+    required String ifsc,
+    required String beneficiaryName,
+    required double amount,
+    String? remarks,
+  }) {
+    _deductFromPrimaryBank(amount);
+    awardCoinsForTxn(amount);
+    final last4 = accountNumber.length >= 4
+        ? accountNumber.substring(accountNumber.length - 4)
+        : accountNumber;
+    final txn = PaymentTransactionModel(
+      id: 'txn_bank_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: 'current_user',
+      senderName: 'You',
+      receiverId: 'acc_$accountNumber',
+      receiverName: beneficiaryName,
+      amount: amount,
+      currency: '₹',
+      note: (remarks != null && remarks.isNotEmpty) ? remarks : 'Transfer to A/C •••• $last4',
+      timestamp: DateTime.now(),
+      status: 'SUCCESS',
+      upiRefId: 'IMPS${DateTime.now().millisecondsSinceEpoch}',
+      bankName: primaryBank.bankName,
+      paymentMethod: 'Bank Transfer (IMPS)',
+      category: 'BANK_TRANSFER',
+      details: 'A/C: •••• $last4 | IFSC: ${ifsc.toUpperCase()} | Beneficiary: $beneficiaryName',
+    );
+
+    _transactions.insert(0, txn);
+    _txnStreamController.add(List.from(_transactions));
+    return txn;
+  }
+
   // --- Request Money ---
   PaymentTransactionModel requestMoney({
     required String senderId,
@@ -859,8 +935,10 @@ class PaymentService {
     required String operator,
     required String subscriberId,
     required double amount,
+    String planDetails = '',
   }) {
     _deductFromPrimaryBank(amount);
+    awardCoinsForTxn(amount);
     final txn = PaymentTransactionModel(
       id: 'txn_dth_${DateTime.now().millisecondsSinceEpoch}',
       senderId: 'current_user',
@@ -869,14 +947,14 @@ class PaymentService {
       receiverName: '$operator DTH Recharge',
       amount: amount,
       currency: '₹',
-      note: 'DTH ID: $subscriberId',
+      note: planDetails.isNotEmpty ? '$operator • $subscriberId ($planDetails)' : 'DTH ID: $subscriberId',
       timestamp: DateTime.now(),
       status: 'SUCCESS',
       upiRefId: 'DTH${DateTime.now().millisecondsSinceEpoch}',
       bankName: primaryBank.bankName,
       paymentMethod: 'UPI',
       category: 'DTH',
-      details: '$operator DTH | Subscriber ID: $subscriberId',
+      details: '$operator DTH | Subscriber ID: $subscriberId${planDetails.isNotEmpty ? ' | Plan: $planDetails' : ''}',
     );
 
     _transactions.insert(0, txn);
@@ -891,6 +969,7 @@ class PaymentService {
     required double amount,
   }) {
     _deductFromPrimaryBank(amount);
+    awardCoinsForTxn(amount);
     final txn = PaymentTransactionModel(
       id: 'txn_cc_${DateTime.now().millisecondsSinceEpoch}',
       senderId: 'current_user',
@@ -907,6 +986,42 @@ class PaymentService {
       paymentMethod: 'UPI',
       category: 'CREDIT_CARD',
       details: '$bank Credit Card ending with $last4',
+    );
+
+    _transactions.insert(0, txn);
+    _txnStreamController.add(List.from(_transactions));
+    return txn;
+  }
+
+  PaymentTransactionModel payCreditCardBill({
+    required String cardNumber,
+    required String cardHolderName,
+    required String bankName,
+    required double amount,
+    String billType = 'Total Due',
+  }) {
+    _deductFromPrimaryBank(amount);
+    awardCoinsForTxn(amount);
+    final cleanDigits = cardNumber.replaceAll(RegExp(r'[^0-9]'), '');
+    final last4 = cleanDigits.length >= 4
+        ? cleanDigits.substring(cleanDigits.length - 4)
+        : (cardNumber.length >= 4 ? cardNumber.substring(cardNumber.length - 4) : cardNumber);
+    final txn = PaymentTransactionModel(
+      id: 'txn_cc_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: 'current_user',
+      senderName: 'You',
+      receiverId: 'cc_${bankName.toLowerCase().replaceAll(' ', '_')}',
+      receiverName: '$bankName Card',
+      amount: amount,
+      currency: '₹',
+      note: '$billType • Card ending in •••• $last4 ($cardHolderName)',
+      timestamp: DateTime.now(),
+      status: 'SUCCESS',
+      upiRefId: 'CC${DateTime.now().millisecondsSinceEpoch}',
+      bankName: primaryBank.bankName,
+      paymentMethod: 'Credit Card Pay',
+      category: 'CREDIT_CARD',
+      details: '$bankName | Card: •••• $last4 | $cardHolderName',
     );
 
     _transactions.insert(0, txn);

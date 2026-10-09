@@ -2048,9 +2048,12 @@ class _ChatScreenState extends State<ChatScreen> {
               ),
               if (widget.groupChat == null)
                 ListTile(
-                  leading: const Icon(Icons.block_rounded, color: Colors.redAccent),
-                  title: const Text('Block'),
-                  subtitle: const Text('Block contact from calling or messaging'),
+                  leading: Icon(
+                    isBlocked ? Icons.lock_open_rounded : Icons.block_rounded,
+                    color: isBlocked ? Colors.green : Colors.redAccent,
+                  ),
+                  title: Text(isBlocked ? 'Unblock (अनब्लॉक करें)' : 'Block (ब्लॉक करें)'),
+                  subtitle: Text(isBlocked ? 'Allow contact to call or message' : 'Block contact from calling or messaging'),
                   onTap: () {
                     Navigator.pop(ctx);
                     _toggleBlockContact();
@@ -2058,13 +2061,11 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ListTile(
                 leading: const Icon(Icons.delete_sweep_rounded, color: Colors.red),
-                title: const Text('Clear Chat'),
-                subtitle: const Text('Delete all messages in this chat'),
+                title: const Text('Clear Chat (चैट साफ़ करें)'),
+                subtitle: const Text('Delete all messages in this conversation'),
                 onTap: () {
                   Navigator.pop(ctx);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Chat messages cleared.')),
-                  );
+                  _confirmClearChat();
                 },
               ),
               ListTile(
@@ -2722,6 +2723,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (isBlocked) {
       security.unblockUser(widget.targetUser.uid);
+      setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('${widget.targetUser.name} has been unblocked.')),
       );
@@ -2729,6 +2731,7 @@ class _ChatScreenState extends State<ChatScreen> {
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           title: Text('Block ${widget.targetUser.name}?'),
           content: const Text(
             'Blocked contacts will no longer be able to call you or send you messages.',
@@ -2751,6 +2754,51 @@ class _ChatScreenState extends State<ChatScreen> {
         ),
       );
     }
+  }
+
+  void _confirmClearChat() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Clear this chat? (चैट साफ़ करें)', style: TextStyle(fontWeight: FontWeight.bold)),
+        content: const Text(
+          'Are you sure you want to clear all messages in this conversation? This action cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final authProvider = context.read<AuthProvider>();
+              final chatProvider = context.read<ChatProvider>();
+              await chatProvider.clearChat(
+                _chatId,
+                isDevBypass: authProvider.isDevBypass,
+              );
+              if (mounted) {
+                setState(() {});
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('✓ Chat cleared successfully.'),
+                    backgroundColor: Colors.redAccent,
+                  ),
+                );
+              }
+            },
+            child: const Text('Clear Chat (साफ़ करें)'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _showEditMessageDialog(MessageModel msg) {
@@ -2959,6 +3007,10 @@ class _ChatScreenState extends State<ChatScreen> {
                       _showChatThemeDialog();
                     } else if (val == 'verify') {
                       _showVerifyEncryptionDialog();
+                    } else if (val == 'clear') {
+                      _confirmClearChat();
+                    } else if (val == 'block') {
+                      _toggleBlockContact();
                     } else if (val == 'more') {
                       _showMoreOptionsSheet();
                     }
@@ -3031,6 +3083,30 @@ class _ChatScreenState extends State<ChatScreen> {
                           Icon(Icons.verified_user_rounded, color: AppColors.primary, size: 20),
                           SizedBox(width: 10),
                           Text('Strict E2EE Fingerprint'),
+                        ],
+                      ),
+                    ),
+                    const PopupMenuDivider(),
+                    if (!isGroup)
+                      PopupMenuItem(
+                        value: 'block',
+                        child: Row(
+                          children: [
+                            Icon(isBlocked ? Icons.lock_open_rounded : Icons.block_rounded,
+                                color: isBlocked ? Colors.green : Colors.redAccent, size: 20),
+                            const SizedBox(width: 10),
+                            Text(isBlocked ? 'Unblock Contact' : 'Block Contact',
+                                style: TextStyle(color: isBlocked ? Colors.green : Colors.redAccent)),
+                          ],
+                        ),
+                      ),
+                    const PopupMenuItem(
+                      value: 'clear',
+                      child: Row(
+                        children: [
+                          Icon(Icons.delete_sweep_rounded, color: Colors.red, size: 20),
+                          SizedBox(width: 10),
+                          Text('Clear chat (चैट साफ़ करें)', style: TextStyle(color: Colors.red)),
                         ],
                       ),
                     ),

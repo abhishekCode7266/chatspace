@@ -96,7 +96,25 @@ class _ChatListScreenState extends State<ChatListScreen>
 
   void _showAddStatusDialog() {
     final textController = TextEditingController();
+    final captionController = TextEditingController();
+    String statusType = 'text'; // 'text', 'photo', 'video'
     int selectedColor = 0xFF005C4B;
+    String selectedPhotoUrl = 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800';
+    String selectedVideoUrl = 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-41551-large.mp4';
+
+    final photoPresets = [
+      {'name': 'Tech Summit 💻', 'url': 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800'},
+      {'name': 'Mountain Sunset 🌄', 'url': 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?w=800'},
+      {'name': 'Coffee & Work ☕', 'url': 'https://images.unsplash.com/photo-1498050108023-c5249f4df085?w=800'},
+      {'name': 'Modern City 🏙️', 'url': 'https://images.unsplash.com/photo-1477959858617-67f30bc75b82?w=800'},
+    ];
+
+    final videoPresets = [
+      {'name': 'Developer Coding 💻', 'url': 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-41551-large.mp4', 'duration': '0:15'},
+      {'name': 'Sunset Waves 🌊', 'url': 'https://assets.mixkit.co/videos/preview/mixkit-waves-in-the-water-1164-large.mp4', 'duration': '0:15'},
+      {'name': 'City Traffic Lights 🚗', 'url': 'https://assets.mixkit.co/videos/preview/mixkit-night-traffic-in-the-city-4200-large.mp4', 'duration': '0:20'},
+    ];
+
     final colorOptions = [
       0xFF005C4B,
       0xFF128C7E,
@@ -126,108 +144,314 @@ class _ChatListScreenState extends State<ChatListScreen>
                 color: isDark ? const Color(0xFF1F2C34) : Colors.white,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Create Status Story',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 14),
-                  Container(
-                    height: 110,
-                    decoration: BoxDecoration(
-                      color: Color(selectedColor),
-                      borderRadius: BorderRadius.circular(16),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          'Share to Status (स्टेटस साझा करें)',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.close_rounded),
+                          onPressed: () => Navigator.pop(ctx),
+                        ),
+                      ],
                     ),
-                    padding: const EdgeInsets.all(16),
-                    alignment: Alignment.center,
-                    child: TextField(
-                      controller: textController,
-                      style: const TextStyle(color: Colors.white, fontSize: 18),
-                      textAlign: TextAlign.center,
-                      maxLines: 3,
-                      decoration: const InputDecoration(
-                        hintText: 'Type a status...',
-                        hintStyle: TextStyle(color: Colors.white70),
-                        border: InputBorder.none,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: colorOptions.map((c) {
-                        return GestureDetector(
-                          onTap: () {
-                            setModalState(() {
-                              selectedColor = c;
-                            });
-                          },
-                          child: Container(
-                            margin: const EdgeInsets.only(right: 10),
-                            width: 32,
-                            height: 32,
-                            decoration: BoxDecoration(
-                              color: Color(c),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: selectedColor == c ? Colors.white : Colors.transparent,
-                                width: 2.5,
-                              ),
-                            ),
+                    const SizedBox(height: 10),
+
+                    // Status Type Selector (Text/Link, Photo, Short Video)
+                    Row(
+                      children: [
+                        Expanded(
+                          child: ChoiceChip(
+                            avatar: const Icon(Icons.text_fields_rounded, size: 16),
+                            label: const Text('Text / Link', style: TextStyle(fontSize: 12)),
+                            selected: statusType == 'text',
+                            onSelected: (val) {
+                              if (val) setModalState(() => statusType = 'text');
+                            },
                           ),
-                        );
-                      }).toList(),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: ChoiceChip(
+                            avatar: const Icon(Icons.photo_camera_rounded, size: 16),
+                            label: const Text('Photo', style: TextStyle(fontSize: 12)),
+                            selected: statusType == 'photo',
+                            onSelected: (val) {
+                              if (val) setModalState(() => statusType = 'photo');
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: ChoiceChip(
+                            avatar: const Icon(Icons.videocam_rounded, size: 16),
+                            label: const Text('Short Video', style: TextStyle(fontSize: 12)),
+                            selected: statusType == 'video',
+                            onSelected: (val) {
+                              if (val) setModalState(() => statusType = 'video');
+                            },
+                          ),
+                        ),
+                      ],
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 48,
-                    child: ElevatedButton.icon(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        foregroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
+                    const SizedBox(height: 14),
+
+                    if (statusType == 'text') ...[
+                      // Text / Link Box
+                      Container(
+                        height: 110,
+                        decoration: BoxDecoration(
+                          color: Color(selectedColor),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        alignment: Alignment.center,
+                        child: TextField(
+                          controller: textController,
+                          style: const TextStyle(color: Colors.white, fontSize: 18),
+                          textAlign: TextAlign.center,
+                          maxLines: 3,
+                          decoration: const InputDecoration(
+                            hintText: 'Type a status or paste link (https://)...',
+                            hintStyle: TextStyle(color: Colors.white70),
+                            border: InputBorder.none,
+                          ),
                         ),
                       ),
-                      icon: const Icon(Icons.send_rounded),
-                      label: const Text('Post Status', style: TextStyle(fontWeight: FontWeight.bold)),
-                      onPressed: () {
-                        final text = textController.text.trim();
-                        if (text.isEmpty) return;
-                        final auth = context.read<AuthProvider>();
-                        final chat = context.read<ChatProvider>();
-                        final user = auth.currentUser;
-                        if (user != null) {
-                          chat.addStatus(
-                            StatusModel(
-                              statusId: 'status_${DateTime.now().millisecondsSinceEpoch}',
-                              userId: user.uid,
-                              userName: user.name,
-                              text: text,
-                              backgroundColorHex: selectedColor,
-                              timestamp: DateTime.now(),
-                              isViewed: false,
+                      const SizedBox(height: 12),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: colorOptions.map((c) {
+                            return GestureDetector(
+                              onTap: () {
+                                setModalState(() {
+                                  selectedColor = c;
+                                });
+                              },
+                              child: Container(
+                                margin: const EdgeInsets.only(right: 10),
+                                width: 32,
+                                height: 32,
+                                decoration: BoxDecoration(
+                                  color: Color(c),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: selectedColor == c ? Colors.white : Colors.transparent,
+                                    width: 2.5,
+                                  ),
+                                ),
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                    ] else if (statusType == 'photo') ...[
+                      // Photo Selection and Preview
+                      Container(
+                        height: 140,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.black26,
+                        ),
+                        clipBehavior: Clip.antiAlias,
+                        child: Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            Image.network(
+                              selectedPhotoUrl,
+                              fit: BoxFit.cover,
+                              errorBuilder: (c, e, s) => const Center(
+                                child: Icon(Icons.broken_image_rounded, size: 40, color: Colors.grey),
+                              ),
                             ),
-                            isDevBypass: auth.isDevBypass,
-                          );
-                        }
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Status story published!'),
-                            backgroundColor: AppColors.primary,
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  color: Colors.black64,
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Text('HD Photo', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text('Choose Image Preset or Enter URL:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      const SizedBox(height: 6),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: photoPresets.map((p) {
+                            final isSel = selectedPhotoUrl == p['url'];
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text(p['name']!, style: const TextStyle(fontSize: 11)),
+                                selected: isSel,
+                                onSelected: (val) {
+                                  if (val) setModalState(() => selectedPhotoUrl = p['url']!);
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: captionController,
+                        decoration: InputDecoration(
+                          hintText: 'Add a photo caption...',
+                          prefixIcon: const Icon(Icons.title_rounded, size: 20),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          isDense: true,
+                        ),
+                      ),
+                    ] else if (statusType == 'video') ...[
+                      // Short Video Selection
+                      Container(
+                        height: 130,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF001E2B),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.teal.shade700),
+                        ),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                color: Colors.teal.shade900,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.videocam_rounded, color: Colors.white, size: 30),
+                            ),
+                            const SizedBox(width: 14),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text('Short Video Clip (15s)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 15)),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    videoPresets.firstWhere((v) => v['url'] == selectedVideoUrl, orElse: () => videoPresets.first)['name']!,
+                                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      const Text('Choose Short Video Preset:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      const SizedBox(height: 6),
+                      SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: videoPresets.map((v) {
+                            final isSel = selectedVideoUrl == v['url'];
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: ChoiceChip(
+                                label: Text('${v['name']} (${v['duration']})', style: const TextStyle(fontSize: 11)),
+                                selected: isSel,
+                                onSelected: (val) {
+                                  if (val) setModalState(() => selectedVideoUrl = v['url']!);
+                                },
+                              ),
+                            );
+                          }).toList(),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      TextField(
+                        controller: captionController,
+                        decoration: InputDecoration(
+                          hintText: 'Add a video caption...',
+                          prefixIcon: const Icon(Icons.closed_caption_rounded, size: 20),
+                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                          isDense: true,
+                        ),
+                      ),
+                    ],
+
+                    const SizedBox(height: 18),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 48,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppColors.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
                           ),
-                        );
-                      },
+                        ),
+                        icon: const Icon(Icons.send_rounded),
+                        label: const Text('Post Status (स्टेटस साझा करें)', style: TextStyle(fontWeight: FontWeight.bold)),
+                        onPressed: () {
+                          final text = textController.text.trim();
+                          final caption = captionController.text.trim();
+                          final auth = context.read<AuthProvider>();
+                          final chat = context.read<ChatProvider>();
+                          final user = auth.currentUser;
+
+                          if (statusType == 'text' && text.isEmpty) return;
+
+                          if (user != null) {
+                            String finalText = text;
+                            String? media;
+                            if (statusType == 'photo') {
+                              media = selectedPhotoUrl;
+                              finalText = caption.isNotEmpty ? caption : 'Shared a photo';
+                            } else if (statusType == 'video') {
+                              media = selectedVideoUrl;
+                              finalText = caption.isNotEmpty ? caption : 'Short Video Story';
+                            }
+
+                            chat.addStatus(
+                              StatusModel(
+                                statusId: 'status_${DateTime.now().millisecondsSinceEpoch}',
+                                userId: user.uid,
+                                userName: user.name,
+                                text: finalText,
+                                mediaUrl: media,
+                                caption: caption.isNotEmpty ? caption : null,
+                                statusType: statusType,
+                                backgroundColorHex: selectedColor,
+                                timestamp: DateTime.now(),
+                                isViewed: false,
+                              ),
+                              isDevBypass: auth.isDevBypass,
+                            );
+                          }
+                          Navigator.pop(ctx);
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('✓ Status story published successfully!'),
+                              backgroundColor: AppColors.primary,
+                            ),
+                          );
+                        },
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },
@@ -1091,6 +1315,34 @@ class _ChatListScreenState extends State<ChatListScreen>
                       shape: BoxShape.circle,
                     ),
                     child: const Icon(Icons.add, size: 18),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Tooltip(
+                  message: 'Developer Diagnostics & Bypass',
+                  child: InkWell(
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (ctx) => const DevBypassSheet(),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: isDevBypass ? Colors.amber.withOpacity(0.2) : (isDark ? const Color(0xFF233138) : Colors.grey.shade200),
+                        shape: BoxShape.circle,
+                        border: isDevBypass ? Border.all(color: Colors.amber, width: 1.5) : null,
+                      ),
+                      child: Icon(
+                        Icons.settings_suggest_rounded,
+                        size: 18,
+                        color: isDevBypass ? Colors.amber.shade700 : (isDark ? Colors.grey.shade300 : Colors.grey.shade700),
+                      ),
+                    ),
                   ),
                 ),
               ],

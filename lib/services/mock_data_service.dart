@@ -320,34 +320,51 @@ class MockDataService {
       ),
     ]);
 
-    // Initial Mock Status Stories
+    // Initial Mock Status Stories (Video, Photo, Link, Text)
     _mockStatuses.addAll([
       StatusModel(
         statusId: 'stat_01',
         userId: 'user_alice_01',
         userName: 'Alice Johnson',
-        text: 'Building next-generation intelligent communication tools! 🌐✨\nUniversal Chat App is live.',
+        text: 'Building intelligent communication tools! 🌐✨\nCheck https://universalchat.app',
         backgroundColorHex: 0xFF005C4B,
         timestamp: now.subtract(const Duration(minutes: 35)),
         isViewed: false,
+        statusType: 'text',
       ),
       StatusModel(
-        statusId: 'stat_02',
+        statusId: 'stat_photo_01',
+        userId: 'user_bob_02',
+        userName: 'Bob Smith',
+        text: 'Golden Hour at the Tech Summit 🌅📸',
+        mediaUrl: 'https://images.unsplash.com/photo-1517245386807-bb43f82c33c4?w=800',
+        caption: 'Inspiring keynote on modern WebRTC real-time systems!',
+        backgroundColorHex: 0xFF121B22,
+        timestamp: now.subtract(const Duration(hours: 1)),
+        isViewed: false,
+        statusType: 'photo',
+      ),
+      StatusModel(
+        statusId: 'stat_video_01',
         userId: 'user_charlie_03',
         userName: 'Charlie Dev',
-        text: 'Play Store Google Play Bundle ready! 🚀\nUniversal Chat App v1.3.0 is compiled.',
-        backgroundColorHex: 0xFF128C7E,
+        text: 'Short Video Demo • Flutter Impeller Rendering 🎥⚡',
+        mediaUrl: 'https://assets.mixkit.co/videos/preview/mixkit-software-developer-working-on-code-41551-large.mp4',
+        caption: '60 FPS ultra-smooth responsive layout demo!',
+        backgroundColorHex: 0xFF001E2B,
         timestamp: now.subtract(const Duration(hours: 2)),
         isViewed: false,
+        statusType: 'video',
       ),
       StatusModel(
         statusId: 'stat_03',
         userId: 'user_diana_04',
         userName: 'Diana Prince',
-        text: 'Coffee & zero-knowledge cryptography session ☕🎧',
+        text: 'Coffee & zero-knowledge cryptography session ☕🎧\nRead paper: https://eprint.iacr.org/crypto',
         backgroundColorHex: 0xFF5856D6,
         timestamp: now.subtract(const Duration(hours: 6)),
         isViewed: true,
+        statusType: 'text',
       ),
     ]);
 
@@ -548,6 +565,21 @@ class MockDataService {
     }
   }
 
+  // Clear all messages in a chat (चैट साफ़ करें)
+  Future<void> clearChat(String chatId) async {
+    _mockMessages[chatId] = [];
+    final chatIdx = _mockChats.indexWhere((c) => c.chatId == chatId);
+    if (chatIdx >= 0) {
+      final existing = _mockChats[chatIdx];
+      _mockChats[chatIdx] = existing.copyWith(
+        lastMessage: 'Chat cleared',
+        lastMessageTime: DateTime.now(),
+      );
+    }
+    _chatsController.add(List.from(_mockChats));
+    _messagesControllers[chatId]?.add([]);
+  }
+
   // Send message in mock mode + auto-reply simulator (Text, Media, Docs, Audio, Location, Contact, Stickers)
   Future<void> sendMessage({
     required String chatId,
@@ -646,16 +678,13 @@ class MockDataService {
     _chatsController.add(List.from(_mockChats));
     _messagesControllers[chatId]?.add(List.from(_mockMessages[chatId]!));
 
-    // Simulate auto-reply bot if 1-to-1 mock contact
+    // Simulate auto-reply bot if 1-to-1 mock contact (Voice notes do NOT trigger auto-reply)
     final isGroup = _mockChats.any((c) => c.chatId == chatId && c.isGroup);
     if (!isGroup) {
       if (messageType == 'text') {
         _simulateAutoReply(chatId, receiverId, senderId, text);
-      } else if (messageType == 'audio') {
-        _simulateAudioAutoReply(chatId, receiverId, senderId);
-      } else if (messageType == 'image' || messageType == 'document') {
-        _simulateMediaAutoReply(chatId, receiverId, senderId, messageType);
       }
+      // Note: Voice note mic prevents automatic replies as requested by user
     }
   }
 

@@ -143,6 +143,16 @@ class ChatProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Clear all messages in a chat conversation (चैट साफ़ करें)
+  Future<void> clearChat(String chatId, {required bool isDevBypass}) async {
+    if (isDevBypass) {
+      await _mockDataService.clearChat(chatId);
+    } else {
+      await _chatService.clearChat(chatId);
+    }
+    notifyListeners();
+  }
+
   /// Send message (text, voice note, photo, video, document, location, contact, stickers, replies)
   Future<bool> sendMessage({
     required String chatId,

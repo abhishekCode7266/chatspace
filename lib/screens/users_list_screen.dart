@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user_model.dart';
 import '../providers/auth_provider.dart';
 import '../providers/chat_provider.dart';
@@ -18,6 +19,99 @@ class UsersListScreen extends StatefulWidget {
 class _UsersListScreenState extends State<UsersListScreen> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  bool _contactsPermissionGranted = false;
+  bool _hasAskedPermission = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkContactsPermission();
+  }
+
+  Future<void> _checkContactsPermission() async {
+    final prefs = await SharedPreferences.getInstance();
+    final asked = prefs.getBool('contacts_permission_asked') ?? false;
+    final granted = prefs.getBool('contacts_permission_granted') ?? false;
+
+    setState(() {
+      _hasAskedPermission = asked;
+      _contactsPermissionGranted = granted;
+    });
+
+    if (!asked && mounted) {
+      // Prompt user on first access
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _promptContactsPermission();
+      });
+    }
+  }
+
+  void _promptContactsPermission() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        icon: const CircleAvatar(
+          radius: 28,
+          backgroundColor: Color(0xFFE8F5E9),
+          child: Icon(Icons.contacts_rounded, color: AppColors.primary, size: 30),
+        ),
+        title: const Text(
+          'Allow Universal Chat to access contacts?',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+        ),
+        content: const Text(
+          'Universal Chat uses your contacts to find friends who are already using the app, synchronize your address book, and allow direct contact messaging. Your contacts stay private and safe.',
+          textAlign: TextAlign.center,
+          style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.4),
+        ),
+        actionsAlignment: MainAxisAlignment.spaceEvenly,
+        actions: [
+          TextButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('contacts_permission_asked', true);
+              await prefs.setBool('contacts_permission_granted', false);
+              setState(() {
+                _hasAskedPermission = true;
+                _contactsPermissionGranted = false;
+              });
+            },
+            child: const Text('Don\'t Allow', style: TextStyle(color: Colors.grey)),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final prefs = await SharedPreferences.getInstance();
+              await prefs.setBool('contacts_permission_asked', true);
+              await prefs.setBool('contacts_permission_granted', true);
+              setState(() {
+                _hasAskedPermission = true;
+                _contactsPermissionGranted = true;
+              });
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('✓ Contacts permission granted! Address book synced.'),
+                    backgroundColor: AppColors.primary,
+                  ),
+                );
+              }
+            },
+            child: const Text('Allow Access (अनुमति दें)'),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   void dispose() {
@@ -166,9 +260,53 @@ class _UsersListScreenState extends State<UsersListScreen> {
       ),
       body: Column(
         children: [
+          // Permission Status Banner
+          if (!_contactsPermissionGranted && _hasAskedPermission)
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.amber.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.amber.shade300),
+              ),
+              child: Row(
+                children: [
+                  Icon(Icons.contacts_outlined, color: Colors.amber.shade800, size: 20),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      'Contacts permission not granted. You can still add by phone number.',
+                      style: TextStyle(fontSize: 12, color: Colors.black87),
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: _promptContactsPermission,
+                    child: const Text('Grant', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                  ),
+                ],
+              ),
+            )
+          else if (_contactsPermissionGranted)
+            Container(
+              margin: const EdgeInsets.fromLTRB(16, 6, 16, 2),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.08),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Row(
+                children: const [
+                  Icon(Icons.check_circle_rounded, color: Colors.green, size: 14),
+                  SizedBox(width: 6),
+                  Text('Address Book Synced • Contacts Permission Active', style: TextStyle(fontSize: 11, color: Colors.green, fontWeight: FontWeight.w600)),
+                ],
+              ),
+            ),
+
           // Search contact field
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
             child: TextField(
               controller: _searchController,
               onChanged: (val) {

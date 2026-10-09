@@ -172,3 +172,28 @@ class SubscriptionPlanModel {
     required this.keyFeatures,
   });
 }
+
+class CreditCardModel {
+  final String id;
+  final String bankName;
+  final String cardNumberMasked;
+  final String cardHolderName;
+  final String cardNetwork; // 'Visa', 'Mastercard', 'RuPay', 'Amex'
+  final double totalDue;
+  final double minDue;
+  final String dueDate;
+  final int brandColorHex;
+
+  const CreditCardModel({
+    required this.id,
+    required this.bankName,
+    required this.cardNumberMasked,
+    required this.cardHolderName,
+    this.cardNetwork = 'Visa',
+    this.totalDue = 14500.0,
+    this.minDue = 1450.0,
+    this.dueDate = '28 Oct 2026',
+    this.brandColorHex = 0xFF1A365D,
+  });
+}
+

@@ -139,6 +139,22 @@ class ChatService {
     } catch (_) {}
   }
 
+  /// Clear all messages in a chat conversation (चैट साफ़ करें)
+  Future<void> clearChat(String chatId) async {
+    try {
+      final msgs = await _messagesRef(chatId).get();
+      final batch = _firestore.batch();
+      for (final doc in msgs.docs) {
+        batch.delete(doc.reference);
+      }
+      batch.update(_chatsRef.doc(chatId), {
+        'lastMessage': 'Chat cleared',
+        'lastMessageTime': FieldValue.serverTimestamp(),
+      });
+      await batch.commit();
+    } catch (_) {}
+  }
+
   /// Stream typing indicator status for the other participant
   Stream<bool> getTypingStream({
     required String chatId,

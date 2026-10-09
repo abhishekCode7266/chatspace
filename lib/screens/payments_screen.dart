@@ -36,7 +36,7 @@ class PaymentsScreen extends StatefulWidget {
 
 class _PaymentsScreenState extends State<PaymentsScreen> {
   final PaymentService _paymentService = PaymentService.instance;
-  String _historyFilter = 'All'; // 'All', 'Paid', 'Received', 'Recharge', 'Bills'
+  String _historyFilter = 'All'; // 'All', 'Paid', 'Received', 'Recharge', 'Bank & Cards'
   bool _isBalanceVisible = false;
 
   @override
@@ -1591,21 +1591,131 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
   // ==========================================
   // 5. MOBILE RECHARGE DIALOG
   // ==========================================
+  // ==========================================
+  // 5. MOBILE RECHARGE DIALOG (COMPLETE PLANS)
+  // ==========================================
   void _showMobileRechargeDialog() {
-    final phoneController = TextEditingController();
+    final phoneController = TextEditingController(text: '9876543210');
     String selectedOperator = 'Jio';
-    double selectedAmount = 299;
-    String selectedPlan = '2GB/Day + Unlimited 5G • 28 Days';
+    String selectedCategory = 'Unlimited 5G';
+    double selectedAmount = 299.0;
+    String selectedPlan = '2GB/Day + Unlimited True 5G + Calls • 28 Days';
 
-    final plans = [
-      {'amt': 19.0, 'desc': '1GB High-Speed 4G/5G Data Add-on • Active Validity'},
-      {'amt': 239.0, 'desc': '1.5GB/Day + Unlimited Calls • 28 Days'},
-      {'amt': 299.0, 'desc': '2GB/Day + Unlimited True 5G • 28 Days'},
-      {'amt': 666.0, 'desc': '1.5GB/Day + 100 SMS/Day • 84 Days'},
-      {'amt': 999.0, 'desc': '3GB/Day Hero Unlimited + OTT Subscriptions • 84 Days'},
-      {'amt': 2999.0, 'desc': '2.5GB/Day 365 Days Annual Mega Plan'},
-      {'amt': 899.0, 'desc': 'International Roaming Pass • 100 Mins & 2GB • 30 Days'},
-    ];
+    final Map<String, List<Map<String, dynamic>>> allPlans = {
+      'Unlimited 5G': [
+        {
+          'amt': 299.0,
+          'validity': '28 Days',
+          'data': '2GB/Day',
+          'calls': 'Unlimited Calls + 100 SMS/Day',
+          'perks': 'Unlimited True 5G Data, JioTV & JioCinema',
+        },
+        {
+          'amt': 349.0,
+          'validity': '28 Days',
+          'data': '2.5GB/Day',
+          'calls': 'Unlimited Calls + 100 SMS/Day',
+          'perks': 'Hero Unlimited 5G, Weekend Data Rollover',
+        },
+        {
+          'amt': 666.0,
+          'validity': '70 Days',
+          'data': '1.5GB/Day',
+          'calls': 'Unlimited Calls + 100 SMS/Day',
+          'perks': 'Unlimited 5G, Free National Roaming',
+        },
+        {
+          'amt': 899.0,
+          'validity': '90 Days',
+          'data': '2GB/Day + 20GB extra',
+          'calls': 'Unlimited Calls + 100 SMS/Day',
+          'perks': 'Unlimited 5G Data, 3-Month Cloud Storage',
+        },
+        {
+          'amt': 2999.0,
+          'validity': '365 Days (1 Year)',
+          'data': '2.5GB/Day (912.5 GB)',
+          'calls': 'Unlimited Calls + 100 SMS/Day',
+          'perks': 'Full Year Unlimited True 5G, Premium OTT suite',
+        },
+      ],
+      'Data Boosters': [
+        {
+          'amt': 19.0,
+          'validity': 'Active Plan Validity',
+          'data': '1GB High-Speed Data',
+          'calls': 'Data Only Pack',
+          'perks': 'Instant 4G/5G booster on existing active plan',
+        },
+        {
+          'amt': 29.0,
+          'validity': 'Active Plan Validity',
+          'data': '2GB High-Speed Data',
+          'calls': 'Data Only Pack',
+          'perks': 'Instant booster add-on',
+        },
+        {
+          'amt': 65.0,
+          'validity': 'Active Plan Validity',
+          'data': '4GB High-Speed Data',
+          'calls': 'Data Only Pack',
+          'perks': 'High-capacity streaming booster',
+        },
+        {
+          'amt': 181.0,
+          'validity': '30 Days',
+          'data': '30GB Bulk High-Speed Data',
+          'calls': 'Work From Home Booster',
+          'perks': 'No daily data limit, use all 30GB anytime',
+        },
+      ],
+      'OTT & Entertainment': [
+        {
+          'amt': 398.0,
+          'validity': '28 Days',
+          'data': '2GB/Day + Unlimited 5G',
+          'calls': 'Unlimited Calls',
+          'perks': 'Disney+ Hotstar 3-Month Mobile Subscription included',
+        },
+        {
+          'amt': 838.0,
+          'validity': '84 Days',
+          'data': '3GB/Day High Speed',
+          'calls': 'Unlimited Calls',
+          'perks': 'Amazon Prime Video Mobile Edition included',
+        },
+        {
+          'amt': 1198.0,
+          'validity': '84 Days',
+          'data': '2GB/Day + Unlimited 5G',
+          'calls': 'Unlimited Calls',
+          'perks': 'Netflix Basic + Disney+ Hotstar + Prime Video Combo',
+        },
+      ],
+      'Annual / Value': [
+        {
+          'amt': 155.0,
+          'validity': '24 Days',
+          'data': '1GB Total Data',
+          'calls': 'Unlimited Calls + 300 SMS',
+          'perks': 'Super-value voice calling pack',
+        },
+        {
+          'amt': 179.0,
+          'validity': '28 Days',
+          'data': '2GB Total Data',
+          'calls': 'Unlimited Calls + 300 SMS',
+          'perks': 'Budget monthly pack',
+        },
+        {
+          'amt': 509.0,
+          'validity': '84 Days',
+          'data': '6GB Total Data',
+          'calls': 'Unlimited Calls + 900 SMS',
+          'perks': 'Long-term value calling pass',
+        },
+      ],
+    };
 
     showModalBottomSheet(
       context: context,
@@ -1614,11 +1724,13 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
+          final currentPlans = allPlans[selectedCategory] ?? allPlans['Unlimited 5G']!;
 
           return Container(
+            height: MediaQuery.of(ctx).size.height * 0.88,
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-              top: 24,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              top: 20,
               left: 20,
               right: 20,
             ),
@@ -1626,81 +1738,151 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
               color: isDark ? const Color(0xFF1F2C34) : Colors.white,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: const BoxDecoration(color: Color(0xFFE3F2FD), shape: BoxShape.circle),
-                        child: const Icon(Icons.cell_tower_rounded, color: Colors.blue),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(color: Color(0xFFE3F2FD), shape: BoxShape.circle),
+                      child: const Icon(Icons.cell_tower_rounded, color: Colors.blue),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Mobile Recharge (मोबाइल रिचार्ज)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                          Text('Live Prepaid Plans, 5G Data & OTT Bundles', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
                       ),
-                      const SizedBox(width: 12),
-                      const Text('Mobile Recharge (मोबाइल रिचार्ज)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
-                  TextField(
-                    controller: phoneController,
-                    keyboardType: TextInputType.phone,
-                    decoration: InputDecoration(
-                      labelText: 'Mobile Number',
-                      prefixText: selectedOperator == 'International' ? '+ ' : '+91 ',
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 14),
+                TextField(
+                  controller: phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: InputDecoration(
+                    labelText: 'Mobile Number',
+                    prefixText: '+91 ',
+                    prefixIcon: const Icon(Icons.phone_android_rounded, size: 20),
+                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    isDense: true,
                   ),
-                  const SizedBox(height: 12),
-                  const Text('Select Operator (ऑपरेटर चुनें):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                  const SizedBox(height: 6),
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: ['Jio', 'Airtel', 'Vi', 'BSNL', 'International'].map((op) {
-                        final isSel = selectedOperator == op;
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 8),
-                          child: ChoiceChip(
-                            label: Text(op),
-                            selected: isSel,
-                            onSelected: (val) {
-                              setModalState(() {
-                                selectedOperator = op;
-                              });
-                            },
+                ),
+                const SizedBox(height: 10),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: ['Jio', 'Airtel', 'Vi', 'BSNL'].map((op) {
+                      final isSel = selectedOperator == op;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(op),
+                          selected: isSel,
+                          onSelected: (val) {
+                            setModalState(() => selectedOperator = op);
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: allPlans.keys.map((cat) {
+                      final isSel = selectedCategory == cat;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: FilterChip(
+                          label: Text(cat, style: TextStyle(fontSize: 12, fontWeight: isSel ? FontWeight.bold : FontWeight.normal)),
+                          selected: isSel,
+                          onSelected: (val) {
+                            setModalState(() {
+                              selectedCategory = cat;
+                              final firstPlan = allPlans[cat]!.first;
+                              selectedAmount = (firstPlan['amt'] as num).toDouble();
+                              selectedPlan = '${firstPlan['data']} • ${firstPlan['validity']}';
+                            });
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: currentPlans.length,
+                    itemBuilder: (ctx, i) {
+                      final p = currentPlans[i];
+                      final amt = (p['amt'] as num).toDouble();
+                      final isSel = selectedAmount == amt;
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          side: BorderSide(color: isSel ? AppColors.primary : Colors.grey.withOpacity(0.2), width: isSel ? 2 : 1),
+                        ),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: () {
+                            setModalState(() {
+                              selectedAmount = amt;
+                              selectedPlan = '${p['data']} • ${p['validity']} (${p['calls']})';
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text('₹${amt.toInt()}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: AppColors.primary)),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: isDark ? const Color(0xFF2A3942) : Colors.blue.shade50,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(p['validity'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.blue)),
+                                    ),
+                                    if (isSel)
+                                      const Icon(Icons.check_circle_rounded, color: AppColors.primary, size: 22)
+                                    else
+                                      const Icon(Icons.radio_button_unchecked, color: Colors.grey, size: 22),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.data_usage_rounded, size: 16, color: Colors.teal),
+                                    const SizedBox(width: 6),
+                                    Text(p['data'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                    const SizedBox(width: 14),
+                                    const Icon(Icons.call_rounded, size: 16, color: Colors.green),
+                                    const SizedBox(width: 6),
+                                    Expanded(child: Text(p['calls'] as String, style: const TextStyle(fontSize: 12), overflow: TextOverflow.ellipsis)),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text(p['perks'] as String, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                              ],
+                            ),
                           ),
-                        );
-                      }).toList(),
-                    ),
+                        ),
+                      );
+                    },
                   ),
-                  const SizedBox(height: 14),
-                  const Text('Choose Plan / Offers (प्लान और ऑफर्स):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 8),
-                ...plans.map((p) {
-                  final isSel = selectedAmount == p['amt'];
-                  return Card(
-                    margin: const EdgeInsets.only(bottom: 8),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: BorderSide(color: isSel ? AppColors.primary : Colors.transparent, width: 1.5),
-                    ),
-                    child: ListTile(
-                      dense: true,
-                      leading: Text('₹${(p['amt'] as num).toInt()}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                      title: Text(p['desc'] as String, style: const TextStyle(fontSize: 12)),
-                      trailing: isSel ? const Icon(Icons.check_circle_rounded, color: AppColors.primary) : null,
-                      onTap: () {
-                        setModalState(() {
-                          selectedAmount = (p['amt'] as num).toDouble();
-                          selectedPlan = p['desc'] as String;
-                        });
-                      },
-                    ),
-                  );
-                }),
-                const SizedBox(height: 16),
+                ),
+                const SizedBox(height: 12),
                 SizedBox(
                   width: double.infinity,
                   height: 48,
@@ -1722,32 +1904,91 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                       setState(() {});
                       _showTransactionReceipt(txn);
                     },
-                    child: Text('Recharge ₹${selectedAmount.toInt()} Now', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    child: Text('Recharge ₹${selectedAmount.toInt()} with UPI', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
               ],
             ),
-          ),
-        );
-      },
-    ),
-  );
-}
+          );
+        },
+      ),
+    );
+  }
 
   // ==========================================
-  // 6. ELECTRICITY BILL DIALOG
+  // 6. DTH RECHARGE DIALOG (COMPLETE PLANS)
   // ==========================================
-  void _showElectricityBillDialog() {
-    final consumerIdController = TextEditingController();
-    String selectedDiscom = 'UPPCL (Uttar Pradesh Power)';
-    double billAmount = 1420.0;
+  void _showDthRechargeDialog() {
+    final subIdController = TextEditingController(text: '1029384756');
+    String selectedOperator = 'Tata Play';
+    String selectedCategory = 'Popular Monthly';
+    double selectedAmount = 289.0;
+    String selectedPlan = 'Hindi Super Value HD • 82 HD + 140 SD Channels';
 
-    final discoms = [
-      'UPPCL (Uttar Pradesh Power)',
-      'BSES Rajdhani (Delhi)',
-      'BESCOM (Bengaluru)',
-      'Tata Power (Mumbai)',
-    ];
+    final Map<String, List<Map<String, dynamic>>> dthPlans = {
+      'Popular Monthly': [
+        {
+          'amt': 249.0,
+          'name': 'Basic Family Pack',
+          'validity': '1 Month (30 Days)',
+          'channels': '120+ Channels (News, Kids, Movies, Hindi GEC)',
+          'perks': 'DD FreeDish + Popular Hindi & Regional channels',
+        },
+        {
+          'amt': 289.0,
+          'name': 'Hindi Super Value HD',
+          'validity': '1 Month (30 Days)',
+          'channels': '82 HD + 140 SD Channels',
+          'perks': 'Star Plus HD, Sony HD, Zee TV HD, Colors HD + Movies',
+        },
+        {
+          'amt': 380.0,
+          'name': 'Dhamaka Sports & Movies HD',
+          'validity': '1 Month (30 Days)',
+          'channels': '95 HD + 180 SD Channels',
+          'perks': 'All Star Sports HD, Sony Sports HD, HBO, Star Gold HD',
+        },
+        {
+          'amt': 499.0,
+          'name': 'Ultra Premium HD All-Access',
+          'validity': '1 Month (30 Days)',
+          'channels': 'All 350+ Channels in 1080p HD & Dolby Audio',
+          'perks': 'English, Hindi, Kids, Infotainment, 4K Broadcast support',
+        },
+      ],
+      'Annual Saver (12 Mo)': [
+        {
+          'amt': 1599.0,
+          'name': '6-Month Gold HD Saver',
+          'validity': '6 Months (180 Days)',
+          'channels': '75 HD + 130 SD Channels',
+          'perks': 'Save ₹350 + Free Relocation / Service Visit',
+        },
+        {
+          'amt': 2999.0,
+          'name': 'Annual Mega HD Delight',
+          'validity': '12 Months (365 Days)',
+          'channels': '90 HD + 175 SD Channels',
+          'perks': 'Save ₹650 + 1 Month Extra Free Validity on Annual Pay',
+        },
+      ],
+      'Sports & Regional HD': [
+        {
+          'amt': 199.0,
+          'name': 'South Special Regional HD',
+          'validity': '1 Month (30 Days)',
+          'channels': '65 HD Channels (Tamil, Telugu, Kannada, Malayalam)',
+          'perks': 'Sun TV HD, Star Maa HD, Zee Kannada HD + Movies',
+        },
+        {
+          'amt': 220.0,
+          'name': 'Cricket & Sports Booster Pack',
+          'validity': '1 Month (30 Days)',
+          'channels': 'Star Sports 1/2 HD, Sony Sports 1/2/3 HD, Sports18 HD',
+          'perks': 'IPL, ICC World Cup, Premier League & Champions League in HD',
+        },
+      ],
+    };
 
     showModalBottomSheet(
       context: context,
@@ -1756,11 +1997,13 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
+          final currentPlans = dthPlans[selectedCategory] ?? dthPlans['Popular Monthly']!;
 
           return Container(
+            height: MediaQuery.of(ctx).size.height * 0.88,
             padding: EdgeInsets.only(
-              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-              top: 24,
+              bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
+              top: 20,
               left: 20,
               right: 20,
             ),
@@ -1769,83 +2012,173 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
                     Container(
                       padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(color: Color(0xFFFFF3E0), shape: BoxShape.circle),
-                      child: const Icon(Icons.bolt_rounded, color: Colors.orange),
+                      decoration: const BoxDecoration(color: Color(0xFFFFEBEE), shape: BoxShape.circle),
+                      child: const Icon(Icons.tv_rounded, color: Colors.red),
                     ),
                     const SizedBox(width: 12),
-                    const Text('Electricity Bill (बिजली का बिल)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('DTH Recharge (डीटीएच रिचार्ज)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                          Text('Tata Play, Airtel, Dish TV, Sun Direct & D2H Plans', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<String>(
-                  value: selectedDiscom,
-                  isExpanded: true,
+                const SizedBox(height: 14),
+                TextField(
+                  controller: subIdController,
+                  keyboardType: TextInputType.number,
                   decoration: InputDecoration(
-                    labelText: 'State Electricity Board',
+                    labelText: 'Subscriber ID / SmartCard Number',
+                    prefixIcon: const Icon(Icons.sim_card_rounded, size: 20),
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    isDense: true,
                   ),
-                  items: discoms.map((d) => DropdownMenuItem(value: d, child: Text(d, style: const TextStyle(fontSize: 13)))).toList(),
-                  onChanged: (val) {
-                    if (val != null) {
-                      setModalState(() {
-                        selectedDiscom = val;
-                      });
-                    }
-                  },
+                ),
+                const SizedBox(height: 10),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: ['Tata Play', 'Airtel Digital TV', 'Dish TV', 'Sun Direct', 'D2H'].map((op) {
+                      final isSel = selectedOperator == op;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: ChoiceChip(
+                          label: Text(op),
+                          selected: isSel,
+                          onSelected: (val) {
+                            setModalState(() => selectedOperator = op);
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: dthPlans.keys.map((cat) {
+                      final isSel = selectedCategory == cat;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: FilterChip(
+                          label: Text(cat, style: TextStyle(fontSize: 12, fontWeight: isSel ? FontWeight.bold : FontWeight.normal)),
+                          selected: isSel,
+                          onSelected: (val) {
+                            setModalState(() {
+                              selectedCategory = cat;
+                              final firstPlan = dthPlans[cat]!.first;
+                              selectedAmount = (firstPlan['amt'] as num).toDouble();
+                              selectedPlan = '${firstPlan['name']} (${firstPlan['validity']})';
+                            });
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: currentPlans.length,
+                    itemBuilder: (ctx, i) {
+                      final p = currentPlans[i];
+                      final amt = (p['amt'] as num).toDouble();
+                      final isSel = selectedAmount == amt;
+                      return Card(
+                        margin: const EdgeInsets.only(bottom: 10),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                          side: BorderSide(color: isSel ? Colors.red : Colors.grey.withOpacity(0.2), width: isSel ? 2 : 1),
+                        ),
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(14),
+                          onTap: () {
+                            setModalState(() {
+                              selectedAmount = amt;
+                              selectedPlan = '${p['name']} (${p['validity']})';
+                            });
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text('₹${amt.toInt()}', style: const TextStyle(fontWeight: FontWeight.w900, fontSize: 20, color: Colors.red)),
+                                        Text(p['name'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                                      ],
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: isDark ? const Color(0xFF2A3942) : Colors.red.shade50,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(p['validity'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12, color: Colors.red)),
+                                    ),
+                                    if (isSel)
+                                      const Icon(Icons.check_circle_rounded, color: Colors.red, size: 22)
+                                    else
+                                      const Icon(Icons.radio_button_unchecked, color: Colors.grey, size: 22),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    const Icon(Icons.hd_rounded, size: 18, color: Colors.deepPurple),
+                                    const SizedBox(width: 6),
+                                    Expanded(child: Text(p['channels'] as String, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600))),
+                                  ],
+                                ),
+                                const SizedBox(height: 6),
+                                Text(p['perks'] as String, style: const TextStyle(fontSize: 11, color: Colors.grey)),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
                 ),
                 const SizedBox(height: 12),
-                TextField(
-                  controller: consumerIdController,
-                  decoration: InputDecoration(
-                    labelText: 'Consumer Number / Account ID',
-                    hintText: 'e.g. 1029384756',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF2A3942) : Colors.grey.shade100,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Bill Due Amount:', style: TextStyle(fontWeight: FontWeight.w600)),
-                      Text('₹${billAmount.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.green)),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 18),
                 SizedBox(
                   width: double.infinity,
                   height: 48,
                   child: ElevatedButton(
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primary,
+                      backgroundColor: Colors.red.shade700,
                       foregroundColor: Colors.white,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                     ),
                     onPressed: () {
-                      final cId = consumerIdController.text.trim().isNotEmpty ? consumerIdController.text.trim() : '1029384756';
-                      final txn = _paymentService.payElectricityBill(
-                        discom: selectedDiscom,
-                        consumerId: cId,
-                        amount: billAmount,
+                      final subId = subIdController.text.trim().isNotEmpty ? subIdController.text.trim() : '1029384756';
+                      final txn = _paymentService.rechargeDth(
+                        operator: selectedOperator,
+                        subscriberId: subId,
+                        amount: selectedAmount,
+                        planDetails: selectedPlan,
                       );
                       Navigator.pop(ctx);
                       setState(() {});
                       _showTransactionReceipt(txn);
                     },
-                    child: const Text('Pay Electricity Bill Now', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    child: Text('Recharge DTH ₹${selectedAmount.toInt()} Now', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
               ],
@@ -1857,14 +2190,17 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
   }
 
   // ==========================================
-  // 7. METRO QR TICKETS DIALOG
+  // 7. TO BANK A/C (BANK TRANSFER)
   // ==========================================
-  void _showMetroTicketsDialog() {
-    String selectedCity = 'Delhi Metro';
-    String fromStation = 'Rajiv Chowk';
-    String toStation = 'Noida Sector 18';
-    int passengers = 1;
-    double farePerTicket = 40.0;
+  void _showBankTransferDialog() {
+    final accNumberController = TextEditingController();
+    final confirmAccController = TextEditingController();
+    final ifscController = TextEditingController();
+    final nameController = TextEditingController();
+    final amountController = TextEditingController();
+    final remarksController = TextEditingController();
+    String detectedBank = '';
+    String? errorText;
 
     showModalBottomSheet(
       context: context,
@@ -1873,7 +2209,30 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setModalState) {
           final isDark = Theme.of(ctx).brightness == Brightness.dark;
-          final totalFare = farePerTicket * passengers;
+
+          void updateIfsc(String val) {
+            val = val.toUpperCase().trim();
+            if (val.startsWith('SBIN')) {
+              detectedBank = 'State Bank of India';
+            } else if (val.startsWith('HDFC')) {
+              detectedBank = 'HDFC Bank';
+            } else if (val.startsWith('ICIC')) {
+              detectedBank = 'ICICI Bank';
+            } else if (val.startsWith('PUNB')) {
+              detectedBank = 'Punjab National Bank';
+            } else if (val.startsWith('UTIB')) {
+              detectedBank = 'Axis Bank';
+            } else if (val.startsWith('KKBK')) {
+              detectedBank = 'Kotak Mahindra Bank';
+            } else if (val.startsWith('BARB')) {
+              detectedBank = 'Bank of Baroda';
+            } else if (val.length >= 4) {
+              detectedBank = 'Verified Bank Branch';
+            } else {
+              detectedBank = '';
+            }
+            setModalState(() {});
+          }
 
           return Container(
             padding: EdgeInsets.only(
@@ -1886,135 +2245,483 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
               color: isDark ? const Color(0xFF1F2C34) : Colors.white,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(
+                          color: Color(0xFFE0F2F1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.account_balance_rounded, color: Colors.teal),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'To Bank A/C (बैंक ट्रांसफर)',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17),
+                            ),
+                            Text(
+                              'Instant 24x7 IMPS / NEFT directly to any Bank',
+                              style: TextStyle(fontSize: 12, color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  if (errorText != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(color: Colors.red.shade300),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(Icons.error_outline, color: Colors.red, size: 18),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              errorText!,
+                              style: const TextStyle(color: Colors.red, fontSize: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                  TextField(
+                    controller: accNumberController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Recipient Bank Account Number',
+                      hintText: 'e.g. 109283746501',
+                      prefixIcon: const Icon(Icons.pin_rounded, size: 20),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: confirmAccController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Re-enter Bank Account Number',
+                      hintText: 'Must match account number above',
+                      prefixIcon: const Icon(Icons.lock_outline_rounded, size: 20),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: ifscController,
+                    textCapitalization: TextCapitalization.characters,
+                    onChanged: updateIfsc,
+                    decoration: InputDecoration(
+                      labelText: 'IFSC Code',
+                      hintText: 'e.g. SBIN0001842',
+                      prefixIcon: const Icon(Icons.domain_rounded, size: 20),
+                      suffixText: detectedBank.isNotEmpty ? detectedBank : null,
+                      suffixStyle: const TextStyle(fontWeight: FontWeight.bold, color: Colors.teal, fontSize: 11),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: nameController,
+                    textCapitalization: TextCapitalization.words,
+                    decoration: InputDecoration(
+                      labelText: 'Account Holder / Beneficiary Name',
+                      hintText: 'e.g. Rajesh Kumar Verma',
+                      prefixIcon: const Icon(Icons.person_rounded, size: 20),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: amountController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Transfer Amount (रकम)',
+                      prefixText: '₹ ',
+                      prefixStyle: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: remarksController,
+                    decoration: InputDecoration(
+                      labelText: 'Remarks / Purpose (वैकल्पिक)',
+                      hintText: 'e.g. Rent / Project Fee',
+                      prefixIcon: const Icon(Icons.note_alt_outlined, size: 20),
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                      icon: const Icon(Icons.send_rounded),
+                      label: const Text(
+                        'Proceed to Transfer (सुरक्षित ट्रांसफर)',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      ),
+                      onPressed: () {
+                        final acc1 = accNumberController.text.trim();
+                        final acc2 = confirmAccController.text.trim();
+                        final ifsc = ifscController.text.trim().toUpperCase();
+                        final name = nameController.text.trim();
+                        final amt = double.tryParse(amountController.text.trim()) ?? 0.0;
+
+                        if (acc1.isEmpty || acc1.length < 8) {
+                          setModalState(() => errorText = 'Please enter a valid Account Number (min 8 digits).');
+                          return;
+                        }
+                        if (acc1 != acc2) {
+                          setModalState(() => errorText = 'Account numbers do not match. Please verify.');
+                          return;
+                        }
+                        if (ifsc.isEmpty || ifsc.length < 5) {
+                          setModalState(() => errorText = 'Please enter a valid IFSC Code.');
+                          return;
+                        }
+                        if (name.isEmpty) {
+                          setModalState(() => errorText = 'Please enter the Beneficiary Name.');
+                          return;
+                        }
+                        if (amt <= 0) {
+                          setModalState(() => errorText = 'Please enter a transfer amount greater than ₹0.');
+                          return;
+                        }
+
+                        final txn = _paymentService.transferToBank(
+                          accountNumber: acc1,
+                          ifsc: ifsc,
+                          beneficiaryName: name,
+                          amount: amt,
+                          remarks: remarksController.text.trim(),
+                        );
+                        Navigator.pop(ctx);
+                        setState(() {});
+                        _showTransactionReceipt(txn);
+                      },
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  // ==========================================
+  // 8. CREDIT CARDS HUB DIALOG
+  // ==========================================
+  void _showCreditCardsHubDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setHubState) {
+          final isDark = Theme.of(ctx).brightness == Brightness.dark;
+          final cards = _paymentService.creditCards;
+
+          return Container(
+            height: MediaQuery.of(ctx).size.height * 0.85,
+            padding: const EdgeInsets.only(top: 20),
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(color: Color(0xFFEDE7F6), shape: BoxShape.circle),
-                      child: const Icon(Icons.subway_rounded, color: Colors.deepPurple),
-                    ),
-                    const SizedBox(width: 12),
-                    const Text('Metro QR Tickets (मेट्रो टिकट्स)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: ['Delhi Metro', 'Mumbai Metro', 'Bengaluru Metro'].map((city) {
-                    final isSel = selectedCity == city;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 6),
-                      child: ChoiceChip(
-                        label: Text(city, style: const TextStyle(fontSize: 12)),
-                        selected: isSel,
-                        onSelected: (val) {
-                          setModalState(() {
-                            selectedCity = city;
-                          });
-                        },
-                      ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: TextEditingController(text: fromStation),
-                        onChanged: (val) => fromStation = val,
-                        decoration: InputDecoration(
-                          labelText: 'From Station',
-                          prefixIcon: const Icon(Icons.trip_origin_rounded, color: Colors.green, size: 20),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                      ),
-                    ),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 8),
-                      child: Icon(Icons.arrow_forward_rounded, color: Colors.grey),
-                    ),
-                    Expanded(
-                      child: TextField(
-                        controller: TextEditingController(text: toStation),
-                        onChanged: (val) => toStation = val,
-                        decoration: InputDecoration(
-                          labelText: 'To Station',
-                          prefixIcon: const Icon(Icons.location_on_rounded, color: Colors.red, size: 20),
-                          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text('Number of Passengers:', style: TextStyle(fontWeight: FontWeight.w600)),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.remove_circle_outline),
-                          onPressed: () {
-                            if (passengers > 1) {
-                              setModalState(() => passengers--);
-                            }
-                          },
-                        ),
-                        Text('$passengers', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                        IconButton(
-                          icon: const Icon(Icons.add_circle_outline),
-                          onPressed: () {
-                            if (passengers < 6) {
-                              setModalState(() => passengers++);
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: isDark ? const Color(0xFF2A3942) : Colors.deepPurple.shade50,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text('Total Fare (₹40 x passengers):', style: TextStyle(fontWeight: FontWeight.w600)),
-                      Text('₹${totalFare.toStringAsFixed(2)}', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.deepPurple)),
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: const BoxDecoration(
+                              color: Color(0xFFEDE7F6),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.credit_card_rounded, color: Colors.deepPurple),
+                          ),
+                          const SizedBox(width: 12),
+                          const Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Credit Cards (क्रेडिट कार्ड)',
+                                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+                              ),
+                              Text(
+                                'Manage linked cards & instant bill payment',
+                                style: TextStyle(fontSize: 12, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.add_circle_outline, color: AppColors.primary),
+                        tooltip: 'Add Credit Card',
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          _showAddCreditCardDialog();
+                        },
+                      ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepPurple,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                const SizedBox(height: 12),
+                const Divider(),
+                Expanded(
+                  child: cards.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.credit_card_off_rounded, size: 48, color: Colors.grey),
+                              const SizedBox(height: 12),
+                              const Text('No credit cards added yet.'),
+                              const SizedBox(height: 8),
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  _showAddCreditCardDialog();
+                                },
+                                child: const Text('+ Add New Credit Card'),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                          itemCount: cards.length,
+                          itemBuilder: (ctx, i) {
+                            final card = cards[i];
+                            return Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.all(16),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Color(card.brandColorHex),
+                                    Color(card.brandColorHex).withOpacity(0.8),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius: BorderRadius.circular(18),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Color(card.brandColorHex).withOpacity(0.35),
+                                    blurRadius: 10,
+                                    offset: const Offset(0, 4),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        card.bankName,
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(8),
+                                        ),
+                                        child: Text(
+                                          card.cardNetwork,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 11,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Text(
+                                    card.cardNumberMasked,
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 18,
+                                      letterSpacing: 2,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 14),
+                                  Row(
+                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          const Text('CARDHOLDER', style: TextStyle(color: Colors.white60, fontSize: 10)),
+                                          Text(
+                                            card.cardHolderName,
+                                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                          ),
+                                        ],
+                                      ),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.end,
+                                        children: [
+                                          const Text('DUE DATE', style: TextStyle(color: Colors.white60, fontSize: 10)),
+                                          Text(
+                                            card.dueDate,
+                                            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 13),
+                                          ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.black.withOpacity(0.25),
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            const Text('Total Outstanding Due:', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                                            Text(
+                                              '₹${card.totalDue.toStringAsFixed(2)}',
+                                              style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 17),
+                                            ),
+                                          ],
+                                        ),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.end,
+                                          children: [
+                                            const Text('Min Due:', style: TextStyle(color: Colors.white70, fontSize: 11)),
+                                            Text(
+                                              '₹${card.minDue.toStringAsFixed(2)}',
+                                              style: const TextStyle(color: Colors.amberAccent, fontWeight: FontWeight.bold, fontSize: 13),
+                                            ),
+                                          ],
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  Row(
+                                    children: [
+                                      Expanded(
+                                        child: ElevatedButton(
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: Colors.white,
+                                            foregroundColor: Color(card.brandColorHex),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                            padding: const EdgeInsets.symmetric(vertical: 8),
+                                          ),
+                                          onPressed: () {
+                                            final txn = _paymentService.payCreditCardBill(
+                                              cardNumber: card.cardNumberMasked,
+                                              cardHolderName: card.cardHolderName,
+                                              bankName: card.bankName,
+                                              amount: card.totalDue,
+                                              billType: 'Total Outstanding Paid',
+                                            );
+                                            Navigator.pop(ctx);
+                                            setState(() {});
+                                            _showTransactionReceipt(txn);
+                                          },
+                                          child: Text(
+                                            'Pay Total (₹${card.totalDue.toInt()})',
+                                            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      OutlinedButton(
+                                        style: OutlinedButton.styleFrom(
+                                          foregroundColor: Colors.white,
+                                          side: const BorderSide(color: Colors.white70),
+                                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                                          padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 10),
+                                        ),
+                                        onPressed: () {
+                                          final txn = _paymentService.payCreditCardBill(
+                                            cardNumber: card.cardNumberMasked,
+                                            cardHolderName: card.cardHolderName,
+                                            bankName: card.bankName,
+                                            amount: card.minDue,
+                                            billType: 'Minimum Due Paid',
+                                          );
+                                          Navigator.pop(ctx);
+                                          setState(() {});
+                                          _showTransactionReceipt(txn);
+                                        },
+                                        child: Text(
+                                          'Pay Min (₹${card.minDue.toInt()})',
+                                          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
+                        ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      icon: const Icon(Icons.add_card_rounded),
+                      label: const Text('+ Add Another Credit Card / RuPay Card', style: TextStyle(fontWeight: FontWeight.bold)),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _showAddCreditCardDialog();
+                      },
                     ),
-                    onPressed: () {
-                      final txn = _paymentService.bookMetroTicket(
-                        city: selectedCity,
-                        fromStation: fromStation,
-                        toStation: toStation,
-                        passengers: passengers,
-                        fare: totalFare,
-                      );
-                      Navigator.pop(ctx);
-                      setState(() {});
-                      _showMetroTicketReceiptDialog(txn, fromStation, toStation, passengers);
-                    },
-                    child: Text('Book QR Ticket (₹${totalFare.toInt()})', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ),
                 ),
               ],
@@ -2025,235 +2732,118 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     );
   }
 
-  void _showMetroTicketReceiptDialog(PaymentTransactionModel txn, String from, String to, int passengers) {
+  // ==========================================
+  // 9. ADD CREDIT CARD DIALOG
+  // ==========================================
+  void _showAddCreditCardDialog() {
+    final bankController = TextEditingController(text: 'HDFC Bank');
+    final cardNoController = TextEditingController();
+    final nameController = TextEditingController(text: 'Rajnesh Kumar');
+    final expiryController = TextEditingController(text: '12/29');
+    String selectedNetwork = 'Visa';
+
     showDialog(
       context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              decoration: BoxDecoration(color: Colors.deepPurple, borderRadius: BorderRadius.circular(20)),
-              child: const Text('🚇 ACTIVE METRO QR PASS', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12)),
-            ),
-            const SizedBox(height: 14),
-            // Standard 2D QR Metro Ticket
-            StandardQrCode(
-              data: 'chatspace:metro:${txn.upiRefId}:$from:$to:$passengers',
-              size: 170,
-              darkColor: Colors.deepPurple,
-              centerIcon: const Icon(Icons.subway_rounded, color: Colors.deepPurple, size: 20),
-              showFrame: true,
-            ),
-            const SizedBox(height: 10),
-            Text('$from ➔ $to', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-            const SizedBox(height: 4),
-            Text('$passengers Passenger(s) • Valid for 120 Minutes', style: const TextStyle(fontSize: 12, color: Colors.grey)),
-            const SizedBox(height: 10),
-            Text('Fare Paid: ₹${txn.amount.toStringAsFixed(2)}', style: const TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 16)),
-            const SizedBox(height: 6),
-            Text('Token: ${txn.upiRefId}', style: const TextStyle(fontSize: 10, color: Colors.grey)),
-          ],
-        ),
-        actions: [
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.deepPurple),
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Done', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // ==========================================
-  // 8. FASTAG RECHARGE DIALOG
-  // ==========================================
-  void _showFastagDialog() {
-    final vehicleController = TextEditingController();
-    String selectedBank = 'ICICI Bank FASTag';
-    double amount = 500.0;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
       builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setModalState) {
-          final isDark = Theme.of(ctx).brightness == Brightness.dark;
-
-          return Container(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-              top: 24,
-              left: 20,
-              right: 20,
-            ),
-            decoration: BoxDecoration(
-              color: isDark ? const Color(0xFF1F2C34) : Colors.white,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            ),
+        builder: (ctx, setDlgState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.add_card_rounded, color: Colors.deepPurple),
+              SizedBox(width: 10),
+              Text('Add Credit Card', style: TextStyle(fontSize: 17, fontWeight: FontWeight.bold)),
+            ],
+          ),
+          content: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(color: Color(0xFFFBE9E7), shape: BoxShape.circle),
-                      child: const Icon(Icons.directions_car_rounded, color: Colors.deepOrange),
-                    ),
-                    const SizedBox(width: 12),
-                    const Text('FASTag Recharge (फास्टैग रिचार्ज)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: vehicleController,
-                  textCapitalization: TextCapitalization.characters,
-                  decoration: InputDecoration(
-                    labelText: 'Vehicle Registration Number',
-                    hintText: 'e.g. DL 01 AB 1234',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-                const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: selectedBank,
-                  isExpanded: true,
-                  decoration: InputDecoration(
-                    labelText: 'FASTag Issuing Bank',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  items: ['ICICI Bank FASTag', 'SBI FASTag', 'Paytm Payments Bank', 'IDFC FIRST Bank FASTag']
+                  value: bankController.text,
+                  decoration: const InputDecoration(labelText: 'Issuing Bank', border: OutlineInputBorder(), isDense: true),
+                  items: ['HDFC Bank', 'State Bank of India', 'ICICI Bank', 'Axis Bank', 'Kotak Mahindra Bank', 'RBL Bank']
                       .map((b) => DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(fontSize: 13))))
                       .toList(),
                   onChanged: (val) {
-                    if (val != null) setModalState(() => selectedBank = val);
+                    if (val != null) setDlgState(() => bankController.text = val);
                   },
                 ),
-                const SizedBox(height: 14),
-                const Text('Quick Recharge Amount:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 8),
-                Row(
-                  children: [200.0, 500.0, 1000.0, 2000.0].map((amt) {
-                    final isSel = amount == amt;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text('₹${amt.toInt()}'),
-                        selected: isSel,
-                        onSelected: (val) => setModalState(() => amount = amt),
-                      ),
-                    );
-                  }).toList(),
+                const SizedBox(height: 12),
+                DropdownButtonFormField<String>(
+                  value: selectedNetwork,
+                  decoration: const InputDecoration(labelText: 'Card Network', border: OutlineInputBorder(), isDense: true),
+                  items: ['Visa', 'Mastercard', 'RuPay', 'Amex']
+                      .map((n) => DropdownMenuItem(value: n, child: Text(n, style: const TextStyle(fontSize: 13))))
+                      .toList(),
+                  onChanged: (val) {
+                    if (val != null) setDlgState(() => selectedNetwork = val);
+                  },
                 ),
-                const SizedBox(height: 18),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepOrange,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                    ),
-                    onPressed: () {
-                      final vNo = vehicleController.text.trim().isNotEmpty ? vehicleController.text.trim().toUpperCase() : 'DL 01 AB 1234';
-                      final txn = _paymentService.rechargeFastag(
-                        vehicleNo: vNo,
-                        bank: selectedBank,
-                        amount: amount,
-                      );
-                      Navigator.pop(ctx);
-                      setState(() {});
-                      _showTransactionReceipt(txn);
-                    },
-                    child: Text('Recharge ₹${amount.toInt()} Now', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: cardNoController,
+                  keyboardType: TextInputType.number,
+                  maxLength: 16,
+                  decoration: const InputDecoration(
+                    labelText: '16-Digit Card Number',
+                    hintText: '4000 1234 5678 9010',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: nameController,
+                  textCapitalization: TextCapitalization.words,
+                  decoration: const InputDecoration(
+                    labelText: 'Cardholder Name',
+                    border: OutlineInputBorder(),
+                    isDense: true,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: expiryController,
+                  decoration: const InputDecoration(
+                    labelText: 'Expiry (MM/YY)',
+                    hintText: 'e.g. 08/29',
+                    border: OutlineInputBorder(),
+                    isDense: true,
                   ),
                 ),
               ],
             ),
-          );
-        },
-      ),
-    );
-  }
-
-  // ==========================================
-  // 9. DTH / CREDIT CARD / LOAN REPAYMENT
-  // ==========================================
-  void _showGenericUtilityDialog({required String title, required String fieldLabel, required String category, required double defaultAmount}) {
-    final idController = TextEditingController();
-    final amountController = TextEditingController(text: defaultAmount.toInt().toString());
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (ctx) => Container(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 24,
-          top: 24,
-          left: 20,
-          right: 20,
-        ),
-        decoration: BoxDecoration(
-          color: Theme.of(ctx).brightness == Brightness.dark ? const Color(0xFF1F2C34) : Colors.white,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: idController,
-              decoration: InputDecoration(
-                labelText: fieldLabel,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: amountController,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Amount (रुपये)',
-                prefixText: '₹ ',
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-            ),
-            const SizedBox(height: 18),
-            SizedBox(
-              width: double.infinity,
-              height: 48,
-              child: ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                onPressed: () {
-                  final amt = double.tryParse(amountController.text.trim()) ?? defaultAmount;
-                  PaymentTransactionModel txn;
-                  if (category == 'DTH') {
-                    txn = _paymentService.rechargeDth(operator: 'Tata Play', subscriberId: idController.text.trim().isNotEmpty ? idController.text.trim() : '10293847', amount: amt);
-                  } else if (category == 'CREDIT_CARD') {
-                    txn = _paymentService.payCreditCard(last4: idController.text.trim().isNotEmpty ? idController.text.trim() : '4821', bank: 'HDFC Bank', amount: amt);
-                  } else {
-                    txn = _paymentService.payLoanEmi(lender: 'Bajaj Finance', loanNo: idController.text.trim().isNotEmpty ? idController.text.trim() : 'LN-84920', amount: amt);
-                  }
-                  Navigator.pop(ctx);
-                  setState(() {});
-                  _showTransactionReceipt(txn);
-                },
-                child: const Text('Pay with UPI', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-              ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+              onPressed: () {
+                final cNo = cardNoController.text.trim();
+                final last4 = cNo.length >= 4 ? cNo.substring(cNo.length - 4) : '7721';
+                final newCard = CreditCardModel(
+                  id: 'cc_${DateTime.now().millisecondsSinceEpoch}',
+                  bankName: '${bankController.text} $selectedNetwork',
+                  cardNumberMasked: '•••• •••• •••• $last4',
+                  cardHolderName: nameController.text.trim().isNotEmpty ? nameController.text.trim() : 'Rajnesh Kumar',
+                  cardNetwork: selectedNetwork,
+                  totalDue: 8200.0,
+                  minDue: 820.0,
+                  dueDate: '10 Nov 2026',
+                  brandColorHex: selectedNetwork == 'RuPay' ? 0xFF00897B : 0xFF1A365D,
+                );
+                _paymentService.addCreditCard(newCard);
+                Navigator.pop(ctx);
+                setState(() {});
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('✓ ${newCard.bankName} ending in •••• $last4 added successfully!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              },
+              child: const Text('Save Card'),
             ),
           ],
         ),
@@ -2903,8 +3493,14 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     final filteredTxns = allTxns.where((t) {
       if (_historyFilter == 'Paid') return t.senderId == 'current_user';
       if (_historyFilter == 'Received') return t.receiverId == 'current_user';
-      if (_historyFilter == 'Recharge') return t.category == 'RECHARGE' || t.category == 'FASTAG' || t.category == 'DTH';
-      if (_historyFilter == 'Bills') return t.category == 'ELECTRICITY' || t.category == 'METRO' || t.category == 'CREDIT_CARD' || t.category == 'LOAN';
+      if (_historyFilter == 'Recharge') return t.category == 'RECHARGE' || t.category == 'DTH';
+      if (_historyFilter == 'Bank & Cards') {
+        return t.category == 'BANK_TRANSFER' ||
+            t.category == 'CREDIT_CARD' ||
+            t.paymentMethod.contains('Bank') ||
+            t.paymentMethod.contains('Card') ||
+            t.paymentMethod.contains('IMPS');
+      }
       return true;
     }).toList();
 
@@ -3054,17 +3650,17 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 ),
                 const SizedBox(width: 10),
                 _buildMainActionTile(
+                  icon: Icons.account_balance_rounded,
+                  color: Colors.teal,
+                  label: 'To Bank\nA/C',
+                  onTap: _showBankTransferDialog,
+                ),
+                const SizedBox(width: 10),
+                _buildMainActionTile(
                   icon: Icons.qr_code_2_rounded,
                   color: const Color(0xFF6A1B9A),
                   label: 'Receive\nMoney QR',
                   onTap: _showReceiveMoneyQrDialog,
-                ),
-                const SizedBox(width: 10),
-                _buildMainActionTile(
-                  icon: Icons.send_rounded,
-                  color: const Color(0xFF00897B),
-                  label: 'Send\nMoney',
-                  onTap: () => _showSendMoneyDialog(),
                 ),
               ],
             ),
@@ -3072,10 +3668,10 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
             const SizedBox(height: 24),
 
             // ==========================================
-            // RECHARGE & BILL PAYMENTS SECTION (PhonePe Grid)
+            // CORE SERVICES SECTION (Recharge, Cards, Bank Transfer)
             // ==========================================
             const Text(
-              'Recharge & Pay Bills (रिचार्ज और बिल भुगतान)',
+              'Core Services (रिचार्ज, कार्ड और बैंक ट्रांसफर)',
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 12),
@@ -3086,89 +3682,32 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade200),
               ),
-              child: Column(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildUtilityIcon(
-                        icon: Icons.cell_tower_rounded,
-                        color: Colors.blue,
-                        label: 'Mobile\nRecharge',
-                        onTap: _showMobileRechargeDialog,
-                      ),
-                      _buildUtilityIcon(
-                        icon: Icons.bolt_rounded,
-                        color: Colors.orange,
-                        label: 'Electricity\nBill',
-                        onTap: _showElectricityBillDialog,
-                      ),
-                      _buildUtilityIcon(
-                        icon: Icons.directions_car_rounded,
-                        color: Colors.deepOrange,
-                        label: 'FASTag\nRecharge',
-                        onTap: _showFastagDialog,
-                      ),
-                      _buildUtilityIcon(
-                        icon: Icons.subway_rounded,
-                        color: Colors.deepPurple,
-                        label: 'Metro\nTickets',
-                        onTap: _showMetroTicketsDialog,
-                      ),
-                    ],
+                  _buildUtilityIcon(
+                    icon: Icons.cell_tower_rounded,
+                    color: Colors.blue,
+                    label: 'Mobile\nRecharge',
+                    onTap: _showMobileRechargeDialog,
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildUtilityIcon(
-                        icon: Icons.tv_rounded,
-                        color: Colors.red,
-                        label: 'DTH\nCable',
-                        onTap: () => _showGenericUtilityDialog(
-                          title: 'DTH Recharge (डीटीएच रिचार्ज)',
-                          fieldLabel: 'Subscriber ID / SmartCard Number',
-                          category: 'DTH',
-                          defaultAmount: 350.0,
-                        ),
-                      ),
-                      _buildUtilityIcon(
-                        icon: Icons.credit_card_rounded,
-                        color: Colors.teal,
-                        label: 'Credit\nCard',
-                        onTap: () => _showGenericUtilityDialog(
-                          title: 'Credit Card Bill Payment',
-                          fieldLabel: 'Card Number (Last 4 digits)',
-                          category: 'CREDIT_CARD',
-                          defaultAmount: 4850.0,
-                        ),
-                      ),
-                      _buildUtilityIcon(
-                        icon: Icons.account_balance_rounded,
-                        color: Colors.indigo,
-                        label: 'Loan\nPayment',
-                        onTap: () => _showGenericUtilityDialog(
-                          title: 'Loan EMI Repayment',
-                          fieldLabel: 'Loan Account Number',
-                          category: 'LOAN',
-                          defaultAmount: 2500.0,
-                        ),
-                      ),
-                      _buildUtilityIcon(
-                        icon: Icons.confirmation_number_rounded,
-                        color: Colors.pink,
-                        label: 'Book\nTickets',
-                        onTap: () {
-                          final txn = _paymentService.bookTravelTickets(
-                            type: 'Bus',
-                            details: 'Express Volvo • Delhi to Jaipur (Seat 14A)',
-                            amount: 750.0,
-                          );
-                          setState(() {});
-                          _showTransactionReceipt(txn);
-                        },
-                      ),
-                    ],
+                  _buildUtilityIcon(
+                    icon: Icons.tv_rounded,
+                    color: Colors.red,
+                    label: 'DTH\nRecharge',
+                    onTap: _showDthRechargeDialog,
+                  ),
+                  _buildUtilityIcon(
+                    icon: Icons.credit_card_rounded,
+                    color: Colors.deepPurple,
+                    label: 'Credit\nCards',
+                    onTap: _showCreditCardsHubDialog,
+                  ),
+                  _buildUtilityIcon(
+                    icon: Icons.account_balance_rounded,
+                    color: Colors.teal,
+                    label: 'To Bank\nA/C',
+                    onTap: _showBankTransferDialog,
                   ),
                 ],
               ),
@@ -3213,6 +3752,13 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                   _buildHubActionChip(
                     icon: Icons.credit_card_rounded,
                     color: Colors.deepPurple,
+                    label: 'Credit Cards',
+                    onTap: _showCreditCardsHubDialog,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildHubActionChip(
+                    icon: Icons.payment_rounded,
+                    color: const Color(0xFF5E35B1),
                     label: 'RuPay on UPI',
                     onTap: _showAddRuPayCardDialog,
                   ),
@@ -3222,6 +3768,13 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                     color: Colors.orange,
                     label: 'UPI LITE',
                     onTap: _showUpiLiteSheet,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildHubActionChip(
+                    icon: Icons.qr_code_2_rounded,
+                    color: Colors.teal,
+                    label: 'My QR Code',
+                    onTap: _showReceiveMoneyQrDialog,
                   ),
                   const SizedBox(width: 8),
                   _buildHubActionChip(
@@ -3432,7 +3985,7 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
-                children: ['All', 'Paid', 'Received', 'Recharge', 'Bills'].map((filter) {
+                children: ['All', 'Paid', 'Received', 'Recharge', 'Bank & Cards'].map((filter) {
                   final isSel = _historyFilter == filter;
                   return Padding(
                     padding: const EdgeInsets.only(right: 8),

@@ -380,63 +380,95 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             // Developer Mode & Bypass Hub (Settings)
             Container(
-              margin: const EdgeInsets.symmetric(vertical: 6),
+              margin: const EdgeInsets.symmetric(vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
               decoration: BoxDecoration(
                 color: authProvider.isDevBypass
                     ? Colors.amber.withOpacity(0.08)
                     : (isDark ? const Color(0xFF1F2C34) : Colors.grey.shade50),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(14),
                 border: Border.all(
                   color: authProvider.isDevBypass ? Colors.amber : (isDark ? Colors.white12 : Colors.grey.shade300),
-                  width: 1.5,
                 ),
               ),
-              child: Column(
+              child: Row(
                 children: [
-                  SwitchListTile(
-                    secondary: Container(
-                      padding: const EdgeInsets.all(6),
+                  InkWell(
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (ctx) => const DevBypassSheet(),
+                      );
+                    },
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.all(7),
                       decoration: BoxDecoration(
-                        color: authProvider.isDevBypass ? Colors.amber.shade700 : Colors.grey.shade400,
+                        color: authProvider.isDevBypass ? Colors.amber.shade700 : (isDark ? const Color(0xFF233138) : Colors.grey.shade200),
                         shape: BoxShape.circle,
+                        border: Border.all(color: authProvider.isDevBypass ? Colors.amber : Colors.grey.shade400, width: 1.5),
                       ),
-                      child: const Icon(Icons.build_circle_rounded, color: Colors.white, size: 20),
+                      child: Icon(
+                        Icons.settings_suggest_rounded,
+                        color: authProvider.isDevBypass ? Colors.white : (isDark ? Colors.grey.shade300 : Colors.grey.shade700),
+                        size: 18,
+                      ),
                     ),
-                    title: const Text('Developer Mode Bypass', style: TextStyle(fontWeight: FontWeight.bold)),
-                    subtitle: Text(
-                      authProvider.isDevBypass
-                          ? 'Active: Mock data & diagnostic bypass enabled'
-                          : 'Disabled: Live Firebase production authentication',
-                      style: const TextStyle(fontSize: 12),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text('Developer Bypass', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                            const SizedBox(width: 6),
+                            if (authProvider.isDevBypass)
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.amber.shade800,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Text('ACTIVE', style: TextStyle(color: Colors.white, fontSize: 9, fontWeight: FontWeight.bold)),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          authProvider.isDevBypass
+                              ? 'Mock diagnostics active'
+                              : 'Tap icon for diagnostic tools',
+                          style: const TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                      ],
                     ),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.tune_rounded,
+                      color: authProvider.isDevBypass ? Colors.amber.shade800 : AppColors.primary,
+                      size: 20,
+                    ),
+                    tooltip: 'Diagnostics Hub',
+                    onPressed: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (ctx) => const DevBypassSheet(),
+                      );
+                    },
+                  ),
+                  Switch(
                     value: authProvider.isDevBypass,
                     activeColor: Colors.amber.shade700,
                     onChanged: (val) {
                       authProvider.setDevBypass(val);
                     },
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-                    child: SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton.icon(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.amber.shade800,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        icon: const Icon(Icons.settings_suggest_rounded, size: 18),
-                        label: const Text('Open Developer Inspection & Diagnostics Hub'),
-                        onPressed: () {
-                          showModalBottomSheet(
-                            context: context,
-                            isScrollControlled: true,
-                            backgroundColor: Colors.transparent,
-                            builder: (ctx) => const DevBypassSheet(),
-                          );
-                        },
-                      ),
-                    ),
                   ),
                 ],
               ),
