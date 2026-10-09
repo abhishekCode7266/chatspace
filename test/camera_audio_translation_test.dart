@@ -155,14 +155,18 @@ void main() {
 
     test('SpeechRecognitionService start and stop run safely on VM', () {
       final speech = SpeechRecognitionService.instance;
-      expect(() => speech.startListening(onResult: (_) {}), returnsNormally);
+      expect(() => speech.startListening(
+        onResult: (text, isFinal) {},
+        onError: (err) {},
+        onEnd: () {},
+      ), returnsNormally);
       expect(() => speech.stopListening(), returnsNormally);
     });
   });
 
   group('MockDataService Contact & QR Tests', () {
     test('addContactByPhone adds contact with valid phone number', () {
-      final mock = MockDataService();
+      final mock = MockDataService.instance;
       final newContact = mock.addContactByPhone(
         name: 'Priya Sharma',
         phone: '+91 98765 12345',
@@ -174,7 +178,7 @@ void main() {
     });
 
     test('connectUserByQr connects and returns user model', () {
-      final mock = MockDataService();
+      final mock = MockDataService.instance;
       final connected = mock.connectUserByQr(
         uid: 'user_qr_test_99',
         name: 'Vikram Malhotra',

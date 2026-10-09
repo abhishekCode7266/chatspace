@@ -1,6 +1,5 @@
 import 'dart:math';
 import 'package:flutter/material.dart';
-import '../utils/constants.dart';
 
 /// Standard ISO/IEC 18004 2D QR Code Matrix Generator and Renderer
 /// Supports standard UPI URLs, Contact Tokens, Group Invites, Metro Tickets, and URLs.

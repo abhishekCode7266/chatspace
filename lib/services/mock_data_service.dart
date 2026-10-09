@@ -38,6 +38,7 @@ class MockDataService {
   final Map<String, List<MessageModel>> _mockMessages = {};
 
   UserModel get currentDevUser => _currentDevUser;
+  List<UserModel> get mockUsers => _mockUsers;
 
   void _initializeMockData() {
     final now = DateTime.now();

@@ -1,7 +1,6 @@
 // ignore_for_file: avoid_web_libraries_in_flutter, deprecated_member_use
-import 'dart:async';
 import 'dart:html' as html;
-import 'dart:js' as js;
+import 'dart:js';
 import 'dart:js_util' as js_util;
 import 'package:flutter/foundation.dart';
 
@@ -55,12 +54,12 @@ class SpeechRecognitionService {
       js_util.setProperty(recognition, 'interimResults', true);
       js_util.setProperty(recognition, 'lang', language);
 
-      js_util.setProperty(recognition, 'onstart', js.allowInterop((dynamic _) {
+      js_util.setProperty(recognition, 'onstart', allowInterop((dynamic _) {
         _isListening = true;
         debugPrint('Web Speech Recognition started in $_currentLanguage');
       }));
 
-      js_util.setProperty(recognition, 'onresult', js.allowInterop((dynamic event) {
+      js_util.setProperty(recognition, 'onresult', allowInterop((dynamic event) {
         try {
           final results = js_util.getProperty(event, 'results');
           if (results == null) return;
@@ -93,14 +92,14 @@ class SpeechRecognitionService {
         }
       }));
 
-      js_util.setProperty(recognition, 'onerror', js.allowInterop((dynamic event) {
+      js_util.setProperty(recognition, 'onerror', allowInterop((dynamic event) {
         final err = js_util.getProperty(event, 'error')?.toString() ?? 'Speech recognition error';
         debugPrint('Speech recognition error: $err');
         _isListening = false;
         onError(err);
       }));
 
-      js_util.setProperty(recognition, 'onend', js.allowInterop((dynamic _) {
+      js_util.setProperty(recognition, 'onend', allowInterop((dynamic _) {
         debugPrint('Speech recognition ended');
         _isListening = false;
         onEnd();
