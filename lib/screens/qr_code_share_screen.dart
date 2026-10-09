@@ -38,6 +38,7 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
   bool _isTorchOn = false;
   bool _isFrontCamera = false;
   bool _isCameraReady = false;
+  String _qrToken = 'uc_token_${DateTime.now().millisecondsSinceEpoch}';
 
   @override
   void initState() {
@@ -270,8 +271,8 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
     final subtitle = isGroup ? 'Universal Chat Group Invite' : (user?.email ?? 'user@universalchat.app');
 
     final qrPayload = isGroup
-        ? 'chatspace:group:${widget.groupChatId ?? "group_flutter_devs"}:$name'
-        : 'chatspace:contact:${user?.uid ?? "user_default"}:$name:${user?.phone ?? "+91 98765 43210"}';
+        ? 'chatspace:group:${widget.groupChatId ?? "group_flutter_devs"}:$name:$_qrToken'
+        : 'chatspace:contact:${user?.uid ?? "user_default"}:$name:${user?.phone ?? "+91 98765 43210"}:$_qrToken';
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
