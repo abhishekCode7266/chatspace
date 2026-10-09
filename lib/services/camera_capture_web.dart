@@ -33,16 +33,41 @@ class CameraCaptureService {
         return false;
       }
 
-      final constraints = {
-        'video': {
-          'facingMode': isFrontCamera ? 'user' : 'environment',
-          'width': {'ideal': 1280},
-          'height': {'ideal': 720},
-        },
-        'audio': false,
-      };
+      html.MediaStream? stream;
+      // Step 1: Try requested facing mode with ideal resolution
+      try {
+        final constraints = {
+          'video': {
+            'facingMode': isFrontCamera ? 'user' : 'environment',
+            'width': {'ideal': 1280},
+            'height': {'ideal': 720},
+          },
+          'audio': false,
+        };
+        stream = await mediaDevices.getUserMedia(constraints);
+      } catch (e1) {
+        debugPrint('High constraint camera failed: $e1. Trying facingMode fallback...');
+        // Step 2: Try facingMode only without resolution constraint
+        try {
+          stream = await mediaDevices.getUserMedia({
+            'video': {'facingMode': isFrontCamera ? 'user' : 'environment'},
+            'audio': false,
+          });
+        } catch (e2) {
+          debugPrint('FacingMode fallback failed: $e2. Trying generic video stream...');
+          // Step 3: Generic video stream fallback
+          stream = await mediaDevices.getUserMedia({
+            'video': true,
+            'audio': false,
+          });
+        }
+      }
 
-      final stream = await mediaDevices.getUserMedia(constraints);
+      if (stream == null) {
+        _isStreaming = false;
+        return false;
+      }
+
       _mediaStream = stream;
 
       _videoElement ??= html.VideoElement()
@@ -57,7 +82,11 @@ class CameraCaptureService {
 
       _videoElement!.style.transform = isFrontCamera ? 'scaleX(-1)' : 'none';
       _videoElement!.srcObject = stream;
-      await _videoElement!.play();
+      try {
+        await _videoElement!.play();
+      } catch (playErr) {
+        debugPrint('Video play call error (will autoplay): $playErr');
+      }
       _isStreaming = true;
 
       return true;
@@ -66,6 +95,51 @@ class CameraCaptureService {
       _isStreaming = false;
       return false;
     }
+  }
+
+  /// Toggle torch / flashlight if supported by hardware
+  Future<bool> toggleTorch(bool enable) async {
+    if (_mediaStream == null) return false;
+    try {
+      final tracks = _mediaStream!.getVideoTracks();
+      if (tracks.isNotEmpty) {
+        final track = tracks.first;
+        await track.applyConstraints({
+          'advanced': [{'torch': enable}]
+        });
+        return true;
+      }
+    } catch (e) {
+      debugPrint('Torch not supported on this browser/camera: $e');
+    }
+    return false;
+  }
+
+  /// Pick QR Code image from gallery/device storage
+  Future<String?> pickQrImageFromGallery() async {
+    final completer = Completer<String?>();
+    final input = html.FileUploadInputElement()..accept = 'image/*';
+    input.click();
+
+    input.onChange.listen((event) {
+      final files = input.files;
+      if (files == null || files.isEmpty) {
+        completer.complete(null);
+        return;
+      }
+      final file = files[0];
+      final reader = html.FileReader();
+      reader.readAsDataUrl(file);
+      reader.onLoadEnd.listen((e) {
+        final result = reader.result as String?;
+        completer.complete(result);
+      });
+      reader.onError.listen((e) {
+        completer.complete(null);
+      });
+    });
+
+    return completer.future;
   }
 
   /// Builds the Flutter HtmlElementView embedding the live HTML5 <video> camera element

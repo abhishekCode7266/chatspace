@@ -239,18 +239,155 @@ class PaymentService {
     return false;
   }
 
-  // --- AI Quota Methods ---
-  bool canUseAi() {
-    if (isPremiumUser) return true;
-    return _aiQueriesUsedToday < _dailyFreeAiLimit;
-  }
-
+  // --- AI Assistance (100% Free & Unlimited) ---
+  bool canUseAi() => true;
   void recordAiQuery() {
     _aiQueriesUsedToday++;
   }
-
   void resetDailyAiQuota() {
     _aiQueriesUsedToday = 0;
+  }
+
+  // --- Reward Coins System (रिवॉर्ड कॉइन्स) ---
+  // Milestone: ₹500+ = 1 coin, ₹1000+ = 2 coins, ₹2000+ = 3 coins. 100 coins = ₹1 cashback
+  int _rewardCoins = 180; // 180 coins = ₹1.80
+  int get rewardCoins => _rewardCoins;
+
+  void awardCoinsForTxn(double amount) {
+    if (amount >= 2000) {
+      _rewardCoins += 3;
+    } else if (amount >= 1000) {
+      _rewardCoins += 2;
+    } else if (amount >= 500) {
+      _rewardCoins += 1;
+    }
+  }
+
+  bool redeemRewardCoins({int coinsToRedeem = 100}) {
+    if (_rewardCoins >= coinsToRedeem && coinsToRedeem >= 100) {
+      final double cashback = (coinsToRedeem / 100).floorToDouble() * 1.0;
+      final int usedCoins = (cashback * 100).toInt();
+      _rewardCoins -= usedCoins;
+      _addToPrimaryBank(cashback);
+
+      final txn = PaymentTransactionModel(
+        id: 'txn_coin_${DateTime.now().millisecondsSinceEpoch}',
+        senderId: 'universal_rewards',
+        senderName: 'Universal Reward Coins (रिवॉर्ड कॉइन्स)',
+        receiverId: 'current_user',
+        receiverName: 'You',
+        amount: cashback,
+        currency: '₹',
+        note: 'Cashback from $usedCoins Reward Coins (100 coins = ₹1)',
+        timestamp: DateTime.now(),
+        status: 'SUCCESS',
+        upiRefId: 'COIN${DateTime.now().millisecondsSinceEpoch}',
+        bankName: primaryBank.bankName,
+        paymentMethod: 'Reward Cashback',
+        category: 'UPI',
+        details: 'Redeemed $usedCoins coins to Bank Account',
+      );
+      _transactions.insert(0, txn);
+      _txnStreamController.add(List.from(_transactions));
+      return true;
+    }
+    return false;
+  }
+
+  // --- Free CIBIL Credit Score Check ---
+  int get cibilScore => 785;
+  String get cibilRating => 'Excellent (शानदार)';
+  String get cibilSummary => 'Strong repayment history, zero late payments, 12% credit utilization.';
+
+  // --- UPI LITE (PIN-less 1-Click Payments up to ₹500) ---
+  bool _isUpiLiteActive = true;
+  double _upiLiteBalance = 500.0;
+  bool get isUpiLiteActive => _isUpiLiteActive;
+  double get upiLiteBalance => _upiLiteBalance;
+
+  void topUpUpiLite(double amount) {
+    _deductFromPrimaryBank(amount);
+    _upiLiteBalance += amount;
+  }
+
+  PaymentTransactionModel payViaUpiLite({
+    required String receiverName,
+    required double amount,
+    String note = '1-Click PIN-less UPI LITE payment',
+  }) {
+    _upiLiteBalance = (_upiLiteBalance - amount).clamp(0.0, 2000.0);
+    awardCoinsForTxn(amount);
+    final txn = PaymentTransactionModel(
+      id: 'txn_lite_${DateTime.now().millisecondsSinceEpoch}',
+      senderId: 'current_user',
+      senderName: 'You',
+      receiverId: 'upi_lite_rec',
+      receiverName: receiverName,
+      amount: amount,
+      currency: '₹',
+      note: note,
+      timestamp: DateTime.now(),
+      status: 'SUCCESS',
+      upiRefId: 'LITE${DateTime.now().millisecondsSinceEpoch}',
+      bankName: 'UPI LITE Wallet',
+      paymentMethod: 'UPI LITE',
+      category: 'UPI',
+      details: 'Instant 1-Click Payment without PIN',
+    );
+    _transactions.insert(0, txn);
+    _txnStreamController.add(List.from(_transactions));
+    return txn;
+  }
+
+  // --- AutoPay Recurring Subscriptions & Mandates ---
+  final List<Map<String, dynamic>> _autoPayMandates = [
+    {
+      'title': 'Netflix India Premium',
+      'frequency': 'Monthly',
+      'amount': 649.0,
+      'nextDate': '25 Oct 2026',
+      'bank': 'State Bank of India',
+      'status': 'ACTIVE',
+      'icon': 'movie',
+    },
+    {
+      'title': 'Spotify Premium Family',
+      'frequency': 'Monthly',
+      'amount': 179.0,
+      'nextDate': '12 Nov 2026',
+      'bank': 'HDFC Bank',
+      'status': 'ACTIVE',
+      'icon': 'music_note',
+    },
+    {
+      'title': 'JioFiber 100Mbps Broadband',
+      'frequency': 'Monthly',
+      'amount': 825.0,
+      'nextDate': '01 Nov 2026',
+      'bank': 'State Bank of India',
+      'status': 'ACTIVE',
+      'icon': 'wifi',
+    },
+  ];
+
+  List<Map<String, dynamic>> get autoPayMandates => List.unmodifiable(_autoPayMandates);
+
+  void addAutoPayMandate({
+    required String title,
+    required String frequency,
+    required double amount,
+    required String nextDate,
+    required String bank,
+  }) {
+    _autoPayMandates.add({
+      'title': title,
+      'frequency': frequency,
+      'amount': amount,
+      'nextDate': nextDate,
+      'bank': bank,
+      'status': 'ACTIVE',
+      'icon': 'autorenew',
+    });
   }
 
   // --- Bank Operations ---
@@ -438,6 +575,8 @@ class PaymentService {
     required String note,
     String? bankName,
   }) {
+    _deductFromPrimaryBank(amount);
+    awardCoinsForTxn(amount);
     final usedBank = bankName ?? primaryBank.bankName;
     final txn = PaymentTransactionModel(
       id: 'txn_${DateTime.now().millisecondsSinceEpoch}',
@@ -567,6 +706,7 @@ class PaymentService {
     String note = '',
   }) {
     _deductFromPrimaryBank(amount);
+    awardCoinsForTxn(amount);
     final txn = PaymentTransactionModel(
       id: 'txn_mob_${DateTime.now().millisecondsSinceEpoch}',
       senderId: 'current_user',
@@ -598,6 +738,7 @@ class PaymentService {
     required String planDetails,
   }) {
     _deductFromPrimaryBank(amount);
+    awardCoinsForTxn(amount);
     final txn = PaymentTransactionModel(
       id: 'txn_rch_${DateTime.now().millisecondsSinceEpoch}',
       senderId: 'current_user',

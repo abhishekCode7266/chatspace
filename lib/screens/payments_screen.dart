@@ -37,6 +37,7 @@ class PaymentsScreen extends StatefulWidget {
 class _PaymentsScreenState extends State<PaymentsScreen> {
   final PaymentService _paymentService = PaymentService.instance;
   String _historyFilter = 'All'; // 'All', 'Paid', 'Received', 'Recharge', 'Bills'
+  bool _isBalanceVisible = false;
 
   @override
   void initState() {
@@ -125,6 +126,9 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                     onPressed: () {
                       if (_paymentService.verifyUpiPin(pinController.text.trim())) {
                         Navigator.pop(ctx);
+                        setState(() {
+                          _isBalanceVisible = true;
+                        });
                         _showBalanceRevealedDialog(bank);
                       } else {
                         setModalState(() {
@@ -1238,9 +1242,15 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                         ),
                       ),
                       const SizedBox(height: 12),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Universal User • ${primaryBank.bankName}',
+                        style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      const SizedBox(height: 2),
                       Text(
                         primaryBank.upiId,
-                        style: const TextStyle(color: Colors.black87, fontWeight: FontWeight.bold, fontSize: 15),
+                        style: const TextStyle(color: Colors.black54, fontWeight: FontWeight.w600, fontSize: 13),
                       ),
                       if (customAmount != null && customAmount! > 0) ...[
                         const SizedBox(height: 6),
@@ -1261,7 +1271,78 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 16),
+                const SizedBox(height: 14),
+
+                // 4 Action Buttons: Share QR, Open Scanner, Send Feedback, Help
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.share_rounded, size: 16),
+                        label: const Text('Share QR', style: TextStyle(fontSize: 12)),
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('UPI QR Code shared successfully!')),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: const Color(0xFF007AFF),
+                          side: const BorderSide(color: Color(0xFF007AFF)),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.qr_code_scanner_rounded, size: 16),
+                        label: const Text('Scanner', style: TextStyle(fontSize: 12)),
+                        onPressed: () {
+                          Navigator.pop(ctx);
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const QrCodeShareScreen(initialTabIndex: 1)),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.feedback_outlined, size: 16),
+                        label: const Text('Feedback', style: TextStyle(fontSize: 12)),
+                        onPressed: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Thank you! QR Feedback recorded.')),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.help_outline_rounded, size: 16),
+                        label: const Text('Help', style: TextStyle(fontSize: 12)),
+                        onPressed: () => _showHelpSupportDialog(),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 14),
 
                 // Set Amount Option
                 Row(
@@ -1517,10 +1598,13 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
     String selectedPlan = '2GB/Day + Unlimited 5G • 28 Days';
 
     final plans = [
+      {'amt': 19.0, 'desc': '1GB High-Speed 4G/5G Data Add-on • Active Validity'},
       {'amt': 239.0, 'desc': '1.5GB/Day + Unlimited Calls • 28 Days'},
-      {'amt': 299.0, 'desc': '2GB/Day + Unlimited 5G • 28 Days'},
+      {'amt': 299.0, 'desc': '2GB/Day + Unlimited True 5G • 28 Days'},
       {'amt': 666.0, 'desc': '1.5GB/Day + 100 SMS/Day • 84 Days'},
-      {'amt': 999.0, 'desc': '3GB/Day Hero Unlimited • 84 Days'},
+      {'amt': 999.0, 'desc': '3GB/Day Hero Unlimited + OTT Subscriptions • 84 Days'},
+      {'amt': 2999.0, 'desc': '2.5GB/Day 365 Days Annual Mega Plan'},
+      {'amt': 899.0, 'desc': 'International Roaming Pass • 100 Mins & 2GB • 30 Days'},
     ];
 
     showModalBottomSheet(
@@ -1542,53 +1626,57 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
               color: isDark ? const Color(0xFF1F2C34) : Colors.white,
               borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: const BoxDecoration(color: Color(0xFFE3F2FD), shape: BoxShape.circle),
-                      child: const Icon(Icons.cell_tower_rounded, color: Colors.blue),
-                    ),
-                    const SizedBox(width: 12),
-                    const Text('Mobile Recharge (मोबाइल रिचार्ज)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: InputDecoration(
-                    labelText: 'Mobile Number',
-                    prefixText: '+91 ',
-                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text('Select Operator:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                const SizedBox(height: 6),
-                Row(
-                  children: ['Jio', 'Airtel', 'Vi', 'BSNL'].map((op) {
-                    final isSel = selectedOperator == op;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8),
-                      child: ChoiceChip(
-                        label: Text(op),
-                        selected: isSel,
-                        onSelected: (val) {
-                          setModalState(() {
-                            selectedOperator = op;
-                          });
-                        },
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: const BoxDecoration(color: Color(0xFFE3F2FD), shape: BoxShape.circle),
+                        child: const Icon(Icons.cell_tower_rounded, color: Colors.blue),
                       ),
-                    );
-                  }).toList(),
-                ),
-                const SizedBox(height: 14),
-                const Text('Popular Plans:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                      const SizedBox(width: 12),
+                      const Text('Mobile Recharge (मोबाइल रिचार्ज)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      labelText: 'Mobile Number',
+                      prefixText: selectedOperator == 'International' ? '+ ' : '+91 ',
+                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  const Text('Select Operator (ऑपरेटर चुनें):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                  const SizedBox(height: 6),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: ['Jio', 'Airtel', 'Vi', 'BSNL', 'International'].map((op) {
+                        final isSel = selectedOperator == op;
+                        return Padding(
+                          padding: const EdgeInsets.only(right: 8),
+                          child: ChoiceChip(
+                            label: Text(op),
+                            selected: isSel,
+                            onSelected: (val) {
+                              setModalState(() {
+                                selectedOperator = op;
+                              });
+                            },
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  const Text('Choose Plan / Offers (प्लान और ऑफर्स):', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
                 const SizedBox(height: 8),
                 ...plans.map((p) {
                   final isSel = selectedAmount == p['amt'];
@@ -2346,6 +2434,462 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
   }
 
   // ==========================================
+  // RUPAY ON UPI, UPI LITE, AUTOPAY & REWARDS HUB
+  // ==========================================
+  void _showAddRuPayCardDialog() {
+    final cardController = TextEditingController();
+    String selectedBank = 'HDFC Bank';
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setDlgState) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Row(
+            children: [
+              Icon(Icons.credit_card_rounded, color: Colors.deepPurple),
+              SizedBox(width: 8),
+              Expanded(child: Text('Link RuPay Credit Card on UPI', style: TextStyle(fontSize: 16))),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Pay at any merchant QR code directly using your RuPay Credit Card without POS terminals:', style: TextStyle(fontSize: 12, color: Colors.grey)),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: selectedBank,
+                decoration: const InputDecoration(labelText: 'Issuing Bank', border: OutlineInputBorder(), isDense: true),
+                items: ['HDFC Bank', 'State Bank of India', 'ICICI Bank', 'Punjab National Bank', 'Axis Bank']
+                    .map((b) => DropdownMenuItem(value: b, child: Text(b, style: const TextStyle(fontSize: 13))))
+                    .toList(),
+                onChanged: (val) => setDlgState(() => selectedBank = val ?? selectedBank),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: cardController,
+                keyboardType: TextInputType.number,
+                maxLength: 4,
+                decoration: const InputDecoration(
+                  labelText: 'Last 4 Digits of Card',
+                  hintText: 'e.g. 5432',
+                  prefixText: '•••• •••• •••• ',
+                  border: OutlineInputBorder(),
+                  isDense: true,
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+              onPressed: () {
+                final last4 = cardController.text.trim();
+                if (last4.length == 4) {
+                  _paymentService.addNewBankAccount(
+                    bankName: '$selectedBank (RuPay Credit)',
+                    accountNumber: 'XXXX$last4',
+                    accountType: 'Credit Card',
+                    brandColorHex: 0xFF5E35B1,
+                  );
+                  Navigator.pop(ctx);
+                  setState(() {});
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('✓ $selectedBank RuPay Credit Card linked successfully for UPI payments!'),
+                      backgroundColor: AppColors.primary,
+                    ),
+                  );
+                }
+              },
+              child: const Text('Link Card'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showUpiLiteSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(color: Color(0xFFFFF3E0), shape: BoxShape.circle),
+                    child: const Icon(Icons.flash_on_rounded, color: Colors.orange),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('UPI LITE (पिन-फ्री पेमेंट्स)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                        Text('Instant 1-Click payments up to ₹500 without PIN', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFFE65100), Color(0xFFFF8F00)]),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Available LITE Balance:', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                        Text('₹${_paymentService.upiLiteBalance.toStringAsFixed(2)}', style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                    ElevatedButton(
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.white, foregroundColor: Colors.deepOrange),
+                      onPressed: () {
+                        _paymentService.topUpUpiLite(500.0);
+                        setState(() {});
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('✓ ₹500 added to UPI LITE wallet!'), backgroundColor: Colors.green),
+                        );
+                      },
+                      child: const Text('+ Top Up ₹500', style: TextStyle(fontWeight: FontWeight.bold)),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text('• 100% Success rate even with weak network connectivity.\n• No UPI PIN required for micro-payments under ₹500.\n• Secured by on-device hardware enclave.', style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.5)),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showAutoPaySheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        final mandates = _paymentService.autoPayMandates;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: const BoxDecoration(color: Color(0xFFE8F5E9), shape: BoxShape.circle),
+                      child: const Icon(Icons.autorenew_rounded, color: Colors.green),
+                    ),
+                    const SizedBox(width: 12),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('AutoPay (ऑटो-पे मैंडेट्स)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                          Text('Recurring subscriptions, OTT & bill mandates', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                ...mandates.map((m) => Card(
+                  margin: const EdgeInsets.only(bottom: 10),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  child: ListTile(
+                    leading: const CircleAvatar(backgroundColor: Color(0xFFE8F5E9), child: Icon(Icons.check_circle_rounded, color: Colors.green)),
+                    title: Text(m['title'] as String, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+                    subtitle: Text('${m['frequency']} • ₹${(m['amount'] as num).toInt()} • Next: ${m['nextDate']}\nBank: ${m['bank']}'),
+                    trailing: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(color: Colors.green.shade50, borderRadius: BorderRadius.circular(8)),
+                      child: const Text('ACTIVE', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ),
+                  ),
+                )),
+                const SizedBox(height: 12),
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.add_rounded),
+                    label: const Text('Setup New AutoPay Mandate'),
+                    onPressed: () {
+                      _paymentService.addAutoPayMandate(
+                        title: 'Amazon Prime Video',
+                        frequency: 'Annual',
+                        amount: 1499.0,
+                        nextDate: '15 Dec 2026',
+                        bank: 'State Bank of India',
+                      );
+                      Navigator.pop(ctx);
+                      setState(() {});
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text('✓ New AutoPay mandate for Amazon Prime scheduled!'), backgroundColor: Colors.green),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _showRewardCoinsDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        final coins = _paymentService.rewardCoins;
+        final rupeeValue = (coins / 100).floorToDouble() * 1.0;
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(colors: [Color(0xFFFFB300), Color(0xFFFF6F00)]),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Column(
+                  children: [
+                    const Icon(Icons.monetization_on_rounded, color: Colors.white, size: 48),
+                    const SizedBox(height: 8),
+                    Text('$coins Coins', style: const TextStyle(color: Colors.white, fontSize: 32, fontWeight: FontWeight.bold)),
+                    Text('Worth ₹${(coins / 100).toStringAsFixed(2)} Real Cash', style: const TextStyle(color: Colors.white70, fontSize: 14)),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text('Coin Earning Milestones:', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 8),
+              const Text(
+                '• ₹500 - ₹999 Transaction: 1 Coin\n'
+                '• ₹1,000 - ₹1,999 Transaction: 2 Coins\n'
+                '• ₹2,000+ Transaction: 3 Coins\n'
+                '• Redemption: 100 Coins = ₹1.00 Direct Bank Cashback',
+                style: TextStyle(fontSize: 12, color: Colors.grey, height: 1.5),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.amber.shade800, foregroundColor: Colors.white),
+                  icon: const Icon(Icons.redeem_rounded),
+                  label: Text('Redeem ₹${rupeeValue.toStringAsFixed(2)} to Primary Bank', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  onPressed: coins >= 100
+                      ? () {
+                          final ok = _paymentService.redeemRewardCoins(coinsToRedeem: (rupeeValue * 100).toInt());
+                          Navigator.pop(ctx);
+                          setState(() {});
+                          if (ok) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text('🎉 ₹${rupeeValue.toStringAsFixed(2)} Cashback successfully credited to your Bank Account!'),
+                                backgroundColor: Colors.green.shade700,
+                              ),
+                            );
+                          }
+                        }
+                      : null,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showCibilScoreDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) {
+        final isDark = Theme.of(ctx).brightness == Brightness.dark;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+          decoration: BoxDecoration(
+            color: isDark ? const Color(0xFF1F2C34) : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(color: Color(0xFFE0F2F1), shape: BoxShape.circle),
+                    child: const Icon(Icons.speed_rounded, color: Colors.teal),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Free CIBIL Credit Score (सिबिल स्कोर)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 17)),
+                        Text('Official TransUnion CIBIL Report', style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: isDark ? const Color(0xFF2A3942) : Colors.teal.shade50,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.teal.shade300),
+                ),
+                child: Column(
+                  children: [
+                    const Text('785', style: TextStyle(fontSize: 48, fontWeight: FontWeight.bold, color: Colors.teal)),
+                    const Text('Excellent (शानदार) • Range: 300 - 900', style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 12),
+                    LinearProgressIndicator(
+                      value: 785 / 900,
+                      backgroundColor: Colors.grey.shade300,
+                      color: Colors.teal,
+                      minHeight: 8,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  Column(children: [Text('100%', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.green)), Text('On-time Payments', style: TextStyle(fontSize: 11, color: Colors.grey))]),
+                  Column(children: [Text('12%', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.blue)), Text('Credit Used', style: TextStyle(fontSize: 11, color: Colors.grey))]),
+                  Column(children: [Text('4y 6m', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.purple)), Text('Credit Age', style: TextStyle(fontSize: 11, color: Colors.grey))]),
+                ],
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.teal, foregroundColor: Colors.white),
+                  icon: const Icon(Icons.refresh_rounded),
+                  label: const Text('Refresh Credit Report (Free)'),
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('✓ CIBIL score refreshed. Your credit profile is in peak health!'), backgroundColor: Colors.teal),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showReferAndEarnDialog() {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Row(
+          children: [
+            Icon(Icons.card_giftcard_rounded, color: Colors.purple),
+            SizedBox(width: 8),
+            Text('Refer & Earn ₹100 Cashback'),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('Invite your friends to Universal Chat & Pay! You get ₹100 direct bank cashback when they complete their first transaction.', style: TextStyle(fontSize: 13, height: 1.4)),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: Colors.purple.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.purple.shade200),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('Your Referral Code:', style: TextStyle(fontSize: 12, color: Colors.purple)),
+                  Text('UNIV7266', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.purple)),
+                ],
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Close')),
+          ElevatedButton.icon(
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.purple, foregroundColor: Colors.white),
+            icon: const Icon(Icons.share_rounded, size: 16),
+            label: const Text('Share Invite Link'),
+            onPressed: () {
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('Referral link copied: https://universalchat.app/refer/UNIV7266'), backgroundColor: Colors.purple),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ==========================================
   // BUILD METHOD
   // ==========================================
   @override
@@ -2426,14 +2970,20 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                       ),
                       const Spacer(),
                       ElevatedButton.icon(
-                        icon: const Icon(Icons.account_balance_wallet_rounded, size: 14, color: Color(0xFF005C4B)),
-                        label: const Text('Check Balance', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF005C4B))),
+                        icon: Icon(_isBalanceVisible ? Icons.visibility_off_rounded : Icons.account_balance_wallet_rounded, size: 14, color: const Color(0xFF005C4B)),
+                        label: Text(_isBalanceVisible ? 'Hide' : 'Check Balance (बैलेंस देखें)', style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF005C4B))),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                           visualDensity: VisualDensity.compact,
                         ),
-                        onPressed: () => _showCheckBalanceDialog(primaryBank),
+                        onPressed: () {
+                          if (_isBalanceVisible) {
+                            setState(() => _isBalanceVisible = false);
+                          } else {
+                            _showCheckBalanceDialog(primaryBank);
+                          }
+                        },
                       ),
                     ],
                   ),
@@ -2445,9 +2995,32 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                     style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.bold, letterSpacing: 0.5),
                   ),
                   const SizedBox(height: 8),
-                  Text(
-                    'Primary: ${primaryBank.bankName} (${primaryBank.accountNumberMasked}) • Balance: ₹${primaryBank.balance.toStringAsFixed(2)}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 11),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Primary: ${primaryBank.bankName} (${primaryBank.accountNumberMasked}) • Balance: ${_isBalanceVisible ? "₹" + primaryBank.balance.toStringAsFixed(2) : "₹••••••"}',
+                          style: const TextStyle(color: Colors.white70, fontSize: 11),
+                        ),
+                      ),
+                      IconButton(
+                        visualDensity: VisualDensity.compact,
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        icon: Icon(
+                          _isBalanceVisible ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                          color: Colors.white70,
+                          size: 16,
+                        ),
+                        onPressed: () {
+                          if (_isBalanceVisible) {
+                            setState(() => _isBalanceVisible = false);
+                          } else {
+                            _showCheckBalanceDialog(primaryBank);
+                          }
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -2622,7 +3195,222 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
 
             ..._paymentService.bankAccounts.map((b) => _buildBankAccountCard(b, isDark)),
 
-            const SizedBox(height: 24),
+            const SizedBox(height: 12),
+
+            // UPI & Card Hub Quick Actions
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _buildHubActionChip(
+                    icon: Icons.account_balance_rounded,
+                    color: const Color(0xFF005C4B),
+                    label: 'Setup UPI',
+                    onTap: _showAddBankSearchModal,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildHubActionChip(
+                    icon: Icons.credit_card_rounded,
+                    color: Colors.deepPurple,
+                    label: 'RuPay on UPI',
+                    onTap: _showAddRuPayCardDialog,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildHubActionChip(
+                    icon: Icons.flash_on_rounded,
+                    color: Colors.orange,
+                    label: 'UPI LITE',
+                    onTap: _showUpiLiteSheet,
+                  ),
+                  const SizedBox(width: 8),
+                  _buildHubActionChip(
+                    icon: Icons.autorenew_rounded,
+                    color: Colors.green,
+                    label: 'AutoPay (ऑटो-पे)',
+                    onTap: _showAutoPaySheet,
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
+
+            // ==========================================
+            // REWARDS COINS, CIBIL SCORE & REFER CARDS
+            // ==========================================
+            // 1. Reward Coins Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFFF8E1), Color(0xFFFFECB3)],
+                ),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.amber.shade400),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade700,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.monetization_on_rounded, color: Colors.white, size: 26),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Text(
+                              'Reward Coins (रिवॉर्ड कॉइन्स)',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.black87),
+                            ),
+                            const Spacer(),
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.amber.shade800,
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${_paymentService.rewardCoins} Coins',
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 11),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '₹500+ = 1 Coin • ₹1,000+ = 2 Coins • 100 Coins = ₹1 Cashback',
+                          style: TextStyle(fontSize: 11, color: Colors.grey.shade800),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber.shade900,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onPressed: _showRewardCoinsDialog,
+                    child: const Text('Redeem', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+
+            // 2. Free CIBIL Credit Score Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1F2C34) : Colors.teal.shade50,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.teal.shade300),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.teal.shade700,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.speed_rounded, color: Colors.white, size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Free CIBIL Credit Score: 785 / 900',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Excellent (शानदार) • 100% On-time Payments • Zero Impact Check',
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                  OutlinedButton(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.teal,
+                      side: const BorderSide(color: Colors.teal),
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onPressed: _showCibilScoreDialog,
+                    child: const Text('Check Score', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+
+            // 3. Refer & Earn ₹100 Cashback Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: isDark ? const Color(0xFF1F2C34) : Colors.purple.shade50,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.purple.shade200),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.purple.shade700,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.card_giftcard_rounded, color: Colors.white, size: 24),
+                  ),
+                  const SizedBox(width: 14),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Refer & Earn ₹100 Cashback (आमंत्रित करें)',
+                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                        ),
+                        SizedBox(height: 2),
+                        Text(
+                          'Invite friends to Universal Pay and get ₹100 upon first UPI payment',
+                          style: TextStyle(fontSize: 11, color: Colors.grey),
+                        ),
+                      ],
+                    ),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.purple.shade700,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    onPressed: _showReferAndEarnDialog,
+                    child: const Text('Invite', style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 20),
 
             // ==========================================
             // TRANSACTION HISTORY & CATEGORY FILTERS
@@ -2759,6 +3547,21 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildHubActionChip({
+    required IconData icon,
+    required Color color,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return ActionChip(
+      avatar: Icon(icon, size: 16, color: color),
+      label: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
+      backgroundColor: color.withOpacity(0.08),
+      side: BorderSide(color: color.withOpacity(0.3)),
+      onPressed: onTap,
     );
   }
 

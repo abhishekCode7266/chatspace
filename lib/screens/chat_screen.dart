@@ -2928,7 +2928,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
               actions: [
-                if (!widget.isEmbeddedDesktop) const AppBarDevCircleButton(),
                 IconButton(
                   visualDensity: VisualDensity.compact,
                   padding: const EdgeInsets.symmetric(horizontal: 4),

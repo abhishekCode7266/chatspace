@@ -581,7 +581,6 @@ class _ChatListScreenState extends State<ChatListScreen>
           Navigator.push(context, MaterialPageRoute(builder: (_) => const PaymentsScreen()));
         },
       ),
-      const AppBarDevCircleButton(),
       if (!isCompact)
         IconButton(
           icon: const Icon(Icons.qr_code_scanner_rounded),
@@ -983,25 +982,28 @@ class _ChatListScreenState extends State<ChatListScreen>
   Widget _buildFab() {
     final currentIndex = _tabController.index;
     if (currentIndex == 0) {
-      // Chats Tab FABs: WhatsApp style with Meta AI circle right above New Chat FAB on right side
+      // Chats Tab FABs:
+      // 1. Universal AI Floating Circle on top
+      // 2. Select Contact & Add by Mobile (+91)
+      // 3. New Chat / Direct Message
       return Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          // WhatsApp / Meta AI Floating Circle
+          // Universal AI Floating Circle
           const MetaAiFloatingCircle(),
           const SizedBox(height: 12),
           FloatingActionButton.small(
-            heroTag: 'fab_group',
+            heroTag: 'fab_contacts',
             backgroundColor: const Color(0xFF007AFF),
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const GroupCreateScreen()),
+                MaterialPageRoute(builder: (_) => const UsersListScreen()),
               );
             },
-            tooltip: 'New Group',
-            child: const Icon(Icons.groups_rounded, color: Colors.white),
+            tooltip: 'Select Contact & Add (+91) (कांटेक्ट्स)',
+            child: const Icon(Icons.contacts_rounded, color: Colors.white),
           ),
           const SizedBox(height: 12),
           FloatingActionButton(
@@ -1012,7 +1014,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                 MaterialPageRoute(builder: (_) => const UsersListScreen()),
               );
             },
-            tooltip: 'New Chat',
+            tooltip: 'New Chat / Direct Message (नया चैट)',
             child: const Icon(Icons.chat_rounded),
           ),
         ],

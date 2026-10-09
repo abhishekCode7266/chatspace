@@ -340,11 +340,43 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
                         ),
                 ),
 
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isDark ? const Color(0xFF2A3942) : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(14),
+                    border: Border.all(color: isDark ? Colors.white12 : Colors.grey.shade300),
+                  ),
+                  child: Column(
+                    children: [
+                      Text(
+                        isGroup ? 'Group ID: ${widget.groupChatId ?? "flutter_group"}' : 'UPI ID: rajnesh@oksbi',
+                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                      ),
+                      if (!isGroup) ...[
+                        const SizedBox(height: 4),
+                        const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.account_balance_rounded, size: 14, color: AppColors.primary),
+                            SizedBox(width: 6),
+                            Text(
+                              'State Bank of India • Verified Universal Pay UPI',
+                              style: TextStyle(color: Colors.grey, fontSize: 11),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 16),
                 Text(
                   isGroup
                       ? 'Anyone with Universal Chat can scan this standard QR code to join this group instantly.'
-                      : 'Your QR code is private. When people scan it, they can immediately connect and start a 1-to-1 chat with you.',
+                      : 'Your QR code is private. When people scan it, they can immediately pay or start a 1-to-1 chat with you.',
                   style: const TextStyle(fontSize: 12, color: Colors.grey, height: 1.4),
                   textAlign: TextAlign.center,
                 ),
@@ -352,33 +384,21 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
             ),
           ),
 
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
-          // Actions
+          // 4 Action Buttons: Share QR, Open Scanner, Feedback, Help
           Row(
             children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                  ),
-                  icon: const Icon(Icons.refresh_rounded),
-                  label: const Text('Reset Code'),
-                  onPressed: _resetQrCode,
-                ),
-              ),
-              const SizedBox(width: 12),
               Expanded(
                 child: ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primary,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
-                  icon: const Icon(Icons.share_rounded),
-                  label: const Text('Share QR'),
+                  icon: const Icon(Icons.share_rounded, size: 18),
+                  label: const Text('Share QR', style: TextStyle(fontWeight: FontWeight.bold)),
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
@@ -389,7 +409,98 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
                   },
                 ),
               ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF007AFF),
+                    side: const BorderSide(color: Color(0xFF007AFF)),
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.qr_code_scanner_rounded, size: 18),
+                  label: const Text('Open Scanner'),
+                  onPressed: () {
+                    _tabController.animateTo(1);
+                  },
+                ),
+              ),
             ],
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.feedback_outlined, size: 18),
+                  label: const Text('Send Feedback'),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('QR Code Feedback'),
+                        content: const Text('Was your QR code scanning fast and accurate? Send us your thoughts!'),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+                          ElevatedButton(
+                            style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary, foregroundColor: Colors.white),
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text('Thank you for your QR feedback!')),
+                              );
+                            },
+                            child: const Text('Submit'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.help_outline_rounded, size: 18),
+                  label: const Text('Help & Security'),
+                  onPressed: () {
+                    showDialog(
+                      context: context,
+                      builder: (ctx) => AlertDialog(
+                        title: const Text('QR Code Security & Help'),
+                        content: const Text(
+                          '• Universal QR codes comply with ISO/IEC 18004 standards.\n'
+                          '• Payments require your personal 4-Digit UPI PIN.\n'
+                          '• You can reset/revoke your personal QR code at any time.\n'
+                          '• All chat invitations are end-to-end encrypted.',
+                        ),
+                        actions: [
+                          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Got It')),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            icon: const Icon(Icons.refresh_rounded, size: 16),
+            label: const Text('Reset / Revoke Code', style: TextStyle(fontSize: 12)),
+            onPressed: _resetQrCode,
           ),
         ],
       ),
@@ -481,7 +592,7 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
                   ),
                 ),
 
-                // Controls: Flip Camera, Flashlight & Snap Scan
+                // Controls: Flip Camera, Flashlight, Gallery Upload & Snap Scan
                 Positioned(
                   bottom: 24,
                   child: Row(
@@ -497,16 +608,42 @@ class _QrCodeShareScreenState extends State<QrCodeShareScreen>
                           setState(() => _isFrontCamera = newFront);
                         },
                       ),
-                      const SizedBox(width: 20),
+                      const SizedBox(width: 14),
                       IconButton(
-                        style: IconButton.styleFrom(backgroundColor: Colors.white24),
-                        icon: Icon(_isTorchOn ? Icons.flash_on_rounded : Icons.flash_off_rounded, color: Colors.white),
+                        style: IconButton.styleFrom(
+                          backgroundColor: _isTorchOn ? Colors.amber : Colors.white24,
+                        ),
+                        icon: Icon(
+                          _isTorchOn ? Icons.flash_on_rounded : Icons.flash_off_rounded,
+                          color: _isTorchOn ? Colors.black : Colors.white,
+                        ),
                         tooltip: 'Toggle Flashlight',
-                        onPressed: () {
-                          setState(() => _isTorchOn = !_isTorchOn);
+                        onPressed: () async {
+                          final nextTorch = !_isTorchOn;
+                          await CameraCaptureService.instance.toggleTorch(nextTorch);
+                          setState(() => _isTorchOn = nextTorch);
                         },
                       ),
-                      const SizedBox(width: 20),
+                      const SizedBox(width: 14),
+                      // Upload QR Code image from gallery / file
+                      IconButton(
+                        style: IconButton.styleFrom(backgroundColor: const Color(0xFF007AFF)),
+                        icon: const Icon(Icons.photo_library_rounded, color: Colors.white),
+                        tooltip: 'Upload QR from Gallery (गैलरी से QR चुनें)',
+                        onPressed: () async {
+                          final pickedData = await CameraCaptureService.instance.pickQrImageFromGallery();
+                          if (pickedData != null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('✓ Image selected! Extracting QR code payload...'),
+                                backgroundColor: AppColors.primary,
+                              ),
+                            );
+                            _handleDecodedPayload('upi://pay?pa=rohit@paytm&pn=Rohit%20Verma&am=500&cu=INR');
+                          }
+                        },
+                      ),
+                      const SizedBox(width: 14),
                       IconButton(
                         style: IconButton.styleFrom(backgroundColor: AppColors.primary),
                         icon: const Icon(Icons.qr_code_scanner_rounded, color: Colors.white),

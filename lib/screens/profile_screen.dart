@@ -6,6 +6,7 @@ import '../services/security_service.dart';
 import '../utils/constants.dart';
 import '../utils/validators.dart';
 import 'login_screen.dart';
+import 'dev_bypass_sheet.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -374,6 +375,71 @@ class _ProfileScreenState extends State<ProfileScreen> {
               onChanged: (val) {
                 themeProvider.toggleTheme(val);
               },
+            ),
+            const Divider(),
+
+            // Developer Mode & Bypass Hub (Settings)
+            Container(
+              margin: const EdgeInsets.symmetric(vertical: 6),
+              decoration: BoxDecoration(
+                color: authProvider.isDevBypass
+                    ? Colors.amber.withOpacity(0.08)
+                    : (isDark ? const Color(0xFF1F2C34) : Colors.grey.shade50),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: authProvider.isDevBypass ? Colors.amber : (isDark ? Colors.white12 : Colors.grey.shade300),
+                  width: 1.5,
+                ),
+              ),
+              child: Column(
+                children: [
+                  SwitchListTile(
+                    secondary: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: authProvider.isDevBypass ? Colors.amber.shade700 : Colors.grey.shade400,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.build_circle_rounded, color: Colors.white, size: 20),
+                    ),
+                    title: const Text('Developer Mode Bypass', style: TextStyle(fontWeight: FontWeight.bold)),
+                    subtitle: Text(
+                      authProvider.isDevBypass
+                          ? 'Active: Mock data & diagnostic bypass enabled'
+                          : 'Disabled: Live Firebase production authentication',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    value: authProvider.isDevBypass,
+                    activeColor: Colors.amber.shade700,
+                    onChanged: (val) {
+                      authProvider.setDevBypass(val);
+                    },
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber.shade800,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        ),
+                        icon: const Icon(Icons.settings_suggest_rounded, size: 18),
+                        label: const Text('Open Developer Inspection & Diagnostics Hub'),
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            isScrollControlled: true,
+                            backgroundColor: Colors.transparent,
+                            builder: (ctx) => const DevBypassSheet(),
+                          );
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
             const Divider(),
 

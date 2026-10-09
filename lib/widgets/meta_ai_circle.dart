@@ -52,7 +52,7 @@ class _MetaAiFloatingCircleState extends State<MetaAiFloatingCircle>
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Tooltip(
-      message: 'Universal Meta AI Assistant (आर्टिफिशियल इंटेलिजेंस)',
+      message: 'Universal AI Companion (यूनिवर्सल एआई)',
       child: GestureDetector(
         onTap: () => _openMetaAi(context),
         child: Container(
@@ -155,7 +155,7 @@ class MetaAiChatAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Tooltip(
-      message: 'Ask Meta AI / Imagine',
+      message: 'Ask Universal AI / Imagine',
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
@@ -181,3 +181,5 @@ class MetaAiChatAction extends StatelessWidget {
     );
   }
 }
+
+typedef UniversalAiFloatingCircle = MetaAiFloatingCircle;

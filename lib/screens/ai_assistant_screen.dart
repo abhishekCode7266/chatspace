@@ -76,7 +76,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with SingleTicker
     {
       'scene': 'Scene 4: Finale & Digital Aurora (2:45 - 3:45)',
       'visual': 'The city glows at twilight as Unit 7 and human friends watch the digital aurora in the sky.',
-      'narration': '"A bright new day for humanity, powered by Universal Chat & Meta AI."',
+      'narration': '"A bright new day for humanity, powered by Universal Chat & Universal AI."',
       'soundtrack': 'Emotional Ambient Outro',
     },
   ];
@@ -111,50 +111,6 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with SingleTicker
   void _sendAiMessage({String? customPrompt}) {
     final text = customPrompt ?? _chatInputController.text.trim();
     if (text.isEmpty) return;
-
-    final payment = PaymentService.instance;
-    if (!payment.canUseAi()) {
-      showDialog(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: const Row(
-            children: [
-              Icon(Icons.bolt_rounded, color: Colors.amber, size: 26),
-              SizedBox(width: 8),
-              Expanded(child: Text('Daily AI Quota Reached', style: TextStyle(fontSize: 18))),
-            ],
-          ),
-          content: Text(
-            'You have used your ${payment.dailyFreeAiLimit} free Meta AI requests for today (दैनिक फ्री सीमा समाप्त).\n\nUpgrade to Universal Pro for Unlimited Meta AI queries, /imagine 3D image generations, 100GB extra cloud backup storage, and an ad-free experience!',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx),
-              child: const Text('Maybe Later'),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () {
-                Navigator.pop(ctx);
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
-                );
-              },
-              child: const Text('Upgrade to Pro (प्रीमियम लें)'),
-            ),
-          ],
-        ),
-      );
-      return;
-    }
-
-    payment.recordAiQuery();
 
     final isImagine = text.toLowerCase().startsWith('/imagine') ||
         text.toLowerCase().contains('generate image') ||
@@ -362,7 +318,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with SingleTicker
               child: const Icon(Icons.auto_awesome_rounded, color: AppColors.aiCyan, size: 20),
             ),
             const SizedBox(width: 10),
-            const Text('Universal Meta AI Suite', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            const Text('Universal AI Suite (यूनिवर्सल एआई)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
           ],
         ),
         actions: [
@@ -409,20 +365,15 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with SingleTicker
 
   // 1. AI Chat Tab
   Widget _buildChatTab(bool isDark) {
-    final payment = PaymentService.instance;
-    final isPremium = payment.isPremiumUser;
-
     return Column(
       children: [
-        // Meta AI Quota & Status Banner
+        // Universal AI Free & Unlimited Status Banner
         Container(
           margin: const EdgeInsets.fromLTRB(12, 8, 12, 4),
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isPremium
-                  ? [const Color(0xFF1B5E20), const Color(0xFF004D40)]
-                  : [const Color(0xFF1A237E), const Color(0xFF311B92)],
+            gradient: const LinearGradient(
+              colors: [Color(0xFF0D47A1), Color(0xFF4A148C)],
             ),
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
@@ -441,61 +392,32 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with SingleTicker
                   shape: BoxShape.circle,
                   color: Colors.white24,
                 ),
-                child: Icon(
-                  isPremium ? Icons.star_rounded : Icons.auto_awesome_rounded,
-                  color: isPremium ? Colors.amber : Colors.cyanAccent,
+                child: const Icon(
+                  Icons.auto_awesome_rounded,
+                  color: Colors.cyanAccent,
                   size: 18,
                 ),
               ),
               const SizedBox(width: 10),
-              Expanded(
+              const Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      isPremium
-                          ? 'Universal Pro • Unlimited Meta AI Active ⚡'
-                          : 'Meta AI Free Quota: ${payment.remainingFreeAiQueries} / ${payment.dailyFreeAiLimit} queries left today',
-                      style: const TextStyle(
+                      'Universal AI (यूनिवर्सल एआई) • 100% Free & Unlimited ⚡',
+                      style: TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 12.5,
                       ),
                     ),
                     Text(
-                      isPremium
-                          ? 'Unlimited text & 3D image /imagine generation'
-                          : 'Upgrade for Unlimited AI & 100GB extra cloud backup',
-                      style: const TextStyle(color: Colors.white70, fontSize: 11),
+                      'No daily quota • Smart replies, translations & /imagine generations',
+                      style: TextStyle(color: Colors.white70, fontSize: 11),
                     ),
                   ],
                 ),
               ),
-              if (!isPremium)
-                InkWell(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
-                    );
-                  },
-                  borderRadius: BorderRadius.circular(12),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                    decoration: BoxDecoration(
-                      color: Colors.amber,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Text(
-                      'PRO',
-                      style: TextStyle(
-                        color: Colors.black,
-                        fontWeight: FontWeight.w900,
-                        fontSize: 11,
-                      ),
-                    ),
-                  ),
-                ),
             ],
           ),
         ),
@@ -569,7 +491,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with SingleTicker
                                     Icon(Icons.auto_awesome, color: Colors.cyanAccent, size: 12),
                                     SizedBox(width: 4),
                                     Text(
-                                      'Meta AI 3D',
+                                      'Universal AI 3D',
                                       style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
                                     ),
                                   ],
@@ -600,7 +522,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with SingleTicker
                     child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.aiCyan),
                   ),
                   const SizedBox(width: 8),
-                  Text('Meta AI is generating response...', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
+                  Text('Universal AI is generating response...', style: TextStyle(fontSize: 12, color: Colors.grey.shade500)),
                 ],
               ),
             ),
@@ -646,7 +568,7 @@ class _AiAssistantScreenState extends State<AiAssistantScreen> with SingleTicker
                 child: TextField(
                   controller: _chatInputController,
                   decoration: const InputDecoration(
-                    hintText: 'Ask Meta AI or type /imagine <prompt>...',
+                    hintText: 'Ask Universal AI or type /imagine <prompt>...',
                     border: InputBorder.none,
                     contentPadding: EdgeInsets.symmetric(horizontal: 12),
                   ),

@@ -61,5 +61,19 @@ class CameraCaptureService {
 
   Future<void> flipCamera(bool isFront) async {}
   Future<String?> snapPhoto() async => null;
+  Future<bool> toggleTorch(bool enable) async => false;
+  Future<String?> pickQrImageFromGallery() async {
+    try {
+      final picker = ImagePicker();
+      final picked = await picker.pickImage(source: ImageSource.gallery);
+      if (picked != null) {
+        final bytes = await picked.readAsBytes();
+        return 'data:image/jpeg;base64,${base64Encode(bytes)}';
+      }
+    } catch (e) {
+      debugPrint('Error picking image: $e');
+    }
+    return null;
+  }
   void disposeCamera() {}
 }
