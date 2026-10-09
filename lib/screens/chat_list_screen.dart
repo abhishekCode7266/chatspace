@@ -278,7 +278,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                               child: Container(
                                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                 decoration: BoxDecoration(
-                                  color: Colors.black64,
+                                  color: Colors.black54,
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: const Text('HD Photo', style: TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold)),
@@ -1326,7 +1326,7 @@ class _ChatListScreenState extends State<ChatListScreen>
                         context: context,
                         isScrollControlled: true,
                         backgroundColor: Colors.transparent,
-                        builder: (ctx) => const DevBypassSheet(),
+                        builder: (ctx) => DevBypassSheet(),
                       );
                     },
                     borderRadius: BorderRadius.circular(20),

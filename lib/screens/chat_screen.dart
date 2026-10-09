@@ -2026,6 +2026,9 @@ class _ChatScreenState extends State<ChatScreen> {
       backgroundColor: Colors.transparent,
       builder: (ctx) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
+        final isBlocked = widget.groupChat == null
+            ? SecurityService.instance.isUserBlocked(widget.targetUser.uid)
+            : false;
         return Container(
           padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
