@@ -1727,11 +1727,12 @@ class _PaymentsScreenState extends State<PaymentsScreen> {
                 ),
               ],
             ),
-          );
-        },
-      ),
-    );
-  }
+          ),
+        );
+      },
+    ),
+  );
+}
 
   // ==========================================
   // 6. ELECTRICITY BILL DIALOG

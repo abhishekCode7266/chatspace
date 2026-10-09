@@ -179,6 +179,12 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  /// Explicitly set Developer Mode Bypass state
+  Future<void> setDevBypass(bool value) async {
+    if (_isDevBypass == value) return;
+    await toggleDevBypass();
+  }
+
   /// Update Display Name and Status Bio
   Future<bool> updateProfile({
     required String name,
